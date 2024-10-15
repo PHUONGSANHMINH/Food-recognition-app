@@ -1,5 +1,6 @@
 # Food-recognition-app
 ===========================
+
 A> Setup and run server API
 ---------------------------
 1. git clone https://github.com/IL-Junq/Food-recognition-app.git
