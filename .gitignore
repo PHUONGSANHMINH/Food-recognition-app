@@ -1,0 +1,8 @@
+Frontend-Admin/build
+Frontend-Admin/node_modules
+Frontend-Admin/package-lock.json
+Frontend-Admin/.eslintcache
+Backend-API/venv/
+Backend-API/__pycache__/
+Backend-API/.venv/
+Backend-API/.env
