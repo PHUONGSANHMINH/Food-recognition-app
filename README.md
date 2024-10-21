@@ -14,3 +14,7 @@ A> Setup and run server API
 
 B> Setup Frontend.
 ---------------------------
+B.1> Admin
+1. cd Frontend-Admin
+2. npm install
+3. npm start
