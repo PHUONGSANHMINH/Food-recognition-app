@@ -1,0 +1,58 @@
+# translations.py
+
+MESSAGES = {
+    'en': {
+        'bad_credentials': "Bad username or password",
+        'username_exists': "Username already exists",
+        'user_registered': "User registered successfully",
+        'permission_denied': "Permission denied",
+        'user_deleted': "User deleted successfully",
+        'user_updated': "User updated successfully",
+        'invalid_username': "Username must be between 4 and 16 characters and only letters and numbers",
+        'weak_password': "Password not strong",
+        'successfully_send_code': "Code has been sent to your email",
+        'email_does_not_exist': "Email does not exist",
+        'invalid_verify_code': "Invalid verification code",
+        'expired_verify_code': "Verification code has expired",
+        'max_attempts_exceeded': "You have exceeded the maximum number of verification attempts. Please request a new code.",
+        'missing_fields': "Please provide all required fields.",
+        'incorrect_old_password': "Old password is incorrect.",
+        'password_changed': "Password has been changed successfully."
+    },
+    'vi': {
+        'bad_credentials': "Tên người dùng hoặc mật khẩu không chính xác",
+        'username_exists': "Tên người dùng đã tồn tại",
+        'user_registered': "Người dùng đã được đăng ký thành công",
+        'permission_denied': "Không có quyền thực hiện hành động này",
+        'user_deleted': "Người dùng đã được xóa thành công",
+        'user_updated': "Người dùng đã được cập nhật thành công",
+        'invalid_username': "Tên người dùng phải từ 4 đến 16 ký tự và chỉ chứa chữ cái và số",
+        'weak_password': "Mật khẩu không đủ mạnh.",
+        'successfully_send_code': "Mã xác thực đã được gửi thành công.",
+        'email_does_not_exist': "Email không tồn tại.",
+        'invalid_verify_code': "Mã xác thực không hợp lệ.",
+        'expired_verify_code': "Mã xác thực đã hết hạn.",
+        'max_attempts_exceeded': "Bạn đã vượt quá số lần thử xác thực mã. Vui lòng yêu cầu mã mới.",
+        'missing_fields': "Vui lòng cung cấp đầy đủ các trường yêu cầu.",
+        'incorrect_old_password': "Mật khẩu cũ không đúng.",
+        'password_changed': "Mật khẩu đã được thay đổi thành công."
+    },
+    'es': {
+        'bad_credentials': "Nombre de usuario o contraseña incorrectos",
+        'username_exists': "El nombre de usuario ya existe",
+        'user_registered': "Usuario registrado con éxito",
+        'permission_denied': "Permiso denegado",
+        'user_deleted': "Usuario eliminado con éxito",
+        'user_updated': "Usuario actualizado con éxito",
+        'invalid_username': "El nombre de usuario debe tener entre 4 y 16 caracteres y solo contener letras y números",
+        'weak_password': "La contraseña no es lo suficientemente fuerte.",
+        'successfully_send_code': "El código ha sido enviado a tu correo electrónico",
+        'email_does_not_exist': "El correo electrónico no existe",
+        'invalid_verify_code': "Código de verificación no válido.",
+        'expired_verify_code': "El código de verificación ha caducado.",
+        'max_attempts_exceeded': "Has excedido el número máximo de intentos de verificación. Por favor, solicita un nuevo código.",
+        'missing_fields': "Por favor, proporciona todos los campos requeridos.",
+        'incorrect_old_password': "La contraseña antigua es incorrecta.",
+        'password_changed': "La contraseña ha sido cambiada con éxito."
+    }
+}
