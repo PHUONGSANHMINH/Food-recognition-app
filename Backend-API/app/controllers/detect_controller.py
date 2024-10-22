@@ -18,8 +18,11 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Tải mô hình YOLOv8
-MODEL_PATH = os.getenv('YOLOV8_MODEL_PATH', 'yolov8n.pt')
-model = YOLO(MODEL_PATH)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+MODEL_PATH = os.getenv('YOLOV8_MODEL_PATH', 'yolov8-model/best.pt')
+FULL_MODEL_PATH = os.path.join(BASE_DIR, MODEL_PATH)
+print(f"Full model path: {FULL_MODEL_PATH}")
+model = YOLO(FULL_MODEL_PATH)
 
 # Cấu hình API của Spoonacular
 SPOONACULAR_API_KEY = os.getenv('SPOONACULAR_API_KEY')
