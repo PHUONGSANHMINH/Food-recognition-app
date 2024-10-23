@@ -1,0 +1,692 @@
+[
+  {
+    "id_recipe": 1,
+    "name_recipe": "Grilled Chicken Salad",
+    "image": "https://example.com/images/grilled-chicken-salad.jpg",
+    "type": "Main",
+    "status": "published,featured",
+    "ingredients": [
+      {
+        "id_ingredient": 1,
+        "name_ingredient": "Chicken Breast",
+        "quantity": 200,
+        "unit": "g",
+        "image": "https://example.com/images/chicken-breast.jpg"
+      },
+      {
+        "id_ingredient": 2,
+        "name_ingredient": "Lettuce",
+        "quantity": 100,
+        "unit": "g",
+        "image": "https://example.com/images/lettuce.jpg"
+      }
+    ],
+    "nutrition": {
+      "id_nutrition": 1,
+      "calories": 350,
+      "fat": 15,
+      "saturated_fat": 3,
+      "carbohydrates": 20,
+      "sugar": 5,
+      "cholesterol": 80,
+      "sodium": 200,
+      "protein": 30,
+      "alcohol": 0
+    },
+    "vitamin": {
+      "id_vitamin": 1,
+      "protein": 30,
+      "calcium": 15,
+      "iron": 10,
+      "vitamin_a": 700,
+      "vitamin_c": 40,
+      "vitamin_d": 10,
+      "vitamin_e": 5,
+      "vitamin_k": 100,
+      "vitamin_b1": 0.5,
+      "vitamin_b2": 0.3,
+      "vitamin_b3": 7,
+      "vitamin_b5": 1.5,
+      "vitamin_b6": 0.6,
+      "vitamin_b12": 0.002,
+      "fiber": 5
+    }
+  },
+  {
+    "id_recipe": 2,
+    "name_recipe": "Chicken Caesar Salad",
+    "image": "https://example.com/images/chicken-caesar-salad.jpg",
+    "type": "Main",
+    "status": "published",
+    "ingredients": [
+      {
+        "id_ingredient": 1,
+        "name_ingredient": "Chicken Breast",
+        "quantity": 150,
+        "unit": "g",
+        "image": "https://example.com/images/chicken-breast.jpg"
+      },
+      {
+        "id_ingredient": 2,
+        "name_ingredient": "Romaine Lettuce",
+        "quantity": 100,
+        "unit": "g",
+        "image": "https://example.com/images/romaine-lettuce.jpg"
+      }
+    ],
+    "nutrition": {
+      "id_nutrition": 2,
+      "calories": 400,
+      "fat": 20,
+      "saturated_fat": 5,
+      "carbohydrates": 15,
+      "sugar": 5,
+      "cholesterol": 70,
+      "sodium": 300,
+      "protein": 35,
+      "alcohol": 0
+    },
+    "vitamin": {
+      "id_vitamin": 2,
+      "protein": 35,
+      "calcium": 20,
+      "iron": 12,
+      "vitamin_a": 800,
+      "vitamin_c": 45,
+      "vitamin_d": 12,
+      "vitamin_e": 6,
+      "vitamin_k": 120,
+      "vitamin_b1": 0.6,
+      "vitamin_b2": 0.4,
+      "vitamin_b3": 8,
+      "vitamin_b5": 1.6,
+      "vitamin_b6": 0.7,
+      "vitamin_b12": 0.003,
+      "fiber": 6
+    }
+  },
+  {
+    "id_recipe": 3,
+    "name_recipe": "Lemon Herb Chicken",
+    "image": "https://example.com/images/lemon-herb-chicken.jpg",
+    "type": "Main",
+    "status": "published",
+    "ingredients": [
+      {
+        "id_ingredient": 1,
+        "name_ingredient": "Chicken Thighs",
+        "quantity": 200,
+        "unit": "g",
+        "image": "https://example.com/images/chicken-thighs.jpg"
+      },
+      {
+        "id_ingredient": 2,
+        "name_ingredient": "Lemon",
+        "quantity": 1,
+        "unit": "pc",
+        "image": "https://example.com/images/lemon.jpg"
+      }
+    ],
+    "nutrition": {
+      "id_nutrition": 3,
+      "calories": 450,
+      "fat": 25,
+      "saturated_fat": 6,
+      "carbohydrates": 10,
+      "sugar": 2,
+      "cholesterol": 100,
+      "sodium": 400,
+      "protein": 40,
+      "alcohol": 0
+    },
+    "vitamin": {
+      "id_vitamin": 3,
+      "protein": 40,
+      "calcium": 10,
+      "iron": 8,
+      "vitamin_a": 900,
+      "vitamin_c": 50,
+      "vitamin_d": 14,
+      "vitamin_e": 7,
+      "vitamin_k": 130,
+      "vitamin_b1": 0.7,
+      "vitamin_b2": 0.5,
+      "vitamin_b3": 9,
+      "vitamin_b5": 1.7,
+      "vitamin_b6": 0.8,
+      "vitamin_b12": 0.004,
+      "fiber": 7
+    }
+  },
+  {
+    "id_recipe": 4,
+    "name_recipe": "Spicy Chicken Wings",
+    "image": "https://example.com/images/spicy-chicken-wings.jpg",
+    "type": "Main",
+    "status": "published,featured",
+    "ingredients": [
+      {
+        "id_ingredient": 1,
+        "name_ingredient": "Chicken Wings",
+        "quantity": 500,
+        "unit": "g",
+        "image": "https://example.com/images/chicken-wings.jpg"
+      },
+      {
+        "id_ingredient": 2,
+        "name_ingredient": "Hot Sauce",
+        "quantity": 50,
+        "unit": "ml",
+        "image": "https://example.com/images/hot-sauce.jpg"
+      }
+    ],
+    "nutrition": {
+      "id_nutrition": 1,
+      "calories": 400,
+      "fat": 25,
+      "saturated_fat": 7,
+      "carbohydrates": 10,
+      "sugar": 3,
+      "cholesterol": 100,
+      "sodium": 500,
+      "protein": 35,
+      "alcohol": 0
+    },
+    "vitamin": {
+      "id_vitamin": 1,
+      "protein": 35,
+      "calcium": 20,
+      "iron": 15,
+      "vitamin_a": 600,
+      "vitamin_c": 30,
+      "vitamin_d": 8,
+      "vitamin_e": 4,
+      "vitamin_k": 120,
+      "vitamin_b1": 0.4,
+      "vitamin_b2": 0.25,
+      "vitamin_b3": 5,
+      "vitamin_b5": 1.2,
+      "vitamin_b6": 0.5,
+      "vitamin_b12": 0.0015,
+      "fiber": 3
+    }
+  },
+  {
+    "id_recipe": 5,
+    "name_recipe": "Chicken Alfredo Pasta",
+    "image": "https://example.com/images/chicken-alfredo-pasta.jpg",
+    "type": "Main",
+    "status": "published,featured",
+    "ingredients": [
+      {
+        "id_ingredient": 1,
+        "name_ingredient": "Chicken Breast",
+        "quantity": 200,
+        "unit": "g",
+        "image": "https://example.com/images/chicken-breast.jpg"
+      },
+      {
+        "id_ingredient": 2,
+        "name_ingredient": "Pasta",
+        "quantity": 200,
+        "unit": "g",
+        "image": "https://example.com/images/pasta.jpg"
+      }
+    ],
+    "nutrition": {
+      "id_nutrition": 2,
+      "calories": 700,
+      "fat": 30,
+      "saturated_fat": 15,
+      "carbohydrates": 60,
+      "sugar": 8,
+      "cholesterol": 110,
+      "sodium": 600,
+      "protein": 45,
+      "alcohol": 0
+    },
+    "vitamin": {
+      "id_vitamin": 2,
+      "protein": 45,
+      "calcium": 50,
+      "iron": 20,
+      "vitamin_a": 900,
+      "vitamin_c": 20,
+      "vitamin_d": 12,
+      "vitamin_e": 6,
+      "vitamin_k": 80,
+      "vitamin_b1": 0.6,
+      "vitamin_b2": 0.4,
+      "vitamin_b3": 6.5,
+      "vitamin_b5": 2,
+      "vitamin_b6": 0.7,
+      "vitamin_b12": 0.002,
+      "fiber": 7
+    }
+  },
+  {
+    "id_recipe": 6,
+    "name_recipe": "Chicken Caesar Salad",
+    "image": "https://example.com/images/chicken-caesar-salad.jpg",
+    "type": "Side",
+    "status": "published",
+    "ingredients": [
+      {
+        "id_ingredient": 1,
+        "name_ingredient": "Chicken Breast",
+        "quantity": 150,
+        "unit": "g",
+        "image": "https://example.com/images/chicken-breast.jpg"
+      },
+      {
+        "id_ingredient": 2,
+        "name_ingredient": "Romaine Lettuce",
+        "quantity": 100,
+        "unit": "g",
+        "image": "https://example.com/images/romaine-lettuce.jpg"
+      }
+    ],
+    "nutrition": {
+      "id_nutrition": 3,
+      "calories": 300,
+      "fat": 18,
+      "saturated_fat": 5,
+      "carbohydrates": 10,
+      "sugar": 2,
+      "cholesterol": 80,
+      "sodium": 400,
+      "protein": 25,
+      "alcohol": 0
+    },
+    "vitamin": {
+      "id_vitamin": 3,
+      "protein": 25,
+      "calcium": 10,
+      "iron": 8,
+      "vitamin_a": 500,
+      "vitamin_c": 15,
+      "vitamin_d": 6,
+      "vitamin_e": 3,
+      "vitamin_k": 90,
+      "vitamin_b1": 0.3,
+      "vitamin_b2": 0.2,
+      "vitamin_b3": 4.5,
+      "vitamin_b5": 1,
+      "vitamin_b6": 0.4,
+      "vitamin_b12": 0.001,
+      "fiber": 4
+    }
+  },
+  {
+    "id_recipe": 7,
+    "name_recipe": "Chicken Stir-Fry",
+    "image": "https://example.com/images/chicken-stir-fry.jpg",
+    "type": "Main",
+    "status": "published",
+    "ingredients": [
+      {
+        "id_ingredient": 7,
+        "name_ingredient": "Chicken Breast",
+        "quantity": 200,
+        "unit": "g",
+        "image": "https://example.com/images/chicken-breast.jpg"
+      },
+      {
+        "id_ingredient": 8,
+        "name_ingredient": "Bell Pepper",
+        "quantity": 100,
+        "unit": "g",
+        "image": "https://example.com/images/bell-pepper.jpg"
+      }
+    ],
+    "nutrition": {
+      "id_nutrition": 7,
+      "calories": 400,
+      "fat": 15,
+      "saturated_fat": 3,
+      "carbohydrates": 35,
+      "sugar": 10,
+      "cholesterol": 70,
+      "sodium": 300,
+      "protein": 30,
+      "alcohol": 0
+    },
+    "vitamin": {
+      "id_vitamin": 7,
+      "protein": 30,
+      "calcium": 15,
+      "iron": 10,
+      "vitamin_a": 700,
+      "vitamin_c": 40,
+      "vitamin_d": 10,
+      "vitamin_e": 5,
+      "vitamin_k": 100,
+      "vitamin_b1": 0.5,
+      "vitamin_b2": 0.3,
+      "vitamin_b3": 7,
+      "vitamin_b5": 1.5,
+      "vitamin_b6": 0.6,
+      "vitamin_b12": 0.002,
+      "fiber": 5
+    }
+  },
+  {
+    "id_recipe": 8,
+    "name_recipe": "Chicken Alfredo Pasta",
+    "image": "https://example.com/images/chicken-alfredo-pasta.jpg",
+    "type": "Main",
+    "status": "published",
+    "ingredients": [
+      {
+        "id_ingredient": 9,
+        "name_ingredient": "Chicken Breast",
+        "quantity": 200,
+        "unit": "g",
+        "image": "https://example.com/images/chicken-breast.jpg"
+      },
+      {
+        "id_ingredient": 10,
+        "name_ingredient": "Pasta",
+        "quantity": 150,
+        "unit": "g",
+        "image": "https://example.com/images/pasta.jpg"
+      }
+    ],
+    "nutrition": {
+      "id_nutrition": 8,
+      "calories": 600,
+      "fat": 25,
+      "saturated_fat": 10,
+      "carbohydrates": 60,
+      "sugar": 5,
+      "cholesterol": 100,
+      "sodium": 400,
+      "protein": 35,
+      "alcohol": 0
+    },
+    "vitamin": {
+      "id_vitamin": 8,
+      "protein": 35,
+      "calcium": 20,
+      "iron": 10,
+      "vitamin_a": 500,
+      "vitamin_c": 30,
+      "vitamin_d": 10,
+      "vitamin_e": 5,
+      "vitamin_k": 80,
+      "vitamin_b1": 0.6,
+      "vitamin_b2": 0.4,
+      "vitamin_b3": 7.5,
+      "vitamin_b5": 1.8,
+      "vitamin_b6": 0.7,
+      "vitamin_b12": 0.003,
+      "fiber": 3
+    }
+  }
+  ,
+  {
+    "id_recipe": 9,
+    "name_recipe": "Chicken Tacos",
+    "image": "https://example.com/images/chicken-tacos.jpg",
+    "type": "Main",
+    "status": "published",
+    "ingredients": [
+      {
+        "id_ingredient": 11,
+        "name_ingredient": "Chicken Breast",
+        "quantity": 200,
+        "unit": "g",
+        "image": "https://example.com/images/chicken-breast.jpg"
+      },
+      {
+        "id_ingredient": 12,
+        "name_ingredient": "Taco Shells",
+        "quantity": 100,
+        "unit": "g",
+        "image": "https://example.com/images/taco-shells.jpg"
+      }
+    ],
+    "nutrition": {
+      "id_nutrition": 9,
+      "calories": 450,
+      "fat": 20,
+      "saturated_fat": 5,
+      "carbohydrates": 40,
+      "sugar": 5,
+      "cholesterol": 70,
+      "sodium": 300,
+      "protein": 25,
+      "alcohol": 0
+    },
+    "vitamin": {
+      "id_vitamin": 9,
+      "protein": 25,
+      "calcium": 15,
+      "iron": 8,
+      "vitamin_a": 600,
+      "vitamin_c": 35,
+      "vitamin_d": 8,
+      "vitamin_e": 4,
+      "vitamin_k": 90,
+      "vitamin_b1": 0.4,
+      "vitamin_b2": 0.2,
+      "vitamin_b3": 5,
+      "vitamin_b5": 1.2,
+      "vitamin_b6": 0.5,
+      "vitamin_b12": 0.002,
+      "fiber": 4
+    }
+  },
+  {
+    "id_recipe": 10,
+    "name_recipe": "Chicken Caesar Salad",
+    "image": "https://example.com/images/chicken-caesar-salad.jpg",
+    "type": "Main",
+    "status": "published,featured",
+    "ingredients": [
+      {
+        "id_ingredient": 1,
+        "name_ingredient": "Chicken Breast",
+        "quantity": 200,
+        "unit": "g",
+        "image": "https://example.com/images/chicken-breast.jpg"
+      },
+      {
+        "id_ingredient": 2,
+        "name_ingredient": "Romaine Lettuce",
+        "quantity": 100,
+        "unit": "g",
+        "image": "https://example.com/images/romaine-lettuce.jpg"
+      }
+    ],
+    "nutrition": {
+      "id_nutrition": 1,
+      "calories": 400,
+      "fat": 20,
+      "saturated_fat": 4,
+      "carbohydrates": 15,
+      "sugar": 3,
+      "cholesterol": 70,
+      "sodium": 300,
+      "protein": 35,
+      "alcohol": 0
+    },
+    "vitamin": {
+      "id_vitamin": 1,
+      "protein": 35,
+      "calcium": 20,
+      "iron": 8,
+      "vitamin_a": 900,
+      "vitamin_c": 50,
+      "vitamin_d": 5,
+      "vitamin_e": 3,
+      "vitamin_k": 150,
+      "vitamin_b1": 0.4,
+      "vitamin_b2": 0.25,
+      "vitamin_b3": 6,
+      "vitamin_b5": 1.4,
+      "vitamin_b6": 0.7,
+      "vitamin_b12": 0.002,
+      "fiber": 4
+    }
+  },
+  {
+    "id_recipe": 11,
+    "name_recipe": "BBQ Chicken Pizza",
+    "image": "https://example.com/images/bbq-chicken-pizza.jpg",
+    "type": "Main",
+    "status": "published,featured",
+    "ingredients": [
+      {
+        "id_ingredient": 1,
+        "name_ingredient": "Chicken Breast",
+        "quantity": 150,
+        "unit": "g",
+        "image": "https://example.com/images/chicken-breast.jpg"
+      },
+      {
+        "id_ingredient": 2,
+        "name_ingredient": "BBQ Sauce",
+        "quantity": 50,
+        "unit": "ml",
+        "image": "https://example.com/images/bbq-sauce.jpg"
+      }
+    ],
+    "nutrition": {
+      "id_nutrition": 1,
+      "calories": 600,
+      "fat": 25,
+      "saturated_fat": 8,
+      "carbohydrates": 50,
+      "sugar": 10,
+      "cholesterol": 60,
+      "sodium": 800,
+      "protein": 30,
+      "alcohol": 0
+    },
+    "vitamin": {
+      "id_vitamin": 1,
+      "protein": 30,
+      "calcium": 15,
+      "iron": 6,
+      "vitamin_a": 500,
+      "vitamin_c": 35,
+      "vitamin_d": 3,
+      "vitamin_e": 2,
+      "vitamin_k": 70,
+      "vitamin_b1": 0.3,
+      "vitamin_b2": 0.2,
+      "vitamin_b3": 5,
+      "vitamin_b5": 1,
+      "vitamin_b6": 0.5,
+      "vitamin_b12": 0.002,
+      "fiber": 3
+    }
+  },
+  {
+    "id_recipe": 12,
+    "name_recipe": "Spicy Chicken Tacos",
+    "image": "https://example.com/images/spicy-chicken-tacos.jpg",
+    "type": "Main",
+    "status": "published,featured",
+    "ingredients": [
+      {
+        "id_ingredient": 1,
+        "name_ingredient": "Chicken Thighs",
+        "quantity": 250,
+        "unit": "g",
+        "image": "https://example.com/images/chicken-thighs.jpg"
+      },
+      {
+        "id_ingredient": 2,
+        "name_ingredient": "Taco Shells",
+        "quantity": 3,
+        "unit": "pieces",
+        "image": "https://example.com/images/taco-shells.jpg"
+      }
+    ],
+    "nutrition": {
+      "id_nutrition": 1,
+      "calories": 450,
+      "fat": 20,
+      "saturated_fat": 5,
+      "carbohydrates": 30,
+      "sugar": 6,
+      "cholesterol": 80,
+      "sodium": 500,
+      "protein": 35,
+      "alcohol": 0
+    },
+    "vitamin": {
+      "id_vitamin": 1,
+      "protein": 35,
+      "calcium": 10,
+      "iron": 12,
+      "vitamin_a": 600,
+      "vitamin_c": 40,
+      "vitamin_d": 5,
+      "vitamin_e": 3,
+      "vitamin_k": 100,
+      "vitamin_b1": 0.5,
+      "vitamin_b2": 0.3,
+      "vitamin_b3": 6,
+      "vitamin_b5": 1.5,
+      "vitamin_b6": 0.6,
+      "vitamin_b12": 0.002,
+      "fiber": 4
+    }
+  },
+  {
+    "id_recipe": 13,
+    "name_recipe": "Chicken Alfredo Pasta",
+    "image": "https://example.com/images/chicken-alfredo-pasta.jpg",
+    "type": "Main",
+    "status": "published,featured",
+    "ingredients": [
+      {
+        "id_ingredient": 1,
+        "name_ingredient": "Chicken Breast",
+        "quantity": 200,
+        "unit": "g",
+        "image": "https://example.com/images/chicken-breast.jpg"
+      },
+      {
+        "id_ingredient": 2,
+        "name_ingredient": "Fettuccine",
+        "quantity": 150,
+        "unit": "g",
+        "image": "https://example.com/images/fettuccine.jpg"
+      }
+    ],
+    "nutrition": {
+      "id_nutrition": 1,
+      "calories": 700,
+      "fat": 35,
+      "saturated_fat": 12,
+      "carbohydrates": 60,
+      "sugar": 5,
+      "cholesterol": 90,
+      "sodium": 700,
+      "protein": 40,
+      "alcohol": 0
+    },
+    "vitamin": {
+      "id_vitamin": 1,
+      "protein": 40,
+      "calcium": 25,
+      "iron": 7,
+      "vitamin_a": 300,
+      "vitamin_c": 20,
+      "vitamin_d": 5,
+      "vitamin_e": 4,
+      "vitamin_k": 70,
+      "vitamin_b1": 0.4,
+      "vitamin_b2": 0.3,
+      "vitamin_b3": 5.5,
+      "vitamin_b5": 1.2,
+      "vitamin_b6": 0.6,
+      "vitamin_b12": 0.002,
+      "fiber": 3
+    }
+  }
+]

@@ -1,0 +1,26 @@
+id,name,image,summary,nutrition.calories,nutrition.fat,nutrition.protein,nutrition.carbs
+1,Grilled Chicken Salad,https://example.com/images/grilled-chicken-salad.jpg,A healthy and delicious grilled chicken salad with fresh vegetables and a light dressing.,350,15,30,20
+2,Spaghetti Carbonara,https://example.com/images/spaghetti-carbonara.jpg,"A classic Italian pasta dish made with eggs, cheese, pancetta, and pepper.",450,20,15,50
+3,Vegan Buddha Bowl,https://example.com/images/vegan-buddha-bowl.jpg,"A nutrient-packed bowl filled with quinoa, chickpeas, avocado, and a variety of colorful vegetables.",400,10,20,60
+4,Chicken Alfredo,https://example.com/images/chicken-alfredo.jpg,Creamy Alfredo sauce with tender chicken pieces served over fettuccine pasta.,500,25,35,45
+5,Chicken Tikka Masala,https://example.com/images/chicken-tikka-masala.jpg,A popular Indian dish featuring grilled chunks of chicken enveloped in a spiced tomato cream sauce.,550,30,40,35
+6,Beef Tacos,https://example.com/images/beef-tacos.jpg,"Soft tortillas filled with seasoned ground beef, fresh vegetables, and cheese, served with salsa.",300,12,20,30
+7,Margherita Pizza,https://example.com/images/margherita-pizza.jpg,"A traditional Italian pizza topped with fresh tomatoes, mozzarella cheese, and basil.",600,25,20,70
+8,Caesar Salad,https://example.com/images/caesar-salad.jpg,"Crisp romaine lettuce with Caesar dressing, croutons, and Parmesan cheese.",250,18,8,15
+9,Lentil Soup,https://example.com/images/lentil-soup.jpg,"A hearty and nutritious soup made with lentils, vegetables, and spices.",220,5,15,30
+10,Grilled Salmon,https://example.com/images/grilled-salmon.jpg,"Fresh salmon grilled to perfection, served with steamed vegetables and a lemon-butter sauce.",400,20,35,5
+11,Beef Stroganoff,https://example.com/images/beef-stroganoff.jpg,"A classic Russian dish featuring tender beef strips cooked in a creamy mushroom sauce, served over egg noodles.",600,30,35,45
+12,Avocado Toast,https://example.com/images/avocado-toast.jpg,"Toasted whole grain bread topped with mashed avocado, olive oil, salt, and pepper.",250,15,5,30
+13,Pad Thai,https://example.com/images/pad-thai.jpg,"A popular Thai stir-fried noodle dish made with shrimp, peanuts, scrambled eggs, and bean sprouts.",500,20,25,55
+14,Eggplant Parmesan,https://example.com/images/eggplant-parmesan.jpg,Breaded and baked eggplant slices layered with marinara sauce and melted cheese.,400,20,15,50
+15,Falafel Wrap,https://example.com/images/falafel-wrap.jpg,"Crispy falafel balls wrapped in pita bread with hummus, tahini, and fresh vegetables.",350,18,10,40
+16,Honey Garlic Chicken,https://example.com/images/honey-garlic-chicken.jpg,Juicy chicken thighs glazed with a sweet and savory honey garlic sauce.,400,18,35,20
+17,Lemon Herb Grilled Chicken,https://example.com/images/lemon-herb-grilled-chicken.jpg,"Grilled chicken breasts marinated in lemon juice and fresh herbs, served with a side of vegetables.",350,10,40,10
+18,Buffalo Chicken Wings,https://example.com/images/buffalo-chicken-wings.jpg,"Crispy chicken wings tossed in spicy buffalo sauce, served with blue cheese dressing.",500,35,30,5
+19,Chicken Parmesan,https://example.com/images/chicken-parmesan.jpg,"Breaded chicken breasts topped with marinara sauce and melted mozzarella cheese, served with spaghetti.",600,25,45,50
+20,BBQ Chicken Pizza,https://example.com/images/bbq-chicken-pizza.jpg,"A pizza topped with BBQ sauce, grilled chicken, red onions, and cilantro.",700,28,35,80
+21,Chicken Shawarma,https://example.com/images/chicken-shawarma.jpg,"Middle Eastern-style chicken seasoned with spices, served in pita bread with garlic sauce and pickles.",550,30,35,40
+22,Chicken Fried Rice,https://example.com/images/chicken-fried-rice.jpg,"A stir-fry of rice, chicken, vegetables, and eggs, flavored with soy sauce.",450,15,25,55
+23,Chicken Quesadilla,https://example.com/images/chicken-quesadilla.jpg,"A crispy tortilla filled with grilled chicken, cheese, and sautéed peppers.",600,28,35,50
+24,Teriyaki Chicken,https://example.com/images/teriyaki-chicken.jpg,"Grilled chicken glazed with a sweet teriyaki sauce, served with rice and steamed vegetables.",500,15,40,50
+25,Chicken Enchiladas,https://example.com/images/chicken-enchiladas.jpg,"Corn tortillas filled with shredded chicken, topped with enchilada sauce and melted cheese.",550,25,35,45

@@ -22,8 +22,8 @@ def login():
 
     user = User.query.filter_by(username=username).first()
     if user and user.check_password(password):
-        access_token = create_access_token(identity=user.id)
-        refresh_token = create_refresh_token(identity=user.id)
+        access_token = create_access_token(identity=user.id_user)
+        refresh_token = create_refresh_token(identity=user.id_user)
         return jsonify(access_token=access_token, refresh_token=refresh_token), 200
     else:
         lang = get_locale()
@@ -92,7 +92,7 @@ def register():
 @jwt_required()
 def view_all_users():
     users = User.query.all()
-    user_list = [{"id": user.id, "username": user.username} for user in users]
+    user_list = [{"id": user.id_user, "username": user.username} for user in users]
     return jsonify(users=user_list), 200
 
 @jwt_required()
@@ -100,7 +100,7 @@ def delete_user(user_id):
     current_user_id = get_jwt_identity()
     user = User.query.get_or_404(user_id)
 
-    if current_user_id != user.id:
+    if current_user_id != user.id_user:
         lang = get_locale()
         return jsonify({"msg": get_message('permission_denied', lang)}), 403
 
