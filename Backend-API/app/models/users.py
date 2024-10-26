@@ -51,6 +51,7 @@ class RecipeInfo(db.Model):
     image = db.Column(db.Text, nullable=True)
     type = db.Column(db.String(50), nullable=True)
     status = db.Column(db.String(255), nullable=True)
+    summary = db.Column(db.Text, nullable=True)
 
 class RecipeIngredients(db.Model):
     id_ingredient = db.Column(db.Integer, primary_key=True)

@@ -1,5 +1,5 @@
 # app/controllers/detect_controller.py
-
+import json
 import re
 import os
 import requests
@@ -8,6 +8,11 @@ from flask_jwt_extended import jwt_required
 from werkzeug.utils import secure_filename
 from ultralytics import YOLO
 from dotenv import load_dotenv
+from werkzeug.utils import secure_filename
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import StandardScaler
+from sklearn.feature_extraction.text import TfidfVectorizer
 import logging
 
 # Cấu hình logging để ghi lại các lỗi
@@ -21,8 +26,11 @@ load_dotenv()
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MODEL_PATH = os.getenv('YOLOV8_MODEL_PATH', 'yolov8-model/best.pt')
 FULL_MODEL_PATH = os.path.join(BASE_DIR, MODEL_PATH)
-print(f"Full model path: {FULL_MODEL_PATH}")
 model = YOLO(FULL_MODEL_PATH)
+
+# CSV recommend system
+CSV_PATH = os.getenv('CSV_RECOMMEND_PATH', 'recommend-dataset/recipes.csv')
+FULL_CSV_PATH = os.path.join(BASE_DIR, CSV_PATH)
 
 # Cấu hình API của Spoonacular
 SPOONACULAR_API_KEY = os.getenv('SPOONACULAR_API_KEY')
@@ -37,6 +45,50 @@ def allowed_file(filename):
     allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
+# Đọc dữ liệu từ tệp CSV
+df = pd.read_csv(FULL_CSV_PATH)
+
+# Xử lý các cột dữ liệu dinh dưỡng
+
+# Ensure that the nutrition features match your CSV column names
+nutrition_features = ['nutrition.calories', 'nutrition.fat', 'nutrition.protein', 'nutrition.carbs']
+scaler = StandardScaler()
+
+# Check if the columns exist in the DataFrame
+missing_columns = [col for col in nutrition_features if col not in df.columns]
+if missing_columns:
+    logger.error(f"Missing columns in DataFrame: {missing_columns}")
+    raise ValueError(f"Missing columns in DataFrame: {missing_columns}")
+
+# Scale the nutritional features
+df_scaled = scaler.fit_transform(df[nutrition_features])
+
+# Tính toán độ tương đồng cosine cho dữ liệu dinh dưỡng
+cosine_sim_nutrition = cosine_similarity(df_scaled, df_scaled)
+
+# Xử lý văn bản cho tên và tóm tắt món ăn để tạo ma trận TF-IDF
+tfidf = TfidfVectorizer(stop_words='english')
+df['text'] = df['name'] + " " + df['summary']
+tfidf_matrix = tfidf.fit_transform(df['text'])
+
+# Tính toán độ tương đồng cosine cho văn bản
+cosine_sim_text = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
+# Tạo ma trận tổng hợp của cả dữ liệu dinh dưỡng và văn bản
+cosine_sim_total = (0.3 * cosine_sim_nutrition) + (0.7 * cosine_sim_text)
+indices = pd.Series(df.index, index=df['id']).drop_duplicates()
+
+@jwt_required()  # Kiểm tra xem người dùng có token JWT hợp lệ không
+def recommend_recipes_by_labels(labels):  # Định nghĩa hàm với tham số 'labels' là danh sách các từ khóa
+    recommendations = []  # Khởi tạo danh sách rỗng để lưu trữ các công thức được đề xuất
+    for label in labels:  # Lặp qua từng từ khóa trong danh sách 'labels'
+        keyword_tfidf = tfidf.transform([label])  # Chuyển đổi từ khóa thành dạng vector TF-IDF
+        sim_scores = cosine_similarity(keyword_tfidf, tfidf_matrix).flatten()  # Tính toán độ tương đồng cosine giữa vector từ khóa và ma trận TF-IDF
+        top_indices = sim_scores.argsort()[-10:][::-1]  # Lấy 5 chỉ số có độ tương đồng cao nhất
+        recommended_recipes = df.iloc[top_indices].to_dict(orient='records')  # Lấy thông tin công thức tương ứng với các chỉ số hàng đầu và chuyển đổi thành danh sách từ điển
+        recommendations.extend(recommended_recipes)  # Thêm các công thức được đề xuất vào danh sách 'recommendations'
+    return recommendations  # Trả về danh sách các công thức đã được đề xuất
 
 @jwt_required()
 def detect_recommend_spoonacular():
