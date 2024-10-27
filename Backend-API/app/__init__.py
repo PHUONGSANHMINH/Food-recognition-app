@@ -41,12 +41,13 @@ def create_app():
         from app.routes.auth_route import auth_bp
         from app.routes.user_route import user_bp
         from app.routes.detect_route import detect_bp
+        from app.routes.recipes_route import recipe_bp
 
         # Import models để Flask-Migrate nhận diện
-        from app import models
+        from app.models.model import Config, AdvertisingBanners, Rating, RecipeInfo, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin, User
 
         app.register_blueprint(auth_bp, url_prefix='/api/auth')
         app.register_blueprint(user_bp, url_prefix='/api/user')
         app.register_blueprint(detect_bp, url_prefix='/api/detect')
-
+        app.register_blueprint(recipe_bp, url_prefix='/api/recipe')
     return app

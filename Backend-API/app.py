@@ -1,7 +1,7 @@
 # run.py
 
 from app import create_app, db
-from app.models.users import User
+from app.models.model import User
 
 app = create_app()
 

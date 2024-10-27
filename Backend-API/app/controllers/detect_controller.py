@@ -46,49 +46,45 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
-# Đọc dữ liệu từ tệp CSV
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import json
+
+# Đọc dữ liệu từ CSV với các trường mới
 df = pd.read_csv(FULL_CSV_PATH)
 
-# Xử lý các cột dữ liệu dinh dưỡng
+# Chuyển đổi cột 'ingredients' từ chuỗi JSON sang danh sách các thành phần
+df['ingredients'] = df['ingredients'].apply(lambda x: ' '.join([ingredient['name_ingredient'] for ingredient in json.loads(x.replace("'", '"'))]))
 
-# Ensure that the nutrition features match your CSV column names
-nutrition_features = ['nutrition.calories', 'nutrition.fat', 'nutrition.protein', 'nutrition.carbs']
-scaler = StandardScaler()
+# Tạo cột văn bản tổng hợp từ 'name_recipe', 'summary' và 'ingredients'
+df['text'] = df['name_recipe'] + " " + df['summary'].fillna('') + " " + df['ingredients']
 
-# Check if the columns exist in the DataFrame
-missing_columns = [col for col in nutrition_features if col not in df.columns]
-if missing_columns:
-    logger.error(f"Missing columns in DataFrame: {missing_columns}")
-    raise ValueError(f"Missing columns in DataFrame: {missing_columns}")
-
-# Scale the nutritional features
-df_scaled = scaler.fit_transform(df[nutrition_features])
-
-# Tính toán độ tương đồng cosine cho dữ liệu dinh dưỡng
-cosine_sim_nutrition = cosine_similarity(df_scaled, df_scaled)
-
-# Xử lý văn bản cho tên và tóm tắt món ăn để tạo ma trận TF-IDF
+# Tạo ma trận TF-IDF cho các cột văn bản
 tfidf = TfidfVectorizer(stop_words='english')
-df['text'] = df['name'] + " " + df['summary']
 tfidf_matrix = tfidf.fit_transform(df['text'])
 
 # Tính toán độ tương đồng cosine cho văn bản
 cosine_sim_text = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-# Tạo ma trận tổng hợp của cả dữ liệu dinh dưỡng và văn bản
-cosine_sim_total = (0.3 * cosine_sim_nutrition) + (0.7 * cosine_sim_text)
-indices = pd.Series(df.index, index=df['id']).drop_duplicates()
+# Tạo Series chỉ số dựa vào 'id_recipe'
+indices = pd.Series(df.index, index=df['id_recipe']).drop_duplicates()
 
-@jwt_required()  # Kiểm tra xem người dùng có token JWT hợp lệ không
-def recommend_recipes_by_labels(labels):  # Định nghĩa hàm với tham số 'labels' là danh sách các từ khóa
-    recommendations = []  # Khởi tạo danh sách rỗng để lưu trữ các công thức được đề xuất
-    for label in labels:  # Lặp qua từng từ khóa trong danh sách 'labels'
-        keyword_tfidf = tfidf.transform([label])  # Chuyển đổi từ khóa thành dạng vector TF-IDF
-        sim_scores = cosine_similarity(keyword_tfidf, tfidf_matrix).flatten()  # Tính toán độ tương đồng cosine giữa vector từ khóa và ma trận TF-IDF
-        top_indices = sim_scores.argsort()[-10:][::-1]  # Lấy 5 chỉ số có độ tương đồng cao nhất
-        recommended_recipes = df.iloc[top_indices].to_dict(orient='records')  # Lấy thông tin công thức tương ứng với các chỉ số hàng đầu và chuyển đổi thành danh sách từ điển
-        recommendations.extend(recommended_recipes)  # Thêm các công thức được đề xuất vào danh sách 'recommendations'
-    return recommendations  # Trả về danh sách các công thức đã được đề xuất
+# Hàm recommend dựa trên các nhãn từ khóa
+@jwt_required()
+def recommend_recipes_by_labels(labels, threshold=0.3):  # threshold: ngưỡng độ tương đồng
+    recommendations = []
+    for label in labels:
+        keyword_tfidf = tfidf.transform([label])
+        sim_scores = cosine_similarity(keyword_tfidf, tfidf_matrix).flatten()
+        # Lọc các công thức có độ tương đồng lớn hơn ngưỡng
+        filtered_indices = [i for i, score in enumerate(sim_scores) if score > threshold]
+        # Lấy thông tin công thức tương ứng với các chỉ số đã lọc
+        recommended_recipes = df.iloc[filtered_indices].to_dict(orient='records')
+        recommendations.extend(recommended_recipes)
+    
+    return recommendations
+
 
 @jwt_required()
 def detect_recommend_spoonacular():
