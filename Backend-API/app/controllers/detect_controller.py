@@ -71,7 +71,6 @@ cosine_sim_text = cosine_similarity(tfidf_matrix, tfidf_matrix)
 indices = pd.Series(df.index, index=df['id_recipe']).drop_duplicates()
 
 # Hàm recommend dựa trên các nhãn từ khóa
-@jwt_required()
 def recommend_recipes_by_labels(labels, threshold=0.3):  # threshold: ngưỡng độ tương đồng
     recommendations = []
     for label in labels:

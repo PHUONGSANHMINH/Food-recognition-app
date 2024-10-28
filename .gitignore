@@ -6,3 +6,5 @@ Backend-API/venv/
 Backend-API/__pycache__/
 Backend-API/.venv/
 Backend-API/.env
+Frontend-Mobile/.expo/
+Frontend-Mobile/node_modules/
