@@ -20,12 +20,12 @@ import debounce from 'lodash/debounce';
 
 // API Service
 const api = {
-  baseUrl: 'http://192.168.2.2:5000/api/detect/recommend-by-keyword/chicken',
+  baseUrl: 'http://192.168.2.2:5000/api/recipe',
   
   async fetchRecipes(page = 1, limit = 10, search = '') {
     try {
       const response = await fetch(
-        `${this.baseUrl}/recipes?page=${page}&limit=${limit}&search=${search}`
+        `${this.baseUrl}?page=${page}&limit=${limit}&search=${search}`
       );
       const data = await response.json();
       return data;
@@ -189,7 +189,7 @@ const RecipeList = () => {
       setHasMore(data.length === 10);
       setError(null);
     } catch (err) {
-      setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+      setError('can not load data. Please try again later.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -203,7 +203,7 @@ const RecipeList = () => {
   const handleRefresh = () => {
     setRefreshing(true);
     setPage(1);
-    loadRecipes(1, searchQuery);
+    loadRecipes(1, "");
   };
 
   const handleLoadMore = () => {

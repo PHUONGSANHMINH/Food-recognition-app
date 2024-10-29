@@ -5,9 +5,19 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 # Lấy danh sách các công thức
 def get_recipes():
-    recipes = RecipeInfo.query.all()
+    page = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 10, type=int)
+    search = request.args.get('search', '', type=str)
+
+    query = RecipeInfo.query
+
+    if search:
+        query = query.filter(RecipeInfo.name_recipe.like(f'%{search}%'))
+
+    recipes = query.paginate(page=page, per_page=limit, error_out=False)
+
     recipes_data = []
-    for recipe in recipes:
+    for recipe in recipes.items:
         recipes_data.append({
             'id_recipe': recipe.id_recipe,
             'name_recipe': recipe.name_recipe,
@@ -16,6 +26,7 @@ def get_recipes():
             'status': recipe.status,
             'summary': recipe.summary
         })
+
     return jsonify(recipes_data)
 
 # Lấy chi tiết công thức
