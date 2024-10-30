@@ -241,6 +241,11 @@ const RecipeList = () => {
           renderItem={() => <SkeletonItem />}
           keyExtractor={(item) => item.toString()}
         />
+        <View style={styles.bounceButtonContainer}>
+          <TouchableOpacity style={styles.bounceButton}>
+            <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -276,11 +281,43 @@ const RecipeList = () => {
           }
         />
       )}
+      <View style={styles.bounceButtonContainer}>
+        <TouchableOpacity style={styles.bounceButton}>
+          <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  bounceButtonContainer: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    zIndex: 1, // Đặt zIndex lớn hơn danh sách để nổi lên trên
+  },
+  bounceButton: {
+    backgroundColor: '#ee4d2d',
+    width: 70,
+    height: 70,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 5,
+      height: 5,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  cameraIcon: {
+    width: 40,
+    height: 40,
+    tintColor: 'white',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f8f8f8',
