@@ -12,15 +12,15 @@ import {
   Pressable,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import debounce from 'lodash/debounce';
 
-// API Service
 const api = {
-  baseUrl: 'http://192.168.2.2:5000/api/recipe',
+  baseUrl: 'http://10.1.1.208:5000/api/recipe',
   
   async fetchRecipes(page = 1, limit = 10, search = '') {
     try {
@@ -41,7 +41,6 @@ const Header = ({ onSearch, onLogout }) => {
   const [showLogout, setShowLogout] = useState(false);
   const navigation = useNavigation();
 
-  // Debounce search to prevent too many API calls
   const debouncedSearch = useCallback(
     debounce((text) => {
       onSearch(text);
@@ -168,6 +167,7 @@ const SkeletonItem = () => (
 );
 
 const RecipeList = () => {
+  const navigation = useNavigation();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [recipes, setRecipes] = useState([]);
@@ -189,7 +189,7 @@ const RecipeList = () => {
       setHasMore(data.length === 10);
       setError(null);
     } catch (err) {
-      setError('can not load data. Please try again later.');
+      setError('Cannot load data. Please try again later.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -221,11 +221,34 @@ const RecipeList = () => {
     loadRecipes(1, text);
   };
 
+  const handleCameraPress = () => {
+    navigation.navigate('Camera');
+    Alert.alert(
+      "Camera",
+      "Opening camera feature...",
+      [
+        { text: "OK", onPress: () => console.log("Camera button pressed") }
+      ]
+    );
+  };
+
   const renderFooter = () => {
     if (!loading || !hasMore) return null;
     return (
       <View style={styles.footer}>
         <ActivityIndicator size="small" color="#ee4d2d" />
+      </View>
+    );
+  };
+
+  const renderEmptyList = () => {
+    if (loading) return null;
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No recipes found</Text>
+        <Text style={styles.emptySubText}>
+          Try adjusting your search or add a new recipe using the camera button
+        </Text>
       </View>
     );
   };
@@ -242,7 +265,7 @@ const RecipeList = () => {
           keyExtractor={(item) => item.toString()}
         />
         <View style={styles.bounceButtonContainer}>
-          <TouchableOpacity style={styles.bounceButton}>
+          <TouchableOpacity style={styles.bounceButton} onPress={handleCameraPress}>
             <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
           </TouchableOpacity>
         </View>
@@ -261,7 +284,7 @@ const RecipeList = () => {
             style={styles.retryButton}
             onPress={() => loadRecipes(page, searchQuery)}
           >
-            <Text style={styles.retryText}>Thử lại</Text>
+            <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -272,6 +295,7 @@ const RecipeList = () => {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}
+          ListEmptyComponent={renderEmptyList}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -282,7 +306,7 @@ const RecipeList = () => {
         />
       )}
       <View style={styles.bounceButtonContainer}>
-        <TouchableOpacity style={styles.bounceButton}>
+        <TouchableOpacity style={styles.bounceButton} onPress={handleCameraPress}>
           <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
         </TouchableOpacity>
       </View>
@@ -295,7 +319,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     right: 20,
-    zIndex: 1, // Đặt zIndex lớn hơn danh sách để nổi lên trên
+    zIndex: 1,
   },
   bounceButton: {
     backgroundColor: '#ee4d2d',
@@ -458,6 +482,12 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
     padding: 16,
+  },
+  logoutButton: {
+    padding: 16,
+    backgroundColor: '#ee4d2d',
+    borderRadius: 8,
+    alignItems: 'center',
   },
   logoutButton: {
     padding: 16,

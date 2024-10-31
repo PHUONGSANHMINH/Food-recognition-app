@@ -33,7 +33,7 @@ export default function LoginScreen({ navigation }) {
     setError('')
 
     try {
-      const response = await axios.post('http://192.168.2.2:5000/api/auth/login', {
+      const response = await axios.post('http://10.1.1.208:5000/api/auth/login', {
         username: username.value,
         password: password.value,
       })
