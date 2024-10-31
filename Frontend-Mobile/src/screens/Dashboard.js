@@ -18,17 +18,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import debounce from 'lodash/debounce';
+import axios from 'axios'; // Thêm import axios
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const api = {
-  baseUrl: 'http://10.1.1.208:5000/api/recipe',
+  // Sử dụng biến môi trường cho URL
   
   async fetchRecipes(page = 1, limit = 10, search = '') {
     try {
-      const response = await fetch(
-        `${this.baseUrl}?page=${page}&limit=${limit}&search=${search}`
-      );
-      const data = await response.json();
-      return data;
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_DOMAIN}api/recipe`, {
+        params: { page, limit, search }, // Sử dụng params để truyền tham số
+      });
+      return response.data; // Trả về dữ liệu từ response
     } catch (error) {
       console.error('Error fetching recipes:', error);
       throw error;
@@ -53,10 +54,20 @@ const Header = ({ onSearch, onLogout }) => {
     debouncedSearch(text);
   };
 
-  const handleLogout = () => {
-    setShowLogout(false);
-    onLogout();
-    navigation.replace('Login');
+  const handleLogout = async () => {
+    try {
+      // Xóa token khỏi AsyncStorage
+      await AsyncStorage.removeItem('access_token');
+
+      // Chuyển hướng đến màn hình đăng nhập
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'LoginScreen' }],
+      });
+    } catch (error) {
+      console.error('Logout failed: ', error);
+      // Xử lý lỗi nếu cần thiết
+    }
   };
 
   return (
@@ -101,7 +112,7 @@ const Header = ({ onSearch, onLogout }) => {
                 style={styles.logoutButton}
                 onPress={handleLogout}
               >
-                <Text style={styles.logoutText}>Đăng xuất</Text>
+                <Text style={styles.logoutText}>Logout</Text>
               </TouchableOpacity>
             </View>
           </Pressable>
@@ -260,7 +271,7 @@ const RecipeList = () => {
       <View style={styles.container}>
         <Header onSearch={handleSearch} />
         <FlatList
-          data={[1, 2, 3, 4]}
+          data={[1, 2, 3, 4, 5]}
           renderItem={() => <SkeletonItem />}
           keyExtractor={(item) => item.toString()}
         />

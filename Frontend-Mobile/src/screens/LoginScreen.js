@@ -1,130 +1,219 @@
-import React, { useState } from 'react'
-import { TouchableOpacity, StyleSheet, View, Alert, Image } from 'react-native'
-import { Text } from 'react-native-paper'
-import axios from 'axios'
-import Background from '../components/Background'
-import Logo from '../components/Logo'
-import Header from '../components/Header'
-import Button from '../components/Button'
-import TextInput from '../components/TextInput'
-import BackButton from '../components/BackButton'
-import { theme } from '../core/theme'
-import { usernameValidator } from '../helpers/usernameValidator'
-import { passwordValidator } from '../helpers/passwordValidator'
-import Modal from 'react-native-modal'
+import React, { useState, useCallback } from 'react';
+import { TouchableOpacity, StyleSheet, View, Alert, Image } from 'react-native';
+import { Text } from 'react-native-paper';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Background from '../components/Background';
+import Logo from '../components/Logo';
+import Header from '../components/Header';
+import Button from '../components/Button';
+import TextInput from '../components/TextInput';
+import BackButton from '../components/BackButton';
+import { theme } from '../core/theme';
+import { usernameValidator } from '../helpers/usernameValidator';
+import { passwordValidator } from '../helpers/passwordValidator';
+import Modal from 'react-native-modal';
+import Config from 'react-native-config'; // Add this
+
+const ACCESS_TOKEN_KEY = 'access_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
 
 export default function LoginScreen({ navigation }) {
-  const [username, setUsername] = useState({ value: '', error: '' })
-  const [password, setPassword] = useState({ value: '', error: '' })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')  // Holds error messages from API
-  const [isModalVisible, setModalVisible] = useState(false)  // Controls modal visibility
+  const [formData, setFormData] = useState({
+    username: { value: '', error: '' },
+    password: { value: '', error: '' }
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isModalVisible, setModalVisible] = useState(false);
 
-  const onLoginPressed = async () => {
-    const usernameError = usernameValidator(username.value)
-    const passwordError = passwordValidator(password.value)
-    if (usernameError || passwordError) {
-      setUsername({ ...username, error: usernameError })
-      setPassword({ ...password, error: passwordError })
-      return
+  const handleInputChange = useCallback((field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: { value, error: '' }
+    }));
+  }, []);
+
+  const storeTokens = async (tokens) => {
+    try {
+      const { access_token, refresh_token } = tokens;
+      if (!access_token || !refresh_token) {
+        throw new Error('Invalid tokens received');
+      }
+      
+      await Promise.all([
+        AsyncStorage.setItem(ACCESS_TOKEN_KEY, access_token),
+        AsyncStorage.setItem(REFRESH_TOKEN_KEY, refresh_token)
+      ]);
+      
+      return true;
+    } catch (error) {
+      console.error('Token storage error:', error);
+      throw new Error('Failed to store authentication tokens');
     }
+  };
 
-    setLoading(true)
-    setError('')
+  const setupAxiosAuth = useCallback((access_token) => {
+    if (!access_token) return;
+    
+    axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+    // Add request interceptor for token refresh
+    axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          try {
+            const refresh_token = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
+            const response = await axios.post(`${Config.API_URL}/auth/refresh`, { refresh_token });
+            const { access_token } = response.data;
+            
+            await AsyncStorage.setItem(ACCESS_TOKEN_KEY, access_token);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+            
+            originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
+            return axios(originalRequest);
+          } catch (refreshError) {
+            // Token refresh failed, redirect to login
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'LoginScreen' }],
+            });
+            return Promise.reject(refreshError);
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+  }, [navigation]);
+
+  const validateForm = useCallback(() => {
+    const usernameError = usernameValidator(formData.username.value);
+    const passwordError = passwordValidator(formData.password.value);
+    
+    setFormData(prev => ({
+      username: { ...prev.username, error: usernameError },
+      password: { ...prev.password, error: passwordError }
+    }));
+
+    return !usernameError && !passwordError;
+  }, [formData]);
+
+  const handleLogin = async () => {
+    if (!validateForm()) return;
+    console.log(process.env.EXPO_PUBLIC_DOMAIN);
+    setLoading(true);
+    setError('');
 
     try {
-      const response = await axios.post('http://10.1.1.208:5000/api/auth/login', {
-        username: username.value,
-        password: password.value,
-      })
-      if (response.status === 200) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Dashboard' }],
-        })
-      } else {
-        setError(response.data.msg || 'Something went wrong')
-        setModalVisible(true)
-      }
-    } catch (error) {
-      setError(
-        error.response?.data?.msg || 'Network Error: Unable to connect to the server'
-      )
-      setModalVisible(true)
-    } finally {
-      setLoading(false)
-    }
-  }
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_DOMAIN}api/auth/login`, {
+        username: formData.username.value,
+        password: formData.password.value,
+      });
 
-  const closeModal = () => {
-    setModalVisible(false)  // Close modal when button is pressed or after timeout
-  }
+      await storeTokens(response.data);
+      setupAxiosAuth(response.data.access_token);
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Dashboard' }],
+      });
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 
+                          'Unable to connect to the server. Please check your internet connection.';
+      setError(errorMessage);
+      setModalVisible(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Background>
       <BackButton goBack={navigation.goBack} />
       <Logo />
-      <Header>Welcome back.</Header>
+      <Header>Welcome back</Header>
+      
       <TextInput
         label="Username"
-        returnKeyType="next"
-        value={username.value}
-        onChangeText={(text) => setUsername({ value: text, error: '' })}
-        error={!!username.error}
-        errorText={username.error}
+        returnKeyType="next" 
+        value={formData.username.value}
+        onChangeText={(text) => handleInputChange('username', text)}
+        error={!!formData.username.error}
+        errorText={formData.username.error}
         autoCapitalize="none"
-        autoCompleteType="username"
+        autoComplete="username"
         textContentType="username"
         keyboardType="default"
+        testID="login-username-input"
       />
+
       <TextInput
         label="Password"
         returnKeyType="done"
-        value={password.value}
-        onChangeText={(text) => setPassword({ value: text, error: '' })}
-        error={!!password.error}
-        errorText={password.error}
+        value={formData.password.value}
+        onChangeText={(text) => handleInputChange('password', text)}
+        error={!!formData.password.error}
+        errorText={formData.password.error}
         secureTextEntry
+        testID="login-password-input"
       />
+
       <View style={styles.forgotPassword}>
         <TouchableOpacity
           onPress={() => navigation.navigate('ResetPasswordScreen')}
+          testID="forgot-password-button"
         >
           <Text style={styles.forgot}>Forgot your password?</Text>
         </TouchableOpacity>
       </View>
-      <Button mode="contained" onPress={onLoginPressed} loading={loading}>
+
+      <Button 
+        mode="contained" 
+        onPress={handleLogin} 
+        loading={loading}
+        testID="login-button"
+      >
         Login
       </Button>
+
       <View style={styles.row}>
-        <Text>Don’t have an account? </Text>
-        <TouchableOpacity onPress={() => navigation.replace('RegisterScreen')}>
+        <Text>Don't have an account? </Text>
+        <TouchableOpacity 
+          onPress={() => navigation.replace('RegisterScreen')}
+          testID="signup-link"
+        >
           <Text style={styles.link}>Sign up</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Modal Popup for Error */}
       <Modal
         isVisible={isModalVisible}
         animationIn="bounceIn"
         animationOut="fadeOut"
-        backdropTransitionOutTiming={0}  // Instant backdrop disappearance
-        onBackdropPress={closeModal}  // Close modal when backdrop is pressed
+        backdropTransitionOutTiming={0}
+        onBackdropPress={() => setModalVisible(false)}
         style={styles.modal}
       >
         <View style={styles.modalContent}>
           <Image
-            source={require('../assets/logo.png')} // Warning icon (replace with your image path)
+            source={require('../assets/caution.png')}
             style={styles.errorIcon}
           />
           <Text style={styles.modalText}>{error}</Text>
-          <Button mode="contained" onPress={closeModal} style={styles.closeButton}>
+          <Button 
+            mode="contained" 
+            onPress={() => setModalVisible(false)}
+            style={styles.closeButton}
+            testID="error-modal-close"
+          >
             Close
           </Button>
         </View>
       </Modal>
     </Background>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -153,13 +242,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 30,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'center', 
     borderRadius: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    elevation: 5,  // Android shadow
+    elevation: 5,
     width: '80%',
   },
   errorIcon: {
@@ -171,9 +260,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 20,
     textAlign: 'center',
-    color: '#D32F2F',  // Warning red color
+    color: '#D32F2F',
   },
   closeButton: {
     backgroundColor: theme.colors.primary,
+    marginTop: 10,
   },
-})
+});

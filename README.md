@@ -18,5 +18,6 @@ B.1> Admin
 
 B.2> Mobile
 1. cd Frontend-Mobile
-2. npx expo start
-3. scan QR or open adb device
+2. npm install expo
+3. npx expo start
+4. scan QR or open adb device
