@@ -234,13 +234,6 @@ const RecipeList = () => {
 
   const handleCameraPress = () => {
     navigation.navigate('Camera');
-    Alert.alert(
-      "Camera",
-      "Opening camera feature...",
-      [
-        { text: "OK", onPress: () => console.log("Camera button pressed") }
-      ]
-    );
   };
 
   const renderFooter = () => {

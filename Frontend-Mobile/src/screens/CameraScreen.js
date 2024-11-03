@@ -1,39 +1,81 @@
-import { Camera, CameraType, useCameraPermissions } from 'expo-camera';
+import { Camera, CameraType } from 'expo-camera/legacy';
 import { useState } from 'react';
-import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
 
 export default function App() {
-  const [facing, setFacing] = useState(CameraType.back);
-  const [permission, requestPermission] = useCameraPermissions();
+  const [type, setType] = useState(CameraType.back);
+  const [permission, requestPermission] = Camera.useCameraPermissions();
+  const [speed, setSpeed] = useState('1.5x');
 
-  if (permission === null) {
-    // Camera permissions are still loading.
+  if (!permission) {
     return <View />;
   }
 
   if (!permission.granted) {
-    // Camera permissions are not granted yet.
     return (
       <View style={styles.container}>
         <Text style={styles.message}>We need your permission to show the camera</Text>
-        <Button onPress={requestPermission} title="Grant Permission" />
+        <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+          <Text>Grant Permission</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  function toggleCameraFacing() {
-    setFacing(current => (current === CameraType.back ? CameraType.front : CameraType.back));
+  function toggleCameraType() {
+    setType(current => (current === CameraType.back ? CameraType.front : CameraType.back));
   }
 
   return (
     <View style={styles.container}>
-      <Camera style={styles.camera} type={facing}>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
-            <Text style={styles.text}>Flip Camera</Text>
+      <StatusBar style="light" />
+      <View style={styles.header}>
+        <View style={styles.profileContainer}>
+          <Image 
+            source={require('../assets/chef.png')} 
+            style={styles.profileImage}
+          />
+          <Text style={styles.title}>Recognition Camera</Text>
+        </View>
+        <TouchableOpacity style={styles.chatButton}>
+          <MaterialIcons name="chat" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
+
+      <Camera style={styles.camera} type={type}>
+        <View style={styles.controlsContainer}>
+          <TouchableOpacity style={styles.controlButton}>
+            <MaterialIcons name="flash-off" size={24} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.controlButton}>
+            <Text style={styles.speedText}>{speed}</Text>
           </TouchableOpacity>
         </View>
       </Camera>
+
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.footerButton}>
+          <MaterialIcons name="photo-library" size={24} color="white" />
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.captureButton}>
+          <View style={styles.captureButtonInner} />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.footerButton}
+          onPress={toggleCameraType}
+        >
+          <MaterialIcons name="refresh" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.historyContainer}>
+        <MaterialIcons name="history" size={24} color="white" />
+        <Text style={styles.historyText}>Lịch sử</Text>
+      </View>
     </View>
   );
 }
@@ -41,29 +83,97 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#000',
   },
-  message: {
-    textAlign: 'center',
-    paddingBottom: 10,
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    paddingTop: 50,
+  },
+  profileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  title: {
+    color: 'white',
+    fontSize: 16,
+  },
+  chatButton: {
+    padding: 10,
   },
   camera: {
     flex: 1,
+    borderRadius: 20,
+    overflow: 'hidden',
+    margin: 10,
   },
-  buttonContainer: {
-    flex: 1,
+  controlsContainer: {
     flexDirection: 'row',
-    backgroundColor: 'transparent',
-    margin: 64,
+    justifyContent: 'space-between',
+    padding: 20,
   },
-  button: {
-    flex: 1,
-    alignSelf: 'flex-end',
+  controlButton: {
+    padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+  },
+  speedText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    padding: 20,
+  },
+  footerButton: {
+    padding: 10,
+  },
+  captureButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'transparent',
+    borderWidth: 4,
+    borderColor: 'white',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  text: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
+  captureButtonInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'white',
   },
+  historyContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+  },
+  historyText: {
+    color: 'white',
+    fontSize: 16,
+    marginLeft: 5,
+  },
+  message: {
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  permissionButton: {
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 5,
+    alignSelf: 'center',
+  }
 });
