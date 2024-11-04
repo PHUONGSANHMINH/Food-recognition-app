@@ -148,11 +148,15 @@ def send_code_forget_password():
     # Gửi email với mã xác thực
     msg = Message(
         '[Learn for Beginners] - Verify Code',
-        sender='noreply@learnforbeginners.com',  # Đảm bảo địa chỉ gửi hợp lệ
+        sender='liseentocbien@gmail.com',  # Đảm bảo địa chỉ gửi hợp lệ
         recipients=[email]
     )
     msg.body = f"Your verification code is: {code}\n\nPlease use this code to verify your email address."
-    mail.send(msg)
+    try:
+        mail.send(msg)
+        print("Email sent successfully!")
+    except Exception as e:
+        print(f"Error sending email: {str(e)}")
     
     return jsonify({"msg": get_message('successfully_send_code', lang)}), 200
 

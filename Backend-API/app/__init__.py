@@ -7,7 +7,9 @@ from flask_migrate import Migrate
 import logging
 from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
+from flasgger import Swagger
 import os
+
 
 db = SQLAlchemy()
 jwt = JWTManager()
@@ -26,6 +28,14 @@ def create_app():
     mail.init_app(app)
     migrate.init_app(app, db)
 
+    # Khởi tạo Swagger
+    app.config['SWAGGER'] = {
+    "title": "Food Recognition API",
+    "uiversion": 3,  # Sử dụng phiên bản Swagger UI
+    "description": "Description",  # Thêm mô tả nếu muốn
+    "version": "1.0.0"  # Đặt phiên bản cho tài liệu API
+    }
+    swagger = Swagger(app)
     # Thiết lập logging
     if not app.debug:
         handler = RotatingFileHandler('app.log', maxBytes=100000, backupCount=10)
