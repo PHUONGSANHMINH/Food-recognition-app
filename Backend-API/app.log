@@ -1,0 +1,2 @@
+2024-11-05 23:54:35,224 ERROR: Error during processing: [Errno 2] No such file or directory: 'D:\\Junq\\NTCL\\Food-recognition-app\\Backend-API\\uploads\\image.jpg' [in D:\Junq\NTCL\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:164]
+2024-11-05 23:54:35,687 ERROR: Error during processing: [Errno 2] No such file or directory: 'D:\\Junq\\NTCL\\Food-recognition-app\\Backend-API\\uploads\\image.jpg' [in D:\Junq\NTCL\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:164]

@@ -1,13 +1,33 @@
+import React, { useState, useRef, useEffect } from 'react';
 import { Camera, CameraType } from 'expo-camera/legacy';
-import { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Image, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 
-export default function App() {
+export default function CameraScreen() {
   const [type, setType] = useState(CameraType.back);
   const [permission, requestPermission] = Camera.useCameraPermissions();
   const [speed, setSpeed] = useState('1.5x');
+  const [photo, setPhoto] = useState(null);
+  const cameraRef = useRef(null);
+  const [accessToken, setAccessToken] = useState('');
+
+  useEffect(() => {
+    const fetchAccessToken = async () => {
+      try {
+        const token = await AsyncStorage.getItem('access_token');
+        if (token) {
+          setAccessToken(token);
+        }
+      } catch (error) {
+        console.error('Failed to retrieve access token:', error);
+      }
+    };
+
+    fetchAccessToken();
+  }, []);
 
   if (!permission) {
     return <View />;
@@ -28,6 +48,29 @@ export default function App() {
     setType(current => (current === CameraType.back ? CameraType.front : CameraType.back));
   }
 
+  async function takePhoto() {
+    if (cameraRef.current) {
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.5 });
+      setPhoto(photo.uri);
+
+      try {
+        const formData = new FormData();
+        formData.append('image', { uri: photo.uri, name: 'image.jpg', type: 'image/jpeg' });
+
+        const response = await axios.post(`${process.env.EXPO_PUBLIC_DOMAIN}api/detect/detect-recommend-spoonacular`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+
+        console.log(response.data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -44,7 +87,7 @@ export default function App() {
         </TouchableOpacity>
       </View>
 
-      <Camera style={styles.camera} type={type}>
+      <Camera style={styles.camera} type={type} ref={cameraRef}>
         <View style={styles.controlsContainer}>
           <TouchableOpacity style={styles.controlButton}>
             <MaterialIcons name="flash-off" size={24} color="white" />
@@ -60,7 +103,7 @@ export default function App() {
           <MaterialIcons name="photo-library" size={24} color="white" />
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.captureButton}>
+        <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
           <View style={styles.captureButtonInner} />
         </TouchableOpacity>
 
