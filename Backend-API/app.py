@@ -2,8 +2,10 @@
 
 from app import create_app, db
 from app.models.model import User
+from flask_cors import CORS
 
 app = create_app()
+CORS(app)
 
 with app.app_context():
     db.create_all()

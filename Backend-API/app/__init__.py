@@ -52,6 +52,7 @@ def create_app():
         from app.routes.user_route import user_bp
         from app.routes.detect_route import detect_bp
         from app.routes.recipes_route import recipe_bp
+        from app.routes.config_route import config_bp
 
         # Import models để Flask-Migrate nhận diện
         from app.models.model import Config, AdvertisingBanners, Rating, RecipeInfo, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin, User
@@ -60,4 +61,5 @@ def create_app():
         app.register_blueprint(user_bp, url_prefix='/api/user')
         app.register_blueprint(detect_bp, url_prefix='/api/detect')
         app.register_blueprint(recipe_bp, url_prefix='/api/recipe')
+        app.register_blueprint(config_bp, url_prefix='/admin/')
     return app

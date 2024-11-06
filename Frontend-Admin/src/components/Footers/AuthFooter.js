@@ -23,7 +23,7 @@ import { NavItem, NavLink, Nav, Container, Row, Col } from "reactstrap";
 const Login = () => {
   return (
     <>
-      <footer className="py-5">
+      <footer style={{paddingTop: "18rem"}}>
         <Container>
           <Row className="align-items-center justify-content-xl-between">
             <Col xl="6">
@@ -34,7 +34,7 @@ const Login = () => {
                   href="https://www.creative-tim.com?ref=adr-auth-footer"
                   target="_blank"
                 >
-                  Creative Tim
+                  Food Recognition License
                 </a>
               </div>
             </Col>
@@ -45,7 +45,7 @@ const Login = () => {
                     href="https://www.creative-tim.com?ref=adr-auth-footer"
                     target="_blank"
                   >
-                    Creative Tim
+                    Info
                   </NavLink>
                 </NavItem>
                 <NavItem>
@@ -62,14 +62,6 @@ const Login = () => {
                     target="_blank"
                   >
                     Blog
-                  </NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink
-                    href="https://github.com/creativetimofficial/argon-dashboard/blob/master/LICENSE.md?ref=adr-auth-footer"
-                    target="_blank"
-                  >
-                    MIT License
                   </NavLink>
                 </NavItem>
               </Nav>
