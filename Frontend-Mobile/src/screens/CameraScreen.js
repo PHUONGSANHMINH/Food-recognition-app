@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, CameraType } from 'expo-camera/legacy';
+import { Camera, CameraType, FlashMode } from 'expo-camera/legacy';
 import { StyleSheet, Text, TouchableOpacity, View, Image, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -9,10 +9,12 @@ import { StatusBar } from 'expo-status-bar';
 export default function CameraScreen() {
   const [type, setType] = useState(CameraType.back);
   const [permission, requestPermission] = Camera.useCameraPermissions();
+  const [flash, setFlash] = useState(FlashMode.off); // Trạng thái của đèn flash
   const [speed, setSpeed] = useState('1.5x');
   const [photo, setPhoto] = useState(null);
   const cameraRef = useRef(null);
   const [accessToken, setAccessToken] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     const fetchAccessToken = async () => {
@@ -48,27 +50,42 @@ export default function CameraScreen() {
     setType(current => (current === CameraType.back ? CameraType.front : CameraType.back));
   }
 
+  function toggleFlash() {
+    setFlash(current => (current === FlashMode.off ? FlashMode.on : FlashMode.off));
+  }
+
   async function takePhoto() {
     if (cameraRef.current) {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.5 });
+      const photo = await cameraRef.current.takePictureAsync({ quality: 1, flashMode: flash });
       setPhoto(photo.uri);
-
-      try {
-        const formData = new FormData();
-        formData.append('image', { uri: photo.uri, name: 'image.jpg', type: 'image/jpeg' });
-
-        const response = await axios.post(`${process.env.EXPO_PUBLIC_DOMAIN}api/detect/detect-recommend-spoonacular`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${accessToken}`
-          }
-        });
-
-        console.log(response.data);
-      } catch (error) {
-        console.error(error);
-      }
+      setShowPreview(true);
     }
+  }
+
+  async function handleUsePhoto() {
+    console.log('Sử dụng ảnh:', photo);
+    setShowPreview(false);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', { uri: photo, name: 'image.jpg', type: 'image/jpeg' });
+
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_DOMAIN}api/detect/detect-recommend-spoonacular`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      console.log(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  function handleRetakePhoto() {
+    setPhoto(null);
+    setShowPreview(false);
   }
 
   return (
@@ -82,22 +99,31 @@ export default function CameraScreen() {
           />
           <Text style={styles.title}>Recognition Camera</Text>
         </View>
-        <TouchableOpacity style={styles.chatButton}>
-          <MaterialIcons name="chat" size={24} color="white" />
-        </TouchableOpacity>
       </View>
-
-      <Camera style={styles.camera} type={type} ref={cameraRef}>
+      {showPreview ? (
+        <View style={styles.previewContainer}>
+          <Image source={{ uri: photo }} style={styles.previewImage} />
+          <View style={styles.previewControls}>
+            <TouchableOpacity style={styles.previewButton} onPress={handleUsePhoto}>
+              <Text style={styles.previewButtonText}>Sử dụng</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.previewButton} onPress={handleRetakePhoto}>
+              <Text style={styles.previewButtonText}>Chụp lại</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+      <Camera style={styles.camera} type={type} flashMode={flash} ref={cameraRef}>
         <View style={styles.controlsContainer}>
-          <TouchableOpacity style={styles.controlButton}>
-            <MaterialIcons name="flash-off" size={24} color="white" />
+          <TouchableOpacity style={styles.controlButton} onPress={toggleFlash}>
+            <MaterialIcons name={flash === FlashMode.off ? "flash-off" : "flash-on"} size={24} color="white" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.controlButton}>
             <Text style={styles.speedText}>{speed}</Text>
           </TouchableOpacity>
         </View>
       </Camera>
-
+      )}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.footerButton}>
           <MaterialIcons name="photo-library" size={24} color="white" />
@@ -116,8 +142,6 @@ export default function CameraScreen() {
       </View>
 
       <View style={styles.historyContainer}>
-        <MaterialIcons name="history" size={24} color="white" />
-        <Text style={styles.historyText}>Lịch sử</Text>
       </View>
     </View>
   );
@@ -208,15 +232,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 5,
   },
-  message: {
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
   permissionButton: {
     backgroundColor: 'white',
     padding: 10,
     borderRadius: 5,
     alignSelf: 'center',
-  }
+  },
+  previewContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'black',
+  },
+  previewImage: {
+    width: '100%',
+    height: '80%',
+    resizeMode: 'contain',
+  },
+  previewControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: 20,
+  },
+  previewButton: {
+    padding: 10,
+    backgroundColor: 'white',
+    borderRadius: 5,
+  },
+  previewButtonText: {
+    color: 'black',
+    fontWeight: 'bold',
+  },
 });
