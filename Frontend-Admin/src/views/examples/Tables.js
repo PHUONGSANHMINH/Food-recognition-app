@@ -1,57 +1,75 @@
 import {
-  Badge,
   Card,
   CardHeader,
   CardFooter,
-  DropdownMenu,
-  DropdownItem,
-  UncontrolledDropdown,
-  DropdownToggle,
   Media,
   Pagination,
   PaginationItem,
   PaginationLink,
-  Progress,
   Table,
   Container,
   Row,
-  UncontrolledTooltip,
 } from "reactstrap";
-// core components
 import React, { useState, useEffect } from "react";
 import Header from "components/Headers/Header.js";
 
 const Tables = () => {
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5); // Số mục trên mỗi trang
+  const [itemsPerPage] = useState(5);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN;
+
+  const fetchTotalRecords = async () => {
+    try {
+      const response = await fetch(`${apiDomain}/api/recipe/total`);
+      if (!response.ok) {
+        throw new Error("Lỗi khi lấy tổng số bản ghi");
+      }
+      const result = await response.json();
+      setTotalRecords(result.total);
+      setTotalPages(Math.ceil(result.total / itemsPerPage));
+    } catch (error) {
+      console.error("Error fetching total records: ", error);
+      setError(error.message);
+    }
+  };
+
+  const fetchData = async (page = 1, limit = itemsPerPage) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/recipe/?page=${page}&limit=${limit}`
+      );
+      if (!response.ok) {
+        throw new Error("Lỗi khi lấy dữ liệu");
+      }
+      const result = await response.json();
+      setData(result || []);
+    } catch (error) {
+      console.error("Error fetching data: ", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:5000/api/detect/recommend-by-keyword/chicken"
-        );
-        const result = await response.json();
-        setData(result);
-      } catch (error) {
-        console.error("Error fetching data: ", error);
-      }
-    };
+    fetchData(currentPage, itemsPerPage);
+  }, [currentPage, itemsPerPage]);
 
-    fetchData();
+  useEffect(() => {
+    fetchTotalRecords();
   }, []);
 
-  // Tính toán dữ liệu cho trang hiện tại
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Thay đổi trang
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
-  // Tổng số trang
-  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const paginate = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    fetchData(pageNumber, itemsPerPage);
+  };
 
   return (
     <>
@@ -61,54 +79,66 @@ const Tables = () => {
           <div className="col">
             <Card className="shadow">
               <CardHeader className="border-0">
-                <h3 className="mb-0">Card tables</h3>
+                <h3 className="mb-0">Dish added to suggestions</h3>
               </CardHeader>
               <Table className="align-items-center table-flush" responsive>
                 <thead className="thead-light">
                   <tr>
                     <th scope="col">Name</th>
-                    <th scope="col">Calories</th>
-                    <th scope="col">Carbs</th>
-                    <th scope="col">Fat</th>
-                    <th scope="col">Protein</th>
+                    <th scope="col">Image</th>
+                    <th scope="col">Status</th>
                     <th scope="col">Summary</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentItems.length > 0 ? (
-                    currentItems.map((item) => (
-                      <tr key={item.id}>
-                        <th scope="row">
-                          <Media className="align-items-center">
-                            <a
-                              className="avatar rounded-circle mr-3"
-                              href="#pablo"
-                              onClick={(e) => e.preventDefault()}
-                            >
-                              <img alt="..." src={item.image} />
+                  {loading ? (
+                    // Hiển thị skeleton khi đang tải
+                    Array.from({ length: 5 }).map((_, index) => (
+                      <tr key={index} className="skeleton-row">
+                        <td><div className="skeleton skeleton-text" /></td>
+                        <td><div className="skeleton skeleton-image" /></td>
+                        <td><div className="skeleton skeleton-text" /></td>
+                        <td><div className="skeleton skeleton-text" /></td>
+                      </tr>
+                    ))
+                  ) : error ? (
+                    <tr>
+                      <td colSpan="4" className="text-center text-danger">
+                        {error}
+                      </td>
+                    </tr>
+                  ) : data && data.length > 0 ? (
+                    data.map((item) => (
+                      <tr key={item.id_recipe}>
+                        <td>{item.name_recipe}</td>
+                        <td>
+                          <Media>
+                            <a href="#pablo" onClick={(e) => e.preventDefault()}>
+                              <img
+                                alt={item.name_recipe}
+                                src={`${apiDomain}/api/file/get-file/${item.image}`}
+                                style={{
+                                  width: "50px",
+                                  height: "50px",
+                                  borderRadius: "5px",
+                                }}
+                              />
                             </a>
-                            <Media>
-                              <span className="mb-0 text-sm">{item.name}</span>
-                            </Media>
                           </Media>
-                        </th>
-                        <td>{item["nutrition.calories"]}</td>
-                        <td>{item["nutrition.carbs"]}</td>
-                        <td>{item["nutrition.fat"]}</td>
-                        <td>{item["nutrition.protein"]}</td>
+                        </td>
+                        <td>{item.status}</td>
                         <td>{item.summary}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6" className="text-center">
-                        Loading...
+                      <td colSpan="4" className="text-center">
+                        Không có dữ liệu để hiển thị
                       </td>
                     </tr>
                   )}
                 </tbody>
               </Table>
-              {/* Pagination */}
               <CardFooter className="py-4">
                 <nav aria-label="...">
                   <Pagination className="pagination justify-content-end mb-0">
@@ -126,6 +156,57 @@ const Tables = () => {
           </div>
         </Row>
       </Container>
+
+      {/* CSS styles for skeleton loading */}
+      <style jsx>{`
+        .skeleton {
+          background-color: #e0e0e0;
+          border-radius: 4px;
+          display: inline-block;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .skeleton::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -100%;
+          height: 100%;
+          width: 100%;
+          background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.4) 50%,
+            rgba(255, 255, 255, 0) 100%
+          );
+          animation: skeleton-loading 1.5s infinite;
+        }
+
+        @keyframes skeleton-loading {
+          0% {
+            left: -100%;
+          }
+          100% {
+            left: 100%;
+          }
+        }
+
+        .skeleton-row td {
+          padding: 10px 0;
+        }
+
+        .skeleton-text {
+          width: 100px;
+          height: 20px;
+        }
+
+        .skeleton-image {
+          width: 50px;
+          height: 50px;
+          border-radius: 5px;
+        }
+      `}</style>
     </>
   );
 };

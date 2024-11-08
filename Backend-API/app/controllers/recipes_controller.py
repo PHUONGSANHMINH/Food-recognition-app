@@ -3,6 +3,21 @@ from app import db
 from app.models.model import RecipeInfo, Rating, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin  
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
+# Lấy tổng số bản ghi của tất cả công thức
+def get_total_records():
+    search = request.args.get('search', '', type=str)
+    
+    query = RecipeInfo.query
+    
+    if search:
+        query = query.filter(RecipeInfo.name_recipe.like(f'%{search}%'))
+    
+    # Đếm tổng số công thức
+    total_records = query.count()
+    
+    # Trả về tổng số bản ghi
+    return jsonify({'total': total_records})
+
 # Lấy danh sách các công thức
 def get_recipes():
     page = request.args.get('page', 1, type=int)

@@ -5,7 +5,7 @@
     "image": "https://example.com/images/grilled-chicken-salad.jpg",
     "type": "Main",
     "status": "published,featured",
-    "summary": "Grilled chicken with vegetable and avocado and sauge",
+    "summary": "Grilled chicken with vegetable and avocado and sauce",
     "ingredients": [
       {
         "id_ingredient": 1,
@@ -38,6 +38,248 @@
         "quantity": 100,
         "unit": "g",
         "image": "https://example.com/images/romaine-lettuce.jpg"
+      }
+    ]
+  },
+  {
+    "id_recipe": 3,
+    "name_recipe": "Pasta Salad with Grilled Vegetables",
+    "image": "https://example.com/images/pasta-salad.jpg",
+    "type": "Main",
+    "status": "published",
+    "summary": "A refreshing pasta salad with assorted grilled vegetables",
+    "ingredients": [
+      {
+        "id_ingredient": 3,
+        "name_ingredient": "Pasta",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "id_ingredient": 4,
+        "name_ingredient": "Bell Pepper",
+        "quantity": 50,
+        "unit": "g"
+      }
+    ]
+  },
+  {
+    "id_recipe": 4,
+    "name_recipe": "Tomato Basil Soup",
+    "image": "https://example.com/images/tomato-basil-soup.jpg",
+    "type": "Appetizer",
+    "status": "published",
+    "summary": "Smooth tomato soup with fresh basil",
+    "ingredients": [
+      {
+        "id_ingredient": 5,
+        "name_ingredient": "Tomatoes",
+        "quantity": 300,
+        "unit": "g"
+      },
+      {
+        "id_ingredient": 6,
+        "name_ingredient": "Basil",
+        "quantity": 5,
+        "unit": "g"
+      }
+    ]
+  },
+  {
+    "id_recipe": 5,
+    "name_recipe": "Classic Beef Stew",
+    "image": "https://example.com/images/beef-stew.jpg",
+    "type": "Main",
+    "status": "published",
+    "summary": "Rich and hearty beef stew with vegetables",
+    "ingredients": [
+      {
+        "id_ingredient": 7,
+        "name_ingredient": "Beef",
+        "quantity": 250,
+        "unit": "g"
+      },
+      {
+        "id_ingredient": 8,
+        "name_ingredient": "Carrots",
+        "quantity": 100,
+        "unit": "g"
+      }
+    ]
+  },
+  {
+    "id_recipe": 6,
+    "name_recipe": "Avocado Toast",
+    "image": "https://example.com/images/avocado-toast.jpg",
+    "type": "Breakfast",
+    "status": "published",
+    "summary": "Sliced avocado on toasted bread",
+    "ingredients": [
+      {
+        "id_ingredient": 9,
+        "name_ingredient": "Avocado",
+        "quantity": 1,
+        "unit": "whole"
+      },
+      {
+        "id_ingredient": 10,
+        "name_ingredient": "Bread",
+        "quantity": 2,
+        "unit": "slices"
+      }
+    ]
+  },
+  {
+    "id_recipe": 7,
+    "name_recipe": "Cauliflower Rice",
+    "image": "https://example.com/images/cauliflower-rice.jpg",
+    "type": "Side",
+    "status": "published",
+    "summary": "Low-carb cauliflower rice with herbs",
+    "ingredients": [
+      {
+        "id_ingredient": 11,
+        "name_ingredient": "Cauliflower",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "id_ingredient": 12,
+        "name_ingredient": "Parsley",
+        "quantity": 5,
+        "unit": "g"
+      }
+    ]
+  },
+  {
+    "id_recipe": 8,
+    "name_recipe": "Mango Smoothie",
+    "image": "https://example.com/images/mango-smoothie.jpg",
+    "type": "Drink",
+    "status": "published",
+    "summary": "Refreshing mango smoothie",
+    "ingredients": [
+      {
+        "id_ingredient": 13,
+        "name_ingredient": "Mango",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "id_ingredient": 14,
+        "name_ingredient": "Milk",
+        "quantity": 150,
+        "unit": "ml"
+      }
+    ]
+  },
+  {
+    "id_recipe": 9,
+    "name_recipe": "Vegetable Stir Fry",
+    "image": "https://example.com/images/vegetable-stir-fry.jpg",
+    "type": "Main",
+    "status": "published",
+    "summary": "Assorted vegetables stir-fried in garlic sauce",
+    "ingredients": [
+      {
+        "id_ingredient": 15,
+        "name_ingredient": "Broccoli",
+        "quantity": 100,
+        "unit": "g"
+      },
+      {
+        "id_ingredient": 16,
+        "name_ingredient": "Carrot",
+        "quantity": 50,
+        "unit": "g"
+      }
+    ]
+  },
+  {
+    "id_recipe": 10,
+    "name_recipe": "Berry Parfait",
+    "image": "https://example.com/images/berry-parfait.jpg",
+    "type": "Dessert",
+    "status": "published",
+    "summary": "Layered yogurt and mixed berries",
+    "ingredients": [
+      {
+        "id_ingredient": 17,
+        "name_ingredient": "Yogurt",
+        "quantity": 150,
+        "unit": "g"
+      },
+      {
+        "id_ingredient": 18,
+        "name_ingredient": "Mixed Berries",
+        "quantity": 100,
+        "unit": "g"
+      }
+    ]
+  },
+  {
+    "id_recipe": 11,
+    "name_recipe": "Chicken Tacos",
+    "image": "https://example.com/images/chicken-tacos.jpg",
+    "type": "Main",
+    "status": "published",
+    "summary": "Soft tacos filled with seasoned chicken and toppings",
+    "ingredients": [
+      {
+        "id_ingredient": 19,
+        "name_ingredient": "Chicken",
+        "quantity": 150,
+        "unit": "g"
+      },
+      {
+        "id_ingredient": 20,
+        "name_ingredient": "Taco Shells",
+        "quantity": 3,
+        "unit": "pieces"
+      }
+    ]
+  },
+  {
+    "id_recipe": 12,
+    "name_recipe": "Veggie Wrap",
+    "image": "https://example.com/images/veggie-wrap.jpg",
+    "type": "Main",
+    "status": "published",
+    "summary": "Whole wheat wrap filled with fresh vegetables",
+    "ingredients": [
+      {
+        "id_ingredient": 21,
+        "name_ingredient": "Whole Wheat Wrap",
+        "quantity": 1,
+        "unit": "piece"
+      },
+      {
+        "id_ingredient": 22,
+        "name_ingredient": "Vegetables",
+        "quantity": 100,
+        "unit": "g"
+      }
+    ]
+  },
+  {
+    "id_recipe": 13,
+    "name_recipe": "Fruit Salad",
+    "image": "https://example.com/images/fruit-salad.jpg",
+    "type": "Dessert",
+    "status": "published",
+    "summary": "Mixed fruit salad with honey dressing",
+    "ingredients": [
+      {
+        "id_ingredient": 23,
+        "name_ingredient": "Mixed Fruits",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "id_ingredient": 24,
+        "name_ingredient": "Honey",
+        "quantity": 20,
+        "unit": "ml"
       }
     ]
   }
