@@ -1,20 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, CameraType, FlashMode } from 'expo-camera/legacy';
-import { StyleSheet, Text, TouchableOpacity, View, Image, Alert } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Image, Alert, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { useNavigation } from '@react-navigation/native';
+import LottieView from 'lottie-react-native';
 
-export default function CameraScreen() {
+export default function CameraScreen({ navigation }) {
   const [type, setType] = useState(CameraType.back);
   const [permission, requestPermission] = Camera.useCameraPermissions();
-  const [flash, setFlash] = useState(FlashMode.off); // Trạng thái của đèn flash
+  const [flash, setFlash] = useState(FlashMode.off);
   const [speed, setSpeed] = useState('1.5x');
   const [photo, setPhoto] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const cameraRef = useRef(null);
   const [accessToken, setAccessToken] = useState('');
-  const [showPreview, setShowPreview] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchAccessToken = async () => {
@@ -58,34 +61,53 @@ export default function CameraScreen() {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePictureAsync({ quality: 1, flashMode: flash });
       setPhoto(photo.uri);
-      setShowPreview(true);
+      setIsModalVisible(true);
     }
   }
 
   async function handleUsePhoto() {
-    console.log('Sử dụng ảnh:', photo);
-    setShowPreview(false);
-
+    setIsModalVisible(false);
+    setLoading(true);
     try {
       const formData = new FormData();
-      formData.append('image', { uri: photo, name: 'image.jpg', type: 'image/jpeg' });
-
-      const response = await axios.post(`${process.env.EXPO_PUBLIC_DOMAIN}api/detect/detect-recommend-spoonacular`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${accessToken}`
-        }
+      formData.append('image', {
+        uri: photo,
+        name: 'image.jpg',
+        type: 'image/jpeg'
       });
 
-      console.log(response.data);
+      const response = await axios.post(
+        `${process.env.EXPO_PUBLIC_DOMAIN}api/detect/detect-recommend-spoonacular`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${accessToken}`
+          }
+        }
+      );
+      setLoading(false);
+      // Chuyển đến trang danh sách đề xuất với dữ liệu nhận được
+      console.log(response.data)
+      navigation.navigate('RecipeRecommendations', {
+        detectedObjects: response.data.detected_objects, // Đối tượng đã nhận diện
+        recommendations: response.data.recommendations // Danh sách món ăn đề xuất
+      });
+
+
     } catch (error) {
       console.error(error);
+      Alert.alert(
+        'Lỗi',
+        'Không thể xử lý ảnh. Vui lòng thử lại.',
+        [{ text: 'OK' }]
+      );
     }
   }
 
   function handleRetakePhoto() {
     setPhoto(null);
-    setShowPreview(false);
+    setIsModalVisible(false);
   }
 
   return (
@@ -100,19 +122,7 @@ export default function CameraScreen() {
           <Text style={styles.title}>Recognition Camera</Text>
         </View>
       </View>
-      {showPreview ? (
-        <View style={styles.previewContainer}>
-          <Image source={{ uri: photo }} style={styles.previewImage} />
-          <View style={styles.previewControls}>
-            <TouchableOpacity style={styles.previewButton} onPress={handleUsePhoto}>
-              <Text style={styles.previewButtonText}>Sử dụng</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.previewButton} onPress={handleRetakePhoto}>
-              <Text style={styles.previewButtonText}>Chụp lại</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : (
+
       <Camera style={styles.camera} type={type} flashMode={flash} ref={cameraRef}>
         <View style={styles.controlsContainer}>
           <TouchableOpacity style={styles.controlButton} onPress={toggleFlash}>
@@ -123,10 +133,10 @@ export default function CameraScreen() {
           </TouchableOpacity>
         </View>
       </Camera>
-      )}
+
       <View style={styles.footer}>
         <TouchableOpacity style={styles.footerButton}>
-          <MaterialIcons name="photo-library" size={24} color="white" />
+          <MaterialIcons name="photo-library" size={24} color="#ed5c01" />
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
@@ -137,12 +147,42 @@ export default function CameraScreen() {
           style={styles.footerButton}
           onPress={toggleCameraType}
         >
-          <MaterialIcons name="refresh" size={24} color="white" />
+          <MaterialIcons name="refresh" size={24} color="#ed5c01" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.historyContainer}>
-      </View>
+      {/* Modal for Previewing the Photo */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Image source={{ uri: photo }} style={styles.modalImage} />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalButton} onPress={handleUsePhoto}>
+                <Text style={styles.modalButtonText}>Sử dụng</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalButton} onPress={handleRetakePhoto}>
+                <Text style={styles.modalButtonText}>Chụp lại</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <LottieView
+            source={require('../animation/animation_scan.json')} // Thay bằng đường dẫn của bạn
+            autoPlay
+            loop
+            style={styles.lottieAnimation}
+          />
+          <Text style={styles.loadingText}>Detecting...</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -150,7 +190,7 @@ export default function CameraScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#ed5c010f',
   },
   header: {
     flexDirection: 'row',
@@ -170,11 +210,9 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   title: {
-    color: 'white',
+    color: '#ed5c01',
     fontSize: 16,
-  },
-  chatButton: {
-    padding: 10,
+    fontWeight: 'bold',
   },
   camera: {
     flex: 1,
@@ -211,7 +249,7 @@ const styles = StyleSheet.create({
     borderRadius: 35,
     backgroundColor: 'transparent',
     borderWidth: 4,
-    borderColor: 'white',
+    borderColor: '#ed5c01',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -219,18 +257,42 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'white',
+    backgroundColor: '#ed5c01',
   },
-  historyContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
-    padding: 15,
+    alignItems: 'center',
   },
-  historyText: {
+  modalContent: {
+    width: '90%',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    padding: 20,
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  modalImage: {
+    width: '100%',
+    height: 480,
+    borderRadius: 15,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  modalButton: {
+    padding: 12,
+    backgroundColor: '#ed5c01',
+    borderRadius: 8,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  modalButtonText: {
     color: 'white',
-    fontSize: 16,
-    marginLeft: 5,
+    fontWeight: 'bold',
   },
   permissionButton: {
     backgroundColor: 'white',
@@ -238,30 +300,19 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     alignSelf: 'center',
   },
-  previewContainer: {
-    flex: 1,
+  loadingContainer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 1)',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'black',
   },
-  previewImage: {
-    width: '100%',
-    height: '80%',
-    resizeMode: 'contain',
+  lottieAnimation: {
+    width: 150,
+    height: 150,
   },
-  previewControls: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 20,
-  },
-  previewButton: {
-    padding: 10,
-    backgroundColor: 'white',
-    borderRadius: 5,
-  },
-  previewButtonText: {
-    color: 'black',
-    fontWeight: 'bold',
+  loadingText: {
+    color: '#ed5c01',
+    marginTop: 10,
+    fontSize: 16,
   },
 });
