@@ -10,7 +10,8 @@ import {
   ResetPasswordScreen,
   Dashboard,
   CameraScreen,
-  RecipeRecommendationsScreen
+  RecipeRecommendationsScreen,
+  RecipeDetailScreen
 } from './src/screens'
 
 const Stack = createStackNavigator()
@@ -31,6 +32,7 @@ export default function App() {
           <Stack.Screen name="Dashboard" component={Dashboard} />
           <Stack.Screen name="Camera" component={CameraScreen} />
           <Stack.Screen name="RecipeRecommendations" component={RecipeRecommendationsScreen} />
+          <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} options={{ headerShown: false }}/>
           <Stack.Screen
             name="ResetPasswordScreen"
             component={ResetPasswordScreen}

@@ -163,10 +163,10 @@ export default function CameraScreen({ navigation }) {
             <Image source={{ uri: photo }} style={styles.modalImage} />
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.modalButton} onPress={handleUsePhoto}>
-                <Text style={styles.modalButtonText}>Sử dụng</Text>
+                <Text style={styles.modalButtonText}>Use photo</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalButton} onPress={handleRetakePhoto}>
-                <Text style={styles.modalButtonText}>Chụp lại</Text>
+                <Text style={styles.modalButtonText}>take photo</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -219,6 +219,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     margin: 10,
+    marginBottom: 40,
   },
   controlsContainer: {
     flexDirection: 'row',
@@ -238,6 +239,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
+    paddingBottom: 70,
     padding: 20,
   },
   footerButton: {

@@ -24,7 +24,7 @@ export default function RecipeRecommendations({ route, navigation }) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FF6B6B" />
-        <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+        <Text style={styles.loadingText}>Loading...</Text>
       </SafeAreaView>
     );
   }
@@ -32,7 +32,7 @@ export default function RecipeRecommendations({ route, navigation }) {
   const renderBadges = () => {
     if (!detectedObjects.length) {
       return (
-        <Text style={styles.noObjectsText}>Không có đối tượng được nhận diện</Text>
+        <Text style={styles.noObjectsText}>No objects identified</Text>
       );
     }
 
@@ -58,13 +58,17 @@ export default function RecipeRecommendations({ route, navigation }) {
     return colors[index % colors.length];
   };
 
-  const renderRecipeItem = ({ item }) => (
-    <TouchableOpacity 
+  const handleRecipePress = (recipe) => {
+    navigation.navigate('RecipeDetail', { recipe });
+  };
+
+  const renderRecipeItem = ({ item, onPress }) => (
+    <TouchableOpacity
       style={styles.recipeCard}
-      onPress={() => navigation.navigate('RecipeDetail', { recipe: item })}
+      onPress={handleRecipePress}
     >
-      <Image 
-        source={{ uri: item.image }} 
+      <Image
+        source={{ uri: item.image }}
         style={styles.recipeImage}
         resizeMode="cover"
       />
@@ -90,7 +94,7 @@ export default function RecipeRecommendations({ route, navigation }) {
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
       <MaterialIcons name="restaurant" size={64} color="#DDD" />
-      <Text style={styles.emptyText}>Không có món ăn đề xuất</Text>
+      <Text style={styles.emptyText}>There are no recommended dishes</Text>
     </View>
   );
 
@@ -104,19 +108,19 @@ export default function RecipeRecommendations({ route, navigation }) {
         >
           <MaterialIcons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Đề xuất món ăn</Text>
+        <Text style={styles.headerTitle}>Recommended dishes</Text>
         <View style={styles.headerRight} />
       </View>
 
       {/* Detected Objects Section */}
       <View style={styles.detectedObjectsContainer}>
-        <Text style={styles.sectionTitle}>Đối tượng nhận diện:</Text>
+        <Text style={styles.sectionTitle}>Identifying object:</Text>
         {renderBadges()}
       </View>
       
       {/* Recommendations Section */}
       <View style={styles.recommendationsContainer}>
-        <Text style={styles.sectionTitle}>Món ăn đề xuất:</Text>
+        <Text style={styles.sectionTitle}>Recommended dishes:</Text>
         <FlatList
           data={recommendations}
           renderItem={renderRecipeItem}
