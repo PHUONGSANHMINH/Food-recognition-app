@@ -31,8 +31,8 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <BrowserRouter>
     <Routes>
-      <Route path="/admin/*" element={<AdminLayout />} />
       <Route path="/auth/*" element={<AuthLayout />} />
+      <Route path="/admin/*" element={<AdminLayout />} />
       <Route path="*" element={<Navigate to="/auth/login" replace />} />
     </Routes>
   </BrowserRouter>

@@ -11,7 +11,7 @@ import {
   Row,
 } from "reactstrap";
 import React, { useState, useEffect } from "react";
-import Header from "components/Headers/Header.js";
+import Header from "components/Headers/HeaderRecipeList.js";
 
 const Tables = () => {
   const [data, setData] = useState([]);

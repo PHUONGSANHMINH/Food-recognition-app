@@ -14,6 +14,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
 import logging
+import pandas as pd
+import json
 
 # Cấu hình logging để ghi lại các lỗi
 logging.basicConfig(level=logging.INFO)
@@ -33,9 +35,14 @@ CSV_PATH = os.getenv('CSV_RECOMMEND_PATH', 'recommend-dataset/recipes.csv')
 FULL_CSV_PATH = os.path.join(BASE_DIR, CSV_PATH)
 
 # Cấu hình API của Spoonacular
-SPOONACULAR_API_KEY = os.getenv('SPOONACULAR_API_KEY')
+SPOONACULAR_API_KEY = os.getenv('SPOONACULAR_API_KEY', '').split(',')
 SPOONACULAR_SEARCH_URL = 'https://api.spoonacular.com/recipes/complexSearch'
 SPOONACULAR_NUTRITION_URL = 'https://api.spoonacular.com/recipes/{id}/nutritionWidget.json'
+
+# Kiểm tra nếu danh sách API_KEYS trống
+if not SPOONACULAR_API_KEY or SPOONACULAR_API_KEY == ['']:
+    raise ValueError("API keys are required. Please set the SPOONACULAR_API_KEY environment variable.")
+limited_api_keys = set()
 
 # Khởi tạo mô hình gợi ý riêng (nếu có)
 # RECOMMENDER = RecipeRecommender('app/data/processed_recipes.csv')  # Nếu sử dụng mô hình gợi ý riêng
@@ -45,11 +52,6 @@ def allowed_file(filename):
     allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in allowed_extensions
-
-import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-import json
 
 # Đọc dữ liệu từ CSV với các trường mới
 df = pd.read_csv(FULL_CSV_PATH)
@@ -102,11 +104,11 @@ def detect_recommend_spoonacular():
         file.save(filepath)
 
         try:
-            # Chạy YOLOv8 để phát hiện đối tượng
+            # Chạy YOLOv8 để phát hiện vật thể
             results = model.predict(source=filepath, save=False)
             detected_labels = set()
 
-            # Lấy kết quả từ mô hình
+            # Lấy kết quả từ model
             for result in results:
                 for cls in result.boxes.cls:
                     label = model.names[int(cls)]
@@ -119,46 +121,64 @@ def detect_recommend_spoonacular():
             if not detected_labels:
                 return jsonify({'msg': 'No objects detected'}), 200
 
-            # Gợi ý từ Spoonacular
+            # Recommendations từ Spoonacular
             ingredients = ','.join(detected_labels)
             params = {
-                'apiKey': SPOONACULAR_API_KEY,
                 'includeIngredients': ingredients,
                 'number': 5,
                 'ranking': 1,
                 'addRecipeInformation': True
             }
 
-            response = requests.get(SPOONACULAR_SEARCH_URL, params=params)
+            # Thử từng APIKey trong list
+            for api_key in SPOONACULAR_API_KEY:
+                # Trường hợp key tồn tại trong list limited thì sẽ không gọi đến.
+                if api_key in limited_api_keys:
+                    continue
+                params['apiKey'] = api_key.strip()
 
-            if response.status_code != 200:
-                return jsonify({'msg': 'Failed to fetch recommendations from Spoonacular', 'error': response.text}), 500
+                try:
+                    response = requests.get(SPOONACULAR_SEARCH_URL, params=params)
 
-            data = response.json()
-            recipes = data.get('results', [])
+                    if response.status_code == 200:
+                        data = response.json()
+                        recipes = data.get('results', [])
 
-            if not recipes:
-                return jsonify({'msg': 'No recipes found for detected ingredients'}), 200
+                        if not recipes:
+                            return jsonify({'msg': 'No recipes found for detected ingredients'}), 200
 
-            recommendations = []
-            for recipe in recipes:
-                # Lấy thông tin dinh dưỡng chính xác từ nutritionWidget.json
-                recipe_info = get_recipe_info(recipe.get('id'))
-                # Kết hợp thông tin cơ bản từ recipe search với thông tin dinh dưỡng
-                combined_info = {
-                    'id': recipe_info.get('id'),
-                    'title': recipe.get('title'),
-                    'image': recipe.get('image'),
-                    'calories': recipe_info.get('calories'),
-                    'summary': recipe.get('summary'),
-                    'sourceUrl': recipe.get('sourceUrl'),
-                }
-                recommendations.append(combined_info)
+                        recommendations = []
+                        for recipe in recipes:
+                            # Gọi hàm để lấy ra thông tin calories.
+                            recipe_info = get_recipe_info(recipe.get('id'))
+                            # Kết hợp data trả về
+                            combined_info = {
+                                'id': recipe_info.get('id'),
+                                'title': recipe.get('title'),
+                                'image': recipe.get('image'),
+                                'calories': recipe_info.get('calories'),
+                                'summary': recipe.get('summary'),
+                                'sourceUrl': recipe.get('sourceUrl'),
+                            }
+                            recommendations.append(combined_info)
 
-            return jsonify({
-                'detected_objects': detected_labels,
-                'recommendations': recommendations
-            }), 200
+                        return jsonify({
+                            'detected_objects': detected_labels,
+                            'recommendations': recommendations
+                        }), 200
+
+                    elif response.status_code == 402:
+                        # Thêm key vào list limited do giới hạn do key hết số lượt request theo ngày.
+                        limited_api_keys.add(api_key)
+                        logging.warning(f"API key {api_key} has reached the request limit. Trying the next API key.")
+                    else:
+                        logging.error(f"Unexpected error with API key {api_key}: {response.text}")
+                
+                except requests.RequestException as e:
+                    logging.error(f"Request error with API key {api_key}: {str(e)}")
+
+            # If all API keys fail
+            return jsonify({'msg': 'All API keys have reached their limits or encountered an error'}), 500
 
         except Exception as e:
             logger.error(f"Error during processing: {str(e)}")
@@ -169,27 +189,41 @@ def detect_recommend_spoonacular():
 def get_recipe_info(recipe_id):
     """Lấy thông tin dinh dưỡng của công thức món ăn bao gồm calo."""
     url = SPOONACULAR_NUTRITION_URL.format(id=recipe_id)
-    params = {
-        'apiKey': SPOONACULAR_API_KEY
-    }
-    
-    response = requests.get(url, params=params)
+    params = {}
 
-    if response.status_code == 200:
-        data = response.json()
-        # Trích xuất calo từ dữ liệu phản hồi
-        calories = data.get('calories', 'N/A')
+    # Thử từng APIKey trong list
+    for api_key in SPOONACULAR_API_KEY:
+        # Trường hợp key tồn tại trong list thì sẽ không gọi đến.
+        if api_key in limited_api_keys:
+            continue
+        params['apiKey'] = api_key.strip()
+
+        try:
+            response = requests.get(url, params=params)
+
+            if response.status_code == 200:
+                data = response.json()
+                calories = data.get('calories', 'N/A')
+
+                return {
+                    'id': recipe_id,
+                    'calories': calories,
+                }
+            elif response.status_code == 402:
+                # Thêm key vào list limited do giới hạn do key hết số lượt request theo ngày.
+                limited_api_keys.add(api_key)
+                logging.warning(f"API key {api_key} has reached the request limit. Trying the next API key.")
+            else:
+                logging.error(f"Unexpected error with API key {api_key} for Recipe ID {recipe_id}: {response.text}")
         
-        return {
-            'id': recipe_id,
-            'calories': calories,  # Thêm thông tin calo đúng
-        }
-    else:
-        logger.error(f"Failed to fetch nutrition info for Recipe ID {recipe_id}: {response.text}")
-        return {
-            'id': recipe_id,
-            'error': 'Không lấy được thông tin dinh dưỡng công thức'
-        }
+        except requests.RequestException as e:
+            logging.error(f"Request error with API key {api_key} for Recipe ID {recipe_id}: {str(e)}")
+
+    # If all API keys fail
+    return {
+        'id': recipe_id,
+        'error': 'Unable to fetch nutrition info after trying all API keys'
+    }
 
 @jwt_required()
 def get_recipe_by_id():
@@ -211,33 +245,44 @@ def get_recipe_by_id():
 def get_recipe_instructions(recipe_id):
     """Lấy hướng dẫn nấu ăn của công thức món ăn."""
     url = f"https://api.spoonacular.com/recipes/{recipe_id}/analyzedInstructions"
-    params = {
-        'apiKey': SPOONACULAR_API_KEY
-    }
-    
-    response = requests.get(url, params=params)
+    params = {}
 
-    if response.status_code == 200:
-        data = response.json()
-        # Trích xuất các bước hướng dẫn nấu ăn
-        instructions = []
-        if data:
-            for instruction in data:
-                steps = instruction.get('steps', [])
-                for step in steps:
-                    instructions.append({
-                        'step_number': step.get('number'),
-                        'instruction': step.get('step'),
-                        'ingredients': [ingredient.get('name') for ingredient in step.get('ingredients', [])],
-                        'equipment': [equip.get('name') for equip in step.get('equipment', [])]
-                    })
-        return {
-            'recipe_id': recipe_id,
-            'instructions': instructions
-        }
-    else:
-        logger.error(f"Failed to fetch instructions for Recipe ID {recipe_id}: {response.text}")
-        return {
-            'recipe_id': recipe_id,
-            'error': 'Can not fetch instructions'
-        }
+    for api_key in SPOONACULAR_API_KEY:
+        # Trường hợp key có trong list limited thì sẽ không gọi đến.
+        if api_key in limited_api_keys:
+            continue
+        params['apiKey'] = api_key.strip()
+
+        try:
+            response = requests.get(url, params=params)
+
+            if response.status_code == 200:
+                data = response.json()
+                instructions = []
+                if data:
+                    for instruction in data:
+                        steps = instruction.get('steps', [])
+                        for step in steps:
+                            instructions.append({
+                                'step_number': step.get('number'),
+                                'instruction': step.get('step'),
+                                'ingredients': [ingredient.get('name') for ingredient in step.get('ingredients', [])],
+                                'equipment': [equip.get('name') for equip in step.get('equipment', [])]
+                            })
+                return {
+                    'recipe_id': recipe_id,
+                    'instructions': instructions
+                }
+            elif response.status_code == 402:
+                # Thêm key vào list limited do giới hạn do key hết số lượt request theo ngày.
+                limited_api_keys.add(api_key)
+                logging.warning(f"API key {api_key} has reached the request limit. Trying the next API key.")
+            else:
+                logging.error(f"Unexpected error with API key {api_key} for Recipe ID {recipe_id}: {response.text}")
+        
+        except requests.RequestException as e:
+            logging.error(f"Request error with API key {api_key} for Recipe ID {recipe_id}: {str(e)}")
+    return {
+        'recipe_id': recipe_id,
+        'error': 'Unable to fetch instructions after trying all API keys'
+    }
