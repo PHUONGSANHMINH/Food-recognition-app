@@ -154,10 +154,12 @@ def detect_recommend_spoonacular():
                             # Gọi hàm để lấy hướng dẫn chế biến
                             instructions_result = get_recipe_instructions(recipe.get('id'))
                             # Kết hợp data trả về
+                            print(recipe)
                             combined_info = {
                                 'id': recipe_info.get('id'),
                                 'title': recipe.get('title'),
                                 'image': recipe.get('image'),
+                                'cookingMinutes': recipe.get('cookingMinutes'),
                                 'summary': recipe.get('summary'),
                                 'sourceUrl': recipe.get('sourceUrl'),
                                 'calories': recipe_info.get('calories'),

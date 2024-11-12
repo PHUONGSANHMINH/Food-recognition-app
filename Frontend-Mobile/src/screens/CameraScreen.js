@@ -88,7 +88,6 @@ export default function CameraScreen({ navigation }) {
       );
       setLoading(false);
       // Chuyển đến trang danh sách đề xuất với dữ liệu nhận được
-      console.log(response.data)
       navigation.navigate('RecipeRecommendations', {
         detectedObjects: response.data.detected_objects, // Đối tượng đã nhận diện
         recommendations: response.data.recommendations // Danh sách món ăn đề xuất

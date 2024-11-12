@@ -59,13 +59,14 @@ export default function RecipeRecommendations({ route, navigation }) {
   };
 
   const handleRecipePress = (recipe) => {
+    console.log(recipe)
     navigation.navigate('RecipeDetail', { recipe });
   };
 
-  const renderRecipeItem = ({ item, onPress }) => (
+  const renderRecipeItem = ({ item }) => (
     <TouchableOpacity
       style={styles.recipeCard}
-      onPress={handleRecipePress}
+      onPress={() => handleRecipePress(item)} // Pass the item as a parameter here
     >
       <Image
         source={{ uri: item.image }}
@@ -80,7 +81,7 @@ export default function RecipeRecommendations({ route, navigation }) {
         <View style={styles.recipeMetaData}>
           <View style={styles.metaItem}>
             <MaterialIcons name="timer" size={16} color="#FFF" />
-            <Text style={styles.metaText}>{item.readyInMinutes}m</Text>
+            <Text style={styles.metaText}>{item.cookingMinutes}m</Text>
           </View>
           <View style={styles.metaItem}>
             <MaterialIcons name="people" size={16} color="#FFF" />

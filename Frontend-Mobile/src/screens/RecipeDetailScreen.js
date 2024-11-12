@@ -1,79 +1,108 @@
-import React from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  Image,
-  ScrollView,
-  SafeAreaView,
-  TouchableOpacity,
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, SafeAreaView} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import BackButton from '../components/BackButton';
+import { useNavigation } from '@react-navigation/native';
 
-export default function RecipeDetail({ route, navigation }) {
+export default function RecipeDetail({ route }) {
+  const navigation = useNavigation();
   const { recipe } = route.params;
-  
-  // Cung cấp giá trị mặc định nếu không có dữ liệu
-  const ingredients = recipe.ingredients || [];
-  const instructions = recipe.instructions || [];
+  const [activeTab, setActiveTab] = useState('ingredients');
+
+  const handleTabPress = (tab) => {
+    setActiveTab(tab);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <BackButton goBack={navigation.goBack} />
-        <Text style={styles.headerTitle}>Recipe Details</Text>
+        {/* Header */}
+        <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialIcons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Dish details</Text>
         <View style={styles.headerRight} />
       </View>
-      
-      <ScrollView style={styles.content}>
-        <Image source={{ uri: recipe.image }} style={styles.recipeImage} />
-        
-        <View style={styles.recipeInfoContainer}>
-          <Text style={styles.recipeTitle}>{recipe.title}</Text>
-          <View style={styles.recipeMeta}>
-            <View style={styles.metaItem}>
-              <MaterialIcons name="timer" size={20} color="#666" />
-              <Text style={styles.metaText}>{recipe.readyInMinutes} minutes</Text>
+
+        <Image source={{ uri: recipe.image }} style={styles.image} />
+        <Text style={styles.title}>{recipe.title}</Text>
+
+        {/* Tab Navigation */}
+        <View style={styles.tabNavigation}>
+          <TouchableOpacity
+            style={[
+              styles.tabItem,
+              activeTab === 'ingredients' && styles.activeTab,
+            ]}
+            onPress={() => handleTabPress('ingredients')}
+          >
+            <Text style={styles.tabText}>Ingredients</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tabItem,
+              activeTab === 'nutrition' && styles.activeTab,
+            ]}
+            onPress={() => handleTabPress('nutrition')}
+          >
+            <Text style={styles.tabText}>Nutrition</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tabItem,
+              activeTab === 'instructions' && styles.activeTab,
+            ]}
+            onPress={() => handleTabPress('instructions')}
+          >
+            <Text style={styles.tabText}>Instructions</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Tab Content */}
+        <ScrollView style={styles.tabContent}>
+          {activeTab === 'ingredients' && (
+            <View style={styles.section}>
+              {recipe.ingredients.map((ingredient, index) => (
+                <View key={index} style={styles.ingredientItem}>
+                  <View style={styles.ingredientBadge}>
+                    <Text style={styles.ingredientAmount}>{ingredient.amount}</Text>
+                    <Text style={styles.ingredientUnit}>{ingredient.unit}</Text>
+                  </View>
+                  <Text style={styles.ingredientName}>{ingredient.name}</Text>
+                </View>
+              ))}
             </View>
-            <View style={styles.metaItem}>
-              <MaterialIcons name="people" size={20} color="#666" />
-              <Text style={styles.metaText}>{recipe.servings} servings</Text>
+          )}
+          {activeTab === 'nutrition' && (
+            <View style={styles.section}>
+              {recipe.nutrients.map((nutrient, index) => (
+                <View key={index} style={styles.nutrientItem}>
+                  <Text style={styles.nutrientName}>{nutrient.name}</Text>
+                  <Text style={styles.nutrientAmount}>
+                    {nutrient.amount.toFixed(2)} {nutrient.unit}
+                  </Text>
+                  <Text style={styles.nutrientPercentage}>
+                    ({nutrient.percentOfDailyNeeds.toFixed(2)}%)
+                  </Text>
+                </View>
+              ))}
             </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Summary</Text>
-          <Text style={styles.sectionContent}>{recipe.summary}</Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Ingredients</Text>
-          {ingredients.length > 0 ? (
-            ingredients.map((ingredient, index) => (
-              <Text key={index} style={styles.sectionContent}>
-                - {ingredient}
-              </Text>
-            ))
-          ) : (
-            <Text style={styles.sectionContent}>No ingredients listed.</Text>
           )}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Instructions</Text>
-          {instructions.length > 0 ? (
-            instructions.map((instruction, index) => (
-              <Text key={index} style={styles.sectionContent}>
-                {index + 1}. {instruction}
-              </Text>
-            ))
-          ) : (
-            <Text style={styles.sectionContent}>No instructions listed.</Text>
+          {activeTab === 'instructions' && (
+            <View style={styles.section}>
+              {recipe.instructions.map((step, index) => (
+                <View key={index} style={styles.instructionItem}>
+                  <View style={styles.instructionNumber}>
+                    <Text style={styles.instructionNumberText}>{step.step_number}</Text>
+                  </View>
+                  <Text style={styles.instructionText}>{step.instruction}</Text>
+                </View>
+              ))}
+            </View>
           )}
-        </View>
-      </ScrollView>
+        </ScrollView>
     </SafeAreaView>
   );
 }
@@ -81,7 +110,7 @@ export default function RecipeDetail({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8F9FA',
   },
   header: {
     flexDirection: 'row',
@@ -93,6 +122,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#EEE',
   },
+  backButton: {
+    padding: 8,
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -101,50 +133,105 @@ const styles = StyleSheet.create({
   headerRight: {
     width: 40,
   },
-  content: {
-    flex: 1,
-  },
-  recipeImage: {
+  image: {
     width: '100%',
     height: 200,
   },
-  recipeInfoContainer: {
-    padding: 16,
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
-  },
-  recipeTitle: {
+  title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
+    marginVertical: 16,
+    paddingHorizontal: 16,
   },
-  recipeMeta: {
+  tabNavigation: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
   },
-  metaItem: {
-    flexDirection: 'row',
+  tabItem: {
+    flex: 1,
+    paddingVertical: 12,
     alignItems: 'center',
   },
-  metaText: {
-    marginLeft: 8,
-    color: '#666',
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#FF6B6B',
+  },
+  tabText: {
     fontSize: 16,
-  },
-  section: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 8,
   },
-  sectionContent: {
-    fontSize: 16,
+  tabContent: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 24,
+  },
+  section: {
+    marginVertical: 12,
+  },
+  ingredientItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 6,
+  },
+  ingredientBadge: {
+    backgroundColor: '#F0F0F0',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 16,
+    marginRight: 12,
+    width: 120,
+  },
+  ingredientAmount: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  ingredientUnit: {
+    fontSize: 14,
     color: '#666',
-    marginBottom: 8,
+  },
+  ingredientName: {
+    fontSize: 16,
+  },
+  nutrientItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: 6,
+  },
+  nutrientName: {
+    fontSize: 16,
+    flex: 1,
+  },
+  nutrientAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginHorizontal: 8,
+  },
+  nutrientPercentage: {
+    fontSize: 14,
+    color: '#666',
+  },
+  instructionItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginVertical: 12,
+  },
+  instructionNumber: {
+    backgroundColor: '#FF6B6B',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginRight: 12,
+  },
+  instructionNumberText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  instructionText: {
+    fontSize: 16,
+    flex: 1,
   },
 });
