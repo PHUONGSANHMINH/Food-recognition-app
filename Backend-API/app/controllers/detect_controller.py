@@ -151,14 +151,19 @@ def detect_recommend_spoonacular():
                         for recipe in recipes:
                             # Gọi hàm để lấy ra thông tin calories.
                             recipe_info = get_recipe_info(recipe.get('id'))
+                            # Gọi hàm để lấy hướng dẫn chế biến
+                            instructions_result = get_recipe_instructions(recipe.get('id'))
                             # Kết hợp data trả về
                             combined_info = {
                                 'id': recipe_info.get('id'),
                                 'title': recipe.get('title'),
                                 'image': recipe.get('image'),
-                                'calories': recipe_info.get('calories'),
                                 'summary': recipe.get('summary'),
                                 'sourceUrl': recipe.get('sourceUrl'),
+                                'calories': recipe_info.get('calories'),
+                                'nutrients': recipe_info.get('nutrients'),
+                                'ingredients': recipe_info.get('ingredients'),
+                                'instructions': instructions_result.get('instructions', []),
                             }
                             recommendations.append(combined_info)
 
@@ -204,10 +209,13 @@ def get_recipe_info(recipe_id):
             if response.status_code == 200:
                 data = response.json()
                 calories = data.get('calories', 'N/A')
-
+                nutrients = data.get('nutrients', [])
+                ingredients = data.get('ingredients', [])
                 return {
                     'id': recipe_id,
                     'calories': calories,
+                    'nutrients': nutrients,
+                    'ingredients': ingredients
                 }
             elif response.status_code == 402:
                 # Thêm key vào list limited do giới hạn do key hết số lượt request theo ngày.
