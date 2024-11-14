@@ -1,7 +1,152 @@
 from flask import jsonify, request
 from app import db
+import os
+import json
+from werkzeug.utils import secure_filename
+from datetime import datetime
 from app.models.model import RecipeInfo, Rating, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin  
 from flask_jwt_extended import jwt_required, get_jwt_identity
+
+# Cấu hình upload
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def save_uploaded_file(file, subfolder=''):
+    """
+    Helper function để lưu file và trả về filename
+    """
+    if not file:
+        return None
+        
+    if file and allowed_file(file.filename):
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"{timestamp}_{secure_filename(file.filename)}"
+        
+        full_path = os.path.join(UPLOAD_FOLDER, subfolder)
+        if not os.path.exists(full_path):
+            os.makedirs(full_path)
+            
+        file_path = os.path.join(full_path, filename)
+        file.save(file_path)
+        return filename
+    return None
+
+@jwt_required()
+def add_new_recipe():
+    try:
+        # Lấy ID của user hiện tại từ JWT token
+        current_user_id = get_jwt_identity()
+        
+        # Lấy form data và files
+        recipe_image = request.files.get('image')
+        recipe_data = request.form.get('recipe_data')
+        ingredients_images = request.files.getlist('ingredients_images')
+        
+        if not recipe_data:
+            return jsonify({'error': 'Recipe data is required'}), 400
+            
+        data = json.loads(recipe_data)
+        
+        recipe_image_filename = save_uploaded_file(recipe_image, 'recipes')
+        
+        # Tạo recipe mới
+        new_recipe = RecipeInfo(
+            name_recipe=data['name_recipe'],
+            image=recipe_image_filename,
+            type=data.get('type'),
+            status=data.get('status'),
+            summary=data.get('summary')
+        )
+        db.session.add(new_recipe)
+        db.session.flush()  # Để lấy id_recipe
+
+        # Tạo bản ghi contribution
+        new_contribution = RecipesContribution(
+            id_recipe=new_recipe.id_recipe,
+            id_user=current_user_id,
+            accept_contribution=False  # Mặc định là chưa được chấp nhận
+        )
+        db.session.add(new_contribution)
+
+        # Thêm ingredients
+        for idx, ingredient in enumerate(data['ingredients']):
+            ingredient_image = ingredients_images[idx] if idx < len(ingredients_images) else None
+            ingredient_image_filename = save_uploaded_file(ingredient_image, 'ingredients')
+            
+            new_ingredient = RecipeIngredients(
+                id_recipe=new_recipe.id_recipe,
+                name_ingredient=ingredient['name_ingredient'],
+                quantity=ingredient['quantity'],
+                unit=ingredient.get('unit'),
+                image=ingredient_image_filename
+            )
+            db.session.add(new_ingredient)
+
+        # Thêm nutrition nếu có
+        if 'nutrition' in data:
+            new_nutrition = RecipeNutrition(
+                id_recipe=new_recipe.id_recipe,
+                calories=data['nutrition'].get('calories'),
+                fat=data['nutrition'].get('fat'),
+                saturated_fat=data['nutrition'].get('saturated_fat'),
+                carbohydrates=data['nutrition'].get('carbohydrates'),
+                sugar=data['nutrition'].get('sugar'),
+                cholesterol=data['nutrition'].get('cholesterol'),
+                sodium=data['nutrition'].get('sodium'),
+                protein=data['nutrition'].get('protein'),
+                alcohol=data['nutrition'].get('alcohol')
+            )
+            db.session.add(new_nutrition)
+            db.session.flush()  # Để lấy id_nutrition
+
+            # Thêm vitamin
+            for vitamin in data['vitamins']:
+                new_vitamin = RecipeVitamin(
+                    id_nutrition=new_nutrition.id_nutrition,
+                    protein=vitamin.get('protein'),
+                    calcium=vitamin.get('calcium'),
+                    iron=vitamin.get('iron'),
+                    vitamin_a=vitamin.get('vitamin_a'),
+                    vitamin_c=vitamin.get('vitamin_c'),
+                    vitamin_d=vitamin.get('vitamin_d'),
+                    vitamin_e=vitamin.get('vitamin_e'),
+                    vitamin_k=vitamin.get('vitamin_k'),
+                    vitamin_b1=vitamin.get('vitamin_b1'),
+                    vitamin_b2=vitamin.get('vitamin_b2'),
+                    vitamin_b3=vitamin.get('vitamin_b3'),
+                    vitamin_b5=vitamin.get('vitamin_b5'),
+                    vitamin_b6=vitamin.get('vitamin_b6'),
+                    vitamin_b12=vitamin.get('vitamin_b12'),
+                    fiber=vitamin.get('fiber')
+                )
+                db.session.add(new_vitamin)
+
+        # Thêm steps
+        for step in data['steps']:
+            new_step = RecipeSteps(
+                id_recipe=new_recipe.id_recipe,
+                step_number=step['step_number'],
+                content=step['content']
+            )
+            db.session.add(new_step)
+
+        # Lưu tất cả thay đổi
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Recipe added successfully',
+            'recipe_id': new_recipe.id_recipe
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        # Xóa file đã upload nếu có lỗi
+        if recipe_image_filename and os.path.exists(os.path.join(UPLOAD_FOLDER, 'recipes', recipe_image_filename)):
+            os.remove(os.path.join(UPLOAD_FOLDER, 'recipes', recipe_image_filename))
+        return jsonify({'error': str(e)}), 400
 
 # Lấy tổng số bản ghi của tất cả công thức
 def get_total_records():
@@ -98,3 +243,104 @@ def contribute_recipe():
     db.session.commit()
 
     return jsonify({'message': 'Contribution submitted successfully'}), 201
+
+@jwt_required()
+def toggle_favourite_recipe(id_recipe):
+    """
+    Thêm/xóa món ăn khỏi danh sách yêu thích
+    """
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # Kiểm tra xem công thức có tồn tại không
+        recipe = RecipeInfo.query.get(id_recipe)
+        if not recipe:
+            return jsonify({'error': 'Recipe not found'}), 404
+            
+        # Kiểm tra xem món ăn đã có trong favourite chưa
+        favourite = RecipesFavourite.query.filter_by(
+            id_recipe=id_recipe,
+            id_user=current_user_id
+        ).first()
+        
+        if favourite:
+            # Nếu đã có thì xóa khỏi favourite
+            db.session.delete(favourite)
+            db.session.commit()
+            return jsonify({
+                'message': 'Recipe removed from favourites successfully',
+                'is_favourite': False
+            }), 200
+        else:
+            # Nếu chưa có thì thêm vào favourite
+            new_favourite = RecipesFavourite(
+                id_recipe=id_recipe,
+                id_user=current_user_id
+            )
+            db.session.add(new_favourite)
+            db.session.commit()
+            return jsonify({
+                'message': 'Recipe added to favourites successfully',
+                'is_favourite': True
+            }), 201
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
+
+@jwt_required()
+def get_favourite_recipes():
+    """
+    Lấy danh sách các món ăn yêu thích của người dùng hiện tại
+    """
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # Thêm phân trang
+        page = request.args.get('page', 1, type=int)
+        limit = request.args.get('limit', 10, type=int)
+        
+        # Query với join để lấy thông tin món ăn
+        favourite_recipes = db.session.query(RecipeInfo)\
+            .join(RecipesFavourite, RecipesFavourite.id_recipe == RecipeInfo.id_recipe)\
+            .filter(RecipesFavourite.id_user == current_user_id)\
+            .paginate(page=page, per_page=limit, error_out=False)
+            
+        recipes_data = [{
+            'id_recipe': recipe.id_recipe,
+            'name_recipe': recipe.name_recipe,
+            'image': recipe.image,
+            'type': recipe.type,
+            'status': recipe.status,
+            'summary': recipe.summary
+        } for recipe in favourite_recipes.items]
+        
+        return jsonify({
+            'recipes': recipes_data,
+            'total': favourite_recipes.total,
+            'pages': favourite_recipes.pages,
+            'current_page': page
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@jwt_required()
+def check_favourite_status(id_recipe):
+    """
+    Kiểm tra xem một món ăn có trong danh sách yêu thích của người dùng hay không
+    """
+    try:
+        current_user_id = get_jwt_identity()
+        
+        is_favourite = RecipesFavourite.query.filter_by(
+            id_recipe=id_recipe,
+            id_user=current_user_id
+        ).first() is not None
+        
+        return jsonify({
+            'is_favourite': is_favourite
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
