@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, CameraType, FlashMode } from 'expo-camera/legacy';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { StyleSheet, Text, TouchableOpacity, View, Image, Alert, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -9,10 +9,8 @@ import { useNavigation } from '@react-navigation/native';
 import LottieView from 'lottie-react-native';
 
 export default function CameraScreen({ navigation }) {
-  const [type, setType] = useState(CameraType.back);
-  const [permission, requestPermission] = Camera.useCameraPermissions();
-  const [flash, setFlash] = useState(FlashMode.off);
-  const [speed, setSpeed] = useState('1.5x');
+  const [type, setType] = useState('back');
+  const [permission, requestPermission] = useCameraPermissions();
   const [photo, setPhoto] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const cameraRef = useRef(null);
@@ -50,16 +48,12 @@ export default function CameraScreen({ navigation }) {
   }
 
   function toggleCameraType() {
-    setType(current => (current === CameraType.back ? CameraType.front : CameraType.back));
-  }
-
-  function toggleFlash() {
-    setFlash(current => (current === FlashMode.off ? FlashMode.on : FlashMode.off));
+    setType((current) => (current === 'back' ? 'front' : 'back')); // Dùng chuỗi thay cho CameraType.front
   }
 
   async function takePhoto() {
     if (cameraRef.current) {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 1, flashMode: flash });
+      const photo = await cameraRef.current.takePictureAsync({ quality: 1 });
       setPhoto(photo.uri);
       setIsModalVisible(true);
     }
@@ -73,7 +67,7 @@ export default function CameraScreen({ navigation }) {
       formData.append('image', {
         uri: photo,
         name: 'image.jpg',
-        type: 'image/jpeg'
+        type: 'image/jpeg',
       });
 
       const response = await axios.post(
@@ -82,25 +76,18 @@ export default function CameraScreen({ navigation }) {
         {
           headers: {
             'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${accessToken}`
-          }
+            Authorization: `Bearer ${accessToken}`,
+          },
         }
       );
       setLoading(false);
-      // Chuyển đến trang danh sách đề xuất với dữ liệu nhận được
       navigation.navigate('RecipeRecommendations', {
-        detectedObjects: response.data.detected_objects, // Đối tượng đã nhận diện
-        recommendations: response.data.recommendations // Danh sách món ăn đề xuất
+        detectedObjects: response.data.detected_objects,
+        recommendations: response.data.recommendations,
       });
-
-
     } catch (error) {
       console.error(error);
-      Alert.alert(
-        'Lỗi',
-        'Không thể xử lý ảnh. Vui lòng thử lại.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', 'Unable to process the photo. Please try again.', [{ text: 'OK' }]);
     }
   }
 
@@ -114,46 +101,36 @@ export default function CameraScreen({ navigation }) {
       <StatusBar style="light" />
       <View style={styles.header}>
         <View style={styles.profileContainer}>
-          <Image 
-            source={require('../assets/chef.png')} 
-            style={styles.profileImage}
-          />
+          <Image source={require('../assets/chef.png')} style={styles.profileImage} />
           <Text style={styles.title}>Recognition Camera</Text>
         </View>
       </View>
 
-      <Camera style={styles.camera} type={type} flashMode={flash} ref={cameraRef}>
+      <CameraView
+        style={styles.camera}
+        type={type}
+        ref={cameraRef}
+      >
         <View style={styles.controlsContainer}>
-          <TouchableOpacity style={styles.controlButton} onPress={toggleFlash}>
-            <MaterialIcons name={flash === FlashMode.off ? "flash-off" : "flash-on"} size={24} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.controlButton}>
-            <Text style={styles.speedText}>{speed}</Text>
-          </TouchableOpacity>
+          {/* Các nút điều khiển flash đã bị loại bỏ */}
         </View>
-      </Camera>
+      </CameraView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton}>
+        {/* <TouchableOpacity style={styles.footerButton}>
           <MaterialIcons name="photo-library" size={24} color="#ed5c01" />
-        </TouchableOpacity>
-        
+        </TouchableOpacity> */}
         <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
           <View style={styles.captureButtonInner} />
         </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.footerButton}
-          onPress={toggleCameraType}
-        >
+        {/* <TouchableOpacity style={styles.footerButton} onPress={toggleCameraType}>
           <MaterialIcons name="refresh" size={24} color="#ed5c01" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
-      {/* Modal for Previewing the Photo */}
       <Modal
         animationType="slide"
-        transparent={true}
+        transparent
         visible={isModalVisible}
         onRequestClose={() => setIsModalVisible(false)}
       >
@@ -162,19 +139,20 @@ export default function CameraScreen({ navigation }) {
             <Image source={{ uri: photo }} style={styles.modalImage} />
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.modalButton} onPress={handleUsePhoto}>
-                <Text style={styles.modalButtonText}>Use photo</Text>
+                <Text style={styles.modalButtonText}>Use Photo</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalButton} onPress={handleRetakePhoto}>
-                <Text style={styles.modalButtonText}>take photo</Text>
+                <Text style={styles.modalButtonText}>Retake Photo</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
+
       {loading && (
         <View style={styles.loadingContainer}>
           <LottieView
-            source={require('../animation/animation_scan.json')} // Thay bằng đường dẫn của bạn
+            source={require('../animation/animation_scan.json')}
             autoPlay
             loop
             style={styles.lottieAnimation}
@@ -225,15 +203,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 20,
   },
-  controlButton: {
-    padding: 10,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 20,
-  },
-  speedText: {
-    color: 'white',
-    fontSize: 16,
-  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -245,9 +214,9 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   captureButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: 'transparent',
     borderWidth: 4,
     borderColor: '#ed5c01',
@@ -255,9 +224,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   captureButtonInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: '#ed5c01',
   },
   modalContainer: {

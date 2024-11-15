@@ -84,8 +84,8 @@ export default function RecipeRecommendations({ route, navigation }) {
             <Text style={styles.metaText}>{item.cookingMinutes}m</Text>
           </View>
           <View style={styles.metaItem}>
-            <MaterialIcons name="people" size={16} color="#FFF" />
-            <Text style={styles.metaText}>{item.servings}</Text>
+            <MaterialIcons name="whatshot" size={16} color="#FFF" />
+            <Text style={styles.metaText}>{item.calories}</Text>
           </View>
         </View>
       </View>
