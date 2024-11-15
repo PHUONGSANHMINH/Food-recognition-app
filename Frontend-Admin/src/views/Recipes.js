@@ -14,7 +14,7 @@ import {
 import React, { useState, useEffect } from "react";
 import Header from "components/Headers/HeaderRecipeList.js";
 
-const Tables = () => {
+const Recipes = () => {
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
@@ -271,4 +271,4 @@ const Tables = () => {
   );
 };
 
-export default Tables;
+export default Recipes;
