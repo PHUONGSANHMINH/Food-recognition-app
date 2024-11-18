@@ -16,9 +16,24 @@ import {
   Media,
 } from "reactstrap";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { jwtDecode } from "jwt-decode";
+import { useEffect, useState } from "react";
 
 const AdminNavbar = (props) => {
+  const [userName, setUserName] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserName = async () => {
+      const token = await AsyncStorage.getItem("access_token");
+      if (token) {
+        const decoded = jwtDecode(token);
+        setUserName(decoded.sub); // Giả sử tên người dùng được lưu trong thuộc tính `name` của JWT
+      }
+    };
+
+    fetchUserName();
+  }, []);
 
   const handleLogout = async (e) => {
     e.preventDefault();
@@ -40,18 +55,6 @@ const AdminNavbar = (props) => {
           >
             {props.brandText}
           </Link>
-          <Form className="navbar-search navbar-search-dark form-inline mr-3 d-none d-md-flex ml-lg-auto">
-            <FormGroup className="mb-0">
-              <InputGroup className="input-group-alternative">
-                <InputGroupAddon addonType="prepend">
-                  <InputGroupText>
-                    <i className="fas fa-search" />
-                  </InputGroupText>
-                </InputGroupAddon>
-                <Input placeholder="Search" type="text" />
-              </InputGroup>
-            </FormGroup>
-          </Form>
           <Nav className="align-items-center d-none d-md-flex" navbar>
             <UncontrolledDropdown nav>
               <DropdownToggle className="pr-0" nav>
@@ -59,12 +62,12 @@ const AdminNavbar = (props) => {
                   <span className="avatar avatar-sm rounded-circle">
                     <img
                       alt="..."
-                      src={require("../../assets/img/theme/team-4-800x800.jpg")}
+                      src={require("../../assets/img/theme/chef.png")}
                     />
                   </span>
                   <Media className="ml-2 d-none d-lg-block">
                     <span className="mb-0 text-sm font-weight-bold">
-                      Jessica Jones
+                      {userName}
                     </span>
                   </Media>
                 </Media>

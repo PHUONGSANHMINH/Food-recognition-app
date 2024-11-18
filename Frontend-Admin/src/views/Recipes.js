@@ -10,8 +10,10 @@ import {
   Container,
   Row,
   Input,
+  Button
 } from "reactstrap";
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "components/Headers/HeaderRecipeList.js";
 
 const Recipes = () => {
@@ -26,6 +28,7 @@ const Recipes = () => {
   const [hoveredImage, setHoveredImage] = useState(null);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
   const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN;
+  const navigate = useNavigate();
 
   const fetchTotalRecords = async (keyword = '') => {
     try {
@@ -55,11 +58,7 @@ const Recipes = () => {
       const result = await response.json();
       setData(result || []);
 
-      if (!keyword) {
-        fetchTotalRecords();
-      } else {
-        fetchTotalRecords(keyword);
-      }
+      fetchTotalRecords(keyword);
     } catch (error) {
       console.error("Error fetching data: ", error);
       setError(error.message);
@@ -73,7 +72,11 @@ const Recipes = () => {
   }, [currentPage, itemsPerPage, searchKeyword]);
 
   useEffect(() => {
+    if (searchKeyword) {
+      fetchTotalRecords(searchKeyword);
+    } else {
       fetchTotalRecords();
+    }
   }, [searchKeyword]);
 
   const paginate = (pageNumber) => {
@@ -98,15 +101,30 @@ const Recipes = () => {
     setCurrentPage(1);
   };
 
+  const handleAddRecipe = (e) => {
+    // Implement navigation to add recipe page or modal
+    e.preventDefault();
+    navigate('/admin/recipes/add-recipe');
+  };
+
   return (
     <>
       <Header />
       <Container className="mt--7" fluid>
         <Row>
           <div className="col">
-            <Card className="shadow">
+            <Card className="shadow fixed-height">
               <CardHeader className="border-0">
-                <h3 className="mb-0">Dish Recipe</h3>
+                <div className="d-flex justify-content-between align-items-center">
+                  <h3 className="mb-0">Dish Recipe</h3>
+                  <Button
+                    color="success"
+                    onClick={handleAddRecipe}
+                    className="mb-3"
+                  >
+                    Add Recipe
+                  </Button>
+                </div>
                 <Input
                   type="text"
                   placeholder="Search..."
@@ -115,67 +133,68 @@ const Recipes = () => {
                   className="mt-3"
                 />
               </CardHeader>
-              <Table className="align-items-center table-flush" responsive>
-                <thead className="thead-light">
-                  <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Image</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Summary</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    // Hiển thị skeleton khi đang tải
-                    Array.from({ length: 5 }).map((_, index) => (
-                      <tr key={index} className="skeleton-row">
-                        <td><div className="skeleton skeleton-text" /></td>
-                        <td><div className="skeleton skeleton-image" /></td>
-                        <td><div className="skeleton skeleton-text" /></td>
-                        <td><div className="skeleton skeleton-text" /></td>
-                      </tr>
-                    ))
-                  ) : error ? (
+              <div className="fixed-table-container">
+                <Table className="align-items-center table-flush" responsive>
+                  <thead className="thead-light">
                     <tr>
-                      <td colSpan="4" className="text-center text-danger">
-                        {error}
-                      </td>
+                      <th scope="col">Name</th>
+                      <th scope="col">Image</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Summary</th>
                     </tr>
-                  ) : data && data.length > 0 ? (
-                    data.map((item) => (
-                      <tr key={item.id_recipe}>
-                        <td>{item.name_recipe}</td>
-                        <td>
-                          <Media>
-                            <a href="#pablo" onClick={(e) => e.preventDefault()}>
-                              <img
-                                alt={item.name_recipe}
-                                src={`${apiDomain}/api/file/get-file/recipes/${item.image}`}
-                                style={{
-                                  width: "50px",
-                                  height: "50px",
-                                  borderRadius: "5px",
-                                }}
-                                onMouseEnter={(e) => handleMouseEnter(e, `${apiDomain}/api/file/get-file/recipes/${item.image}`)}
-                                onMouseLeave={handleMouseLeave}
-                              />
-                            </a>
-                          </Media>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      Array.from({ length: 5 }).map((_, index) => (
+                        <tr key={index} className="skeleton-row">
+                          <td><div className="skeleton skeleton-text" /></td>
+                          <td><div className="skeleton skeleton-image" /></td>
+                          <td><div className="skeleton skeleton-text" /></td>
+                          <td><div className="skeleton skeleton-text" /></td>
+                        </tr>
+                      ))
+                    ) : error ? (
+                      <tr>
+                        <td colSpan="4" className="text-center text-danger">
+                          {error}
                         </td>
-                        <td>{item.status}</td>
-                        <td>{item.summary}</td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="4" className="text-center">
-                        Không có dữ liệu để hiển thị
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </Table>
-              <CardFooter className="py-4">
+                    ) : data && data.length > 0 ? (
+                      data.map((item) => (
+                        <tr key={item.id_recipe}>
+                          <td>{item.name_recipe}</td>
+                          <td>
+                            <Media>
+                              <a href="#pablo" onClick={(e) => e.preventDefault()}>
+                                <img
+                                  alt={item.name_recipe}
+                                  src={`${apiDomain}/api/file/get-file/recipes/${item.image}`}
+                                  style={{
+                                    width: "50px",
+                                    height: "50px",
+                                    borderRadius: "5px",
+                                  }}
+                                  onMouseEnter={(e) => handleMouseEnter(e, `${apiDomain}/api/file/get-file/recipes/${item.image}`)}
+                                  onMouseLeave={handleMouseLeave}
+                                />
+                              </a>
+                            </Media>
+                          </td>
+                          <td>{item.status}</td>
+                          <td>{item.summary}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="text-center">
+                          Không có dữ liệu để hiển thị
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </Table>
+              </div>
+              <CardFooter className="py-4 fixed-footer">
                 <nav aria-label="...">
                   <Pagination className="pagination justify-content-end mb-0">
                     {Array.from({ length: totalPages }, (_, index) => (
@@ -202,8 +221,25 @@ const Recipes = () => {
         </div>
       )}
 
-      {/* CSS styles */}
       <style jsx>{`
+        .fixed-height {
+          height: 60vh;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .fixed-table-container {
+          flex: 1;
+          overflow-y: auto;
+        }
+
+        .fixed-footer {
+          position: sticky;
+          bottom: 0;
+          background: white;
+          z-index: 10;
+        }
+
         .popup {
           position: absolute;
           z-index: 1000;
