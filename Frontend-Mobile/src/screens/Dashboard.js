@@ -39,7 +39,7 @@ const api = {
 
 const Header = ({ onSearch, onLogout }) => {
   const [searchText, setSearchText] = useState('');
-  const [showLogout, setShowLogout] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const navigation = useNavigation();
 
   const debouncedSearch = useCallback(
@@ -70,6 +70,16 @@ const Header = ({ onSearch, onLogout }) => {
     }
   };
 
+  const handleContributionPress = () => {
+    setShowModal(false);
+    navigation.navigate('Contribution');
+  };
+
+  const handleFavouritesPress = () => {
+    setShowModal(false);
+    navigation.navigate('Favourites');
+  };
+
   return (
     <SafeAreaView style={styles.headerContainer}>
       <View style={styles.header}>
@@ -89,7 +99,7 @@ const Header = ({ onSearch, onLogout }) => {
 
         <TouchableOpacity
           style={styles.avatarContainer}
-          onPress={() => setShowLogout(true)}
+          onPress={() => setShowModal(true)}
         >
           <Image
             source={require('../assets/chef.png')}
@@ -98,25 +108,55 @@ const Header = ({ onSearch, onLogout }) => {
         </TouchableOpacity>
 
         <Modal
-          visible={showLogout}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setShowLogout(false)}
+        visible={showModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowModal(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowModal(false)}
         >
-          <Pressable
-            style={styles.modalOverlay}
-            onPress={() => setShowLogout(false)}
-          >
-            <View style={styles.logoutContainer}>
-              <TouchableOpacity
-                style={styles.logoutButton}
-                onPress={handleLogout}
+          <View style={styles.logoutContainer}>
+            <View style={styles.additionalButtonsContainer}>
+              <TouchableOpacity style={styles.squareButton}
+                onPress={handleContributionPress}
               >
-                <Text style={styles.logoutText}>Logout</Text>
+                <Image 
+                  source={require('../assets/star.png')} 
+                  style={styles.squareButtonIcon} 
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.squareButton}>
+                <Image 
+                  source={require('../assets/blender.png')} 
+                  style={styles.squareButtonIcon} 
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.squareButton}
+                onPress={handleFavouritesPress}
+              >
+                <Image 
+                  source={require('../assets/favourite.png')} 
+                  style={styles.squareButtonIcon} 
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.squareButton}>
+                <Image 
+                  source={require('../assets/chef.png')} 
+                  style={styles.squareButtonIcon} 
+                />
               </TouchableOpacity>
             </View>
-          </Pressable>
-        </Modal>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <Text style={styles.logoutText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
       </View>
     </SafeAreaView>
   );
@@ -319,6 +359,24 @@ const RecipeList = () => {
 };
 
 const styles = StyleSheet.create({
+  additionalButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  squareButton: {
+    width: 60,
+    height: 60,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+  },
+  squareButtonIcon: {
+    width: 30,
+    height: 30,
+  },
   bounceButtonContainer: {
     position: 'absolute',
     bottom: 20,

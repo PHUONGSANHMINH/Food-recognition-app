@@ -167,7 +167,7 @@ export default function CameraScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ed5c010f',
+    backgroundColor: '#ffffff',
   },
   header: {
     flexDirection: 'row',

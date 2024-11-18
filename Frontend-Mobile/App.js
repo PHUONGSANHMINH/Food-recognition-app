@@ -11,7 +11,9 @@ import {
   Dashboard,
   CameraScreen,
   RecipeRecommendationsScreen,
-  RecipeDetailScreen
+  RecipeDetailScreen,
+  ContributionScreen,
+  FavouritesScreen
 } from './src/screens'
 
 const Stack = createStackNavigator()
@@ -31,8 +33,10 @@ export default function App() {
           <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
           <Stack.Screen name="Dashboard" component={Dashboard} />
           <Stack.Screen name="Camera" component={CameraScreen} />
+          <Stack.Screen name="Contribution" component={ContributionScreen} />
+          <Stack.Screen name="Favourites" component={FavouritesScreen} />
           <Stack.Screen name="RecipeRecommendations" component={RecipeRecommendationsScreen} />
-          <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} options={{ headerShown: false }}/>
+          <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
           <Stack.Screen
             name="ResetPasswordScreen"
             component={ResetPasswordScreen}
