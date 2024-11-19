@@ -11,10 +11,11 @@ import {
   Col,
 } from "reactstrap";
 import React, { useState } from "react";
-import UserHeader from "components/Headers/UserHeader.js";
+import HeaderAddRecipe from "components/Headers/HeaderAddRecipe.js";
 
 const AddRecipe = () => {
-  const [recipe, setRecipe] = useState({
+  const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN;
+  const initialRecipeState = {
     name_recipe: "",
     type: "",
     status: "pending",
@@ -30,7 +31,7 @@ const AddRecipe = () => {
       cholesterol: "",
       sodium: "",
       protein: "",
-      alcohol: "",
+      alcohol: ""
     },
     vitamins: [{
       protein: "",
@@ -49,16 +50,32 @@ const AddRecipe = () => {
       vitamin_b12: "",
       fiber: ""
     }]
-  });
+  };
 
+  const [recipe, setRecipe] = useState(initialRecipeState);
   const [recipeImage, setRecipeImage] = useState(null);
   const [ingredientImages, setIngredientImages] = useState([null]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleRecipeChange = (e) => {
     const { name, value } = e.target;
     setRecipe(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handleVitaminChange = (index, e) => {
+    const { name, value } = e.target;
+    const newVitamins = [...recipe.vitamins];
+    newVitamins[index] = {
+      ...newVitamins[index],
+      [name]: value
+    };
+    setRecipe(prev => ({
+      ...prev,
+      vitamins: newVitamins
     }));
   };
 
@@ -114,45 +131,109 @@ const AddRecipe = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    const formData = new FormData();
-    formData.append('recipe_data', JSON.stringify(recipe));
-    if (recipeImage) {
-      formData.append('image', recipeImage);
-    }
-    
-    ingredientImages.forEach((image, index) => {
-      if (image) {
-        formData.append('ingredients_images', image);
-      }
-    });
-
-    try {
-      const response = await fetch('/api/recipe/add', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to add recipe');
-      }
-
-      const result = await response.json();
-      console.log('Recipe added successfully:', result);
-      // Add navigation logic here
-    } catch (error) {
-      console.error('Error adding recipe:', error);
-    }
+  const removeIngredient = (index) => {
+    setRecipe(prev => ({
+      ...prev,
+      ingredients: prev.ingredients.filter((_, i) => i !== index)
+    }));
+    setIngredientImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  const removeStep = (index) => {
+    setRecipe(prev => ({
+      ...prev,
+      steps: prev.steps
+        .filter((_, i) => i !== index)
+        .map((step, i) => ({ ...step, step_number: i + 1 }))
+    }));
+  };
+
+  const handleIngredientImageChange = (index, e) => {
+    const newIngredientImages = [...ingredientImages];
+    newIngredientImages[index] = e.target.files[0];
+    setIngredientImages(newIngredientImages);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+        const formData = new FormData();
+
+        // Chuyển các chuỗi số thành số trong đối tượng công thức
+        const processedRecipe = {
+            ...recipe,
+            ingredients: recipe.ingredients.map(ing => ({
+                name_ingredient: ing.name_ingredient,
+                quantity: Number(ing.quantity) || 0,
+                unit: ing.unit
+            })),
+            nutrition: Object.entries(recipe.nutrition).reduce((acc, [key, value]) => ({
+                ...acc,
+                [key]: Number(value) || 0
+            }), {}),
+            vitamins: recipe.vitamins.map(vitamin =>
+                Object.entries(vitamin).reduce((acc, [key, value]) => ({
+                    ...acc,
+                    [key]: Number(value) || 0
+                }), {})
+            )
+        };
+
+        console.log(JSON.stringify(processedRecipe));
+
+        // Thêm recipe_data như chuỗi JSON
+        formData.append('recipe_data', JSON.stringify(processedRecipe));
+
+        // Thêm hình ảnh công thức nếu có chọn
+        if (recipeImage) {
+            formData.append('image', recipeImage);
+        }
+
+        // Thêm hình ảnh nguyên liệu nếu có chọn
+        ingredientImages.forEach((image, index) => {
+            if (image) {
+                formData.append('ingredients_images', image);
+            }
+        });
+
+        // Gửi yêu cầu đến API
+        const response = await fetch(`${apiDomain}/api/recipe/add`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to add recipe');
+        }
+
+        const responseData = await response.json();
+        console.log('Success:', responseData);
+
+        // Đặt lại form
+        setRecipe(initialRecipeState);
+        setRecipeImage(null);
+        setIngredientImages([null]);
+        alert('Recipe added successfully!');
+
+    } catch (error) {
+        console.error('Error adding recipe:', error);
+        setError(error.message);
+    } finally {
+        setLoading(false);
+    }
+};
+
+  // Rest of the component remains the same (JSX)
   return (
     <>
-      <UserHeader />
+      <HeaderAddRecipe />
       <Container className="mt--7" fluid>
         <Row>
           <Col className="order-xl-1" xl="12">
@@ -165,6 +246,12 @@ const AddRecipe = () => {
                 </Row>
               </CardHeader>
               <CardBody>
+                {error && (
+                  <div className="alert alert-danger" role="alert">
+                    {error}
+                  </div>
+                )}
+                
                 <Form onSubmit={handleSubmit}>
                   {/* Basic Recipe Information */}
                   <h6 className="heading-small text-muted mb-4">Recipe Information</h6>
@@ -222,12 +309,12 @@ const AddRecipe = () => {
                     </Row>
                   </div>
 
-                  {/* Ingredients */}
+                  {/* Ingredients Section */}
                   <hr className="my-4" />
                   <h6 className="heading-small text-muted mb-4">Ingredients</h6>
                   <div className="pl-lg-4">
                     {recipe.ingredients.map((ingredient, index) => (
-                      <div key={index}>
+                      <div key={index} className="mb-3">
                         <Row>
                           <Col lg="4">
                             <FormGroup>
@@ -237,6 +324,7 @@ const AddRecipe = () => {
                                 name="name_ingredient"
                                 value={ingredient.name_ingredient}
                                 onChange={(e) => handleIngredientChange(index, e)}
+                                required
                               />
                             </FormGroup>
                           </Col>
@@ -244,10 +332,11 @@ const AddRecipe = () => {
                             <FormGroup>
                               <label className="form-control-label">Quantity</label>
                               <Input
-                                type="text"
+                                type="number"
                                 name="quantity"
                                 value={ingredient.quantity}
                                 onChange={(e) => handleIngredientChange(index, e)}
+                                required
                               />
                             </FormGroup>
                           </Col>
@@ -259,6 +348,7 @@ const AddRecipe = () => {
                                 name="unit"
                                 value={ingredient.unit}
                                 onChange={(e) => handleIngredientChange(index, e)}
+                                required
                               />
                             </FormGroup>
                           </Col>
@@ -267,15 +357,22 @@ const AddRecipe = () => {
                               <label className="form-control-label">Image</label>
                               <Input
                                 type="file"
-                                onChange={(e) => {
-                                  const newImages = [...ingredientImages];
-                                  newImages[index] = e.target.files[0];
-                                  setIngredientImages(newImages);
-                                }}
+                                onChange={(e) => handleIngredientImageChange(index, e)}
                                 accept="image/*"
                               />
                             </FormGroup>
                           </Col>
+                          {index > 0 && (
+                            <Col lg="2" className="d-flex align-items-center">
+                              <Button
+                                color="danger"
+                                size="sm"
+                                onClick={() => removeIngredient(index)}
+                              >
+                                Delete
+                              </Button>
+                            </Col>
+                          )}
                         </Row>
                       </div>
                     ))}
@@ -289,13 +386,13 @@ const AddRecipe = () => {
                     </Button>
                   </div>
 
-                  {/* Steps */}
+                  {/* Steps Section */}
                   <hr className="my-4" />
                   <h6 className="heading-small text-muted mb-4">Recipe Steps</h6>
                   <div className="pl-lg-4">
                     {recipe.steps.map((step, index) => (
-                      <Row key={index}>
-                        <Col lg="12">
+                      <Row key={index} className="mb-3">
+                        <Col lg="10">
                           <FormGroup>
                             <label className="form-control-label">Step {step.step_number}</label>
                             <Input
@@ -304,9 +401,21 @@ const AddRecipe = () => {
                               value={step.content}
                               onChange={(e) => handleStepChange(index, e)}
                               rows="2"
+                              required
                             />
                           </FormGroup>
                         </Col>
+                        {index > 0 && (
+                          <Col lg="2" className="d-flex align-items-center">
+                            <Button
+                              color="danger"
+                              size="sm"
+                              onClick={() => removeStep(index)}
+                            >
+                              Delete
+                            </Button>
+                          </Col>
+                        )}
                       </Row>
                     ))}
                     <Button
@@ -319,7 +428,7 @@ const AddRecipe = () => {
                     </Button>
                   </div>
 
-                  {/* Nutrition Information */}
+                  {/* Nutrition Section */}
                   <hr className="my-4" />
                   <h6 className="heading-small text-muted mb-4">Nutrition Information</h6>
                   <div className="pl-lg-4">
@@ -342,6 +451,17 @@ const AddRecipe = () => {
                             type="number"
                             name="fat"
                             value={recipe.nutrition.fat}
+                            onChange={handleNutritionChange}
+                          />
+                        </FormGroup>
+                      </Col>
+                      <Col lg="3">
+                        <FormGroup>
+                          <label className="form-control-label">Saturated Fat (g)</label>
+                          <Input
+                            type="number"
+                            name="saturated_fat"
+                            value={recipe.nutrition.saturated_fat}
                             onChange={handleNutritionChange}
                           />
                         </FormGroup>
@@ -372,9 +492,13 @@ const AddRecipe = () => {
                   </div>
 
                   <div className="pl-lg-4 mt-4">
-                    <Button color="primary" type="submit">
-                      Save Recipe
-                    </Button>
+                  <Button 
+                  color="primary" 
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading ? 'Saving...' : 'Save Recipe'}
+                </Button>
                   </div>
                 </Form>
               </CardBody>
