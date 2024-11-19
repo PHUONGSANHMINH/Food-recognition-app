@@ -8,3 +8,4 @@ export { default as RecipeRecommendationsScreen } from './RecipeRecommendationsS
 export { default as RecipeDetailScreen } from './RecipeDetailScreen'
 export { default as ContributionScreen } from './ContributionScreen'
 export { default as FavouritesScreen } from './FavouritesScreen'
+export { default as AddRecipeContributionScreen } from './AddRecipeContributionScreen'

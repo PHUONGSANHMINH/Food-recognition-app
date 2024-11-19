@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from app.controllers.recipes_controller import get_recipes, get_recipe_detail, contribute_recipe, get_total_records, add_new_recipe, check_favourite_status, get_favourite_recipes, toggle_favourite_recipe
+from app.controllers.recipes_controller import get_recipes, get_recipe_detail, contribute_recipe, get_total_records, add_new_recipe, check_favourite_status, get_favourite_recipes, toggle_favourite_recipe, get_user_contributions
 
 recipe_bp = Blueprint('recipe', __name__)
 
@@ -34,3 +34,9 @@ def toggle_favourite_view(recipe_id):
 def get_user_favourites():
     """Get all favourite recipes for current user"""
     return get_favourite_recipes()
+
+
+@recipe_bp.route('/contributions', methods=['GET'])
+def get_user_contributions_view():
+    """Get all recipe contributions for current user"""
+    return get_user_contributions()

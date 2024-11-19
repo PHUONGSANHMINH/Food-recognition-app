@@ -2,86 +2,135 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
   Image,
-  ActivityIndicator
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  ActivityIndicator,
+  RefreshControl
 } from 'react-native';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 
 const ContributionScreen = () => {
+  const navigation = useNavigation();
   const [contributions, setContributions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+
+  const fetchContributions = async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const response = await axios.get(
+        `${process.env.EXPO_PUBLIC_DOMAIN}api/recipe/contributions`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+      setContributions(response.data.contributions);
+      setLoading(false);
+    } catch (err) {
+      setError('Unable to load contributions list');
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchContributions();
   }, []);
 
-  const fetchContributions = async () => {
-    try {
-      // Replace with your actual API endpoint
-      const response = await axios.get(`${process.env.EXPO_PUBLIC_DOMAIN}api/contributions`);
-      setContributions(response.data);
-      setLoading(false);
-    } catch (err) {
-      setError('Failed to load contributions');
-      setLoading(false);
-    }
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchContributions().then(() => setRefreshing(false));
   };
 
   const renderContributionItem = ({ item }) => (
-    <View style={styles.contributionItem}>
-      <Image 
-        source={{ uri: item.image }} 
-        style={styles.contributionImage}
+    <TouchableOpacity
+      style={styles.recipeCard}
+      onPress={() => navigation.navigate('RecipeDetail', { recipeId: item.id_recipe })}
+    >
+      <Image
+        source={{
+          uri: item.image
+            ? `${process.env.EXPO_PUBLIC_DOMAIN}api/file/get-file/recipes/${item.image}`
+            : null
+        }}
+        style={styles.recipeImage}
         defaultSource={require('../assets/food-placeholder.png')}
       />
-      <View style={styles.contributionDetails}>
-        <Text style={styles.contributionTitle}>{item.name_recipe}</Text>
-        <View style={styles.statusContainer}>
-          <Text style={styles.contributionStatus(item.status)}>
-            {item.status === 'approved' ? 'Approved' : 'Pending Review'}
-          </Text>
-        </View>
+      <View style={styles.recipeInfo}>
+        <Text style={styles.recipeName} numberOfLines={2}>{item.name_recipe}</Text>
+        <Text
+          style={[
+            styles.recipeType,
+            item.accept_contribution ? styles.approvedStatus : styles.pendingStatus
+          ]}
+        >
+          {item.accept_contribution ? 'Approved' : 'Pending Review'}
+        </Text>
       </View>
-    </View>
+      {item.accept_contribution && (
+        <Ionicons name="checkmark-circle" size={24} color="green" style={styles.tickIcon} />
+      )}
+    </TouchableOpacity>
   );
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#ee4d2d" />
-      </View>
-    );
-  }
+  const renderContent = () => {
+    if (loading) {
+      return <ActivityIndicator size="large" color="#ee4d2d" />;
+    }
 
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity onPress={fetchContributions} style={styles.retryButton}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+    if (contributions.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No contributions yet</Text>
+          <Text style={styles.emptySubtext}>Feel free to add your recipes</Text>
+        </View>
+      );
+    }
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.screenTitle}>My Contributions</Text>
+    return (
       <FlatList
         data={contributions}
         renderItem={renderContributionItem}
-        keyExtractor={(item) => item.id.toString()}
-        ListEmptyComponent={() => (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No contributions yet</Text>
-          </View>
-        )}
+        keyExtractor={(item) => item.id_recipe.toString()}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={['#ee4d2d']}
+          />
+        }
       />
-    </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Image
+            source={require('../assets/arrow_back.png')}
+            style={styles.backIcon}
+          />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>My Contributions</Text>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => navigation.navigate('AddRecipeContribution')}
+        >
+          <Ionicons name="add" size={24} color="#ee4d2d" />
+        </TouchableOpacity>
+      </View>
+      {renderContent()}
+    </SafeAreaView>
   );
 };
 
@@ -90,81 +139,80 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f8f8',
   },
-  screenTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between', // Change to space-between
     padding: 16,
-    textAlign: 'center',
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
-  contributionItem: {
+  addButton: {
+    // Add style for the add button
+    padding: 8,
+  },
+  backButton: {
+    marginRight: 16,
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  recipeCard: {
     flexDirection: 'row',
     backgroundColor: 'white',
-    marginHorizontal: 12,
-    marginVertical: 6,
+    marginHorizontal: 16,
+    marginVertical: 8,
     borderRadius: 8,
     padding: 12,
+    alignItems: 'center',
     elevation: 2,
   },
-  contributionImage: {
+  recipeImage: {
     width: 80,
     height: 80,
     borderRadius: 8,
+    marginRight: 12,
   },
-  contributionDetails: {
+  recipeInfo: {
     flex: 1,
-    marginLeft: 12,
-    justifyContent: 'space-between',
   },
-  contributionTitle: {
+  recipeName: {
     fontSize: 16,
     fontWeight: '600',
   },
-  statusContainer: {
-    alignSelf: 'flex-start',
-    marginTop: 8,
+  recipeType: {
+    fontSize: 14,
+    marginTop: 4,
   },
-  contributionStatus: (status) => ({
-    fontSize: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    backgroundColor: status === 'approved' ? '#4CAF50' : '#FFC107',
-    color: 'white',
-  }),
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  approvedStatus: {
+    color: '#4CAF50',
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
+  pendingStatus: {
+    color: '#FFC107',
   },
-  errorText: {
-    fontSize: 16,
-    color: 'red',
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: '#ee4d2d',
-    padding: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: 'white',
-    textAlign: 'center',
+  tickIcon: { // Thêm style cho icon tick
+    marginLeft: 8,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '600',
     color: '#666',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
   },
 });
 

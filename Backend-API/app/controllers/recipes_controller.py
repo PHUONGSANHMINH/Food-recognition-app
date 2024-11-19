@@ -344,3 +344,41 @@ def check_favourite_status(id_recipe):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+
+@jwt_required()
+def get_user_contributions():
+    """
+    Lấy danh sách các công thức đóng góp của người dùng hiện tại
+    """
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # Thêm phân trang
+        page = request.args.get('page', 1, type=int)
+        limit = request.args.get('limit', 10, type=int)
+        
+        # Query với join để lấy thông tin chi tiết của các công thức do user đóng góp
+        contributions = db.session.query(RecipeInfo, RecipesContribution)\
+            .join(RecipesContribution, RecipesContribution.id_recipe == RecipeInfo.id_recipe)\
+            .filter(RecipesContribution.id_user == current_user_id)\
+            .paginate(page=page, per_page=limit, error_out=False)
+            
+        contributions_data = [{
+            'id_recipe': recipe.id_recipe,
+            'name_recipe': recipe.name_recipe,
+            'image': recipe.image,
+            'type': recipe.type,
+            'status': recipe.status,
+            'summary': recipe.summary,
+            'accept_contribution': contribution.accept_contribution
+        } for recipe, contribution in contributions.items]
+        
+        return jsonify({
+            'contributions': contributions_data,
+            'total': contributions.total,
+            'pages': contributions.pages,
+            'current_page': page
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
