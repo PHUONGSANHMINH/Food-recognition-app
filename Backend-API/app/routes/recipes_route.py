@@ -1,5 +1,16 @@
 from flask import Blueprint, request
-from app.controllers.recipes_controller import get_recipes, get_recipe_detail, contribute_recipe, get_total_records, add_new_recipe, check_favourite_status, get_favourite_recipes, toggle_favourite_recipe, get_user_contributions
+from app.controllers.recipes_controller import (
+    get_recipes,
+    get_recipe_detail,
+    contribute_recipe,
+    get_total_records,
+    add_new_recipe,
+    get_favourite_recipes,
+    toggle_favourite_recipe,
+    get_user_contributions,
+    get_total_unaccepted_recipes,
+    get_unaccepted_recipes
+)
 
 recipe_bp = Blueprint('recipe', __name__)
 
@@ -40,3 +51,12 @@ def get_user_favourites():
 def get_user_contributions_view():
     """Get all recipe contributions for current user"""
     return get_user_contributions()
+
+# Route mới để lấy tổng số các công thức chưa được chấp nhận
+@recipe_bp.route('/unaccepted_recipes', methods=['GET'])
+def get_total_unaccepted_recipes_view():
+    return get_total_unaccepted_recipes()
+
+@recipe_bp.route('/unaccepted_recipes_list', methods=['GET'])
+def get_unaccepted_recipes_view():
+    return get_unaccepted_recipes()

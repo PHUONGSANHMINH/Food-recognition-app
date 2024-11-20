@@ -12,43 +12,44 @@ import {
 } from "reactstrap";
 import React, { useState } from "react";
 import HeaderAddRecipe from "components/Headers/HeaderAddRecipe.js";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const AddRecipe = () => {
   const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN;
   const initialRecipeState = {
-    name_recipe: "",
-    type: "",
+    name_recipe: null,
+    type: null,
     status: "pending",
-    summary: "",
-    ingredients: [{ name_ingredient: "", quantity: "", unit: "" }],
-    steps: [{ step_number: 1, content: "" }],
+    summary: null,
+    ingredients: [{ name_ingredient: null, quantity: null, unit: null }],
+    steps: [{ step_number: 1, content: null }],
     nutrition: {
-      calories: "",
-      fat: "",
-      saturated_fat: "",
-      carbohydrates: "",
-      sugar: "",
-      cholesterol: "",
-      sodium: "",
-      protein: "",
-      alcohol: ""
+      calories: null,
+      fat: null,
+      saturated_fat: null,
+      carbohydrates: null,
+      sugar: null,
+      cholesterol: null,
+      sodium: null,
+      protein: null,
+      alcohol: null
     },
     vitamins: [{
-      protein: "",
-      calcium: "",
-      iron: "",
-      vitamin_a: "",
-      vitamin_c: "",
-      vitamin_d: "",
-      vitamin_e: "",
-      vitamin_k: "",
-      vitamin_b1: "",
-      vitamin_b2: "",
-      vitamin_b3: "",
-      vitamin_b5: "",
-      vitamin_b6: "",
-      vitamin_b12: "",
-      fiber: ""
+      protein: null,
+      calcium: null,
+      iron: null,
+      vitamin_a: null,
+      vitamin_c: null,
+      vitamin_d: null,
+      vitamin_e: null,
+      vitamin_k: null,
+      vitamin_b1: null,
+      vitamin_b2: null,
+      vitamin_b3: null,
+      vitamin_b5: null,
+      vitamin_b6: null,
+      vitamin_b12: null,
+      fiber: null
     }]
   };
 
@@ -58,6 +59,7 @@ const AddRecipe = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Handlers remain the same until handleSubmit
   const handleRecipeChange = (e) => {
     const { name, value } = e.target;
     setRecipe(prev => ({
@@ -119,7 +121,7 @@ const AddRecipe = () => {
   const addIngredient = () => {
     setRecipe(prev => ({
       ...prev,
-      ingredients: [...prev.ingredients, { name_ingredient: "", quantity: "", unit: "" }]
+      ingredients: [...prev.ingredients, { name_ingredient: null, quantity: null, unit: null }]
     }));
     setIngredientImages(prev => [...prev, null]);
   };
@@ -160,77 +162,76 @@ const AddRecipe = () => {
     setError(null);
 
     try {
-        const formData = new FormData();
+      const formData = new FormData();
 
-        // Chuyển các chuỗi số thành số trong đối tượng công thức
-        const processedRecipe = {
-            ...recipe,
-            ingredients: recipe.ingredients.map(ing => ({
-                name_ingredient: ing.name_ingredient,
-                quantity: Number(ing.quantity) || 0,
-                unit: ing.unit
-            })),
-            nutrition: Object.entries(recipe.nutrition).reduce((acc, [key, value]) => ({
-                ...acc,
-                [key]: Number(value) || 0
-            }), {}),
-            vitamins: recipe.vitamins.map(vitamin =>
-                Object.entries(vitamin).reduce((acc, [key, value]) => ({
-                    ...acc,
-                    [key]: Number(value) || 0
-                }), {})
-            )
-        };
+      // Process recipe data
+      const processedRecipe = {
+        ...recipe,
+        ingredients: recipe.ingredients.map(ing => ({
+          name_ingredient: ing.name_ingredient,
+          quantity: parseFloat(ing.quantity) || 0,
+          unit: ing.unit
+        })),
+        nutrition: Object.entries(recipe.nutrition).reduce((acc, [key, value]) => ({
+          ...acc,
+          [key]: parseFloat(value) || 0
+        }), {}),
+        vitamins: recipe.vitamins.map(vitamin =>
+          Object.entries(vitamin).reduce((acc, [key, value]) => ({
+            ...acc,
+            [key]: parseFloat(value) || 0
+          }), {})
+        )
+      };
 
-        console.log(JSON.stringify(processedRecipe));
+      // Add recipe data as JSON string
+      formData.append('recipe_data', JSON.stringify(processedRecipe));
 
-        // Thêm recipe_data như chuỗi JSON
-        formData.append('recipe_data', JSON.stringify(processedRecipe));
+      // Add recipe image if exists
+      if (recipeImage) {
+        formData.append('image', recipeImage);
+      }
 
-        // Thêm hình ảnh công thức nếu có chọn
-        if (recipeImage) {
-            formData.append('image', recipeImage);
+      // Add ingredient images if they exist
+      ingredientImages.forEach((image, index) => {
+        if (image) {
+          formData.append('ingredients_images', image);
         }
+      });
 
-        // Thêm hình ảnh nguyên liệu nếu có chọn
-        ingredientImages.forEach((image, index) => {
-            if (image) {
-                formData.append('ingredients_images', image);
-            }
-        });
-
-        // Gửi yêu cầu đến API
-        const response = await fetch(`${apiDomain}/api/recipe/add`, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to add recipe');
+      // Send request to API
+      const accessToken = await AsyncStorage.getItem("access_token");
+      const response = await fetch(`${apiDomain}/api/recipe/add`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
         }
+      });
 
-        const responseData = await response.json();
-        console.log('Success:', responseData);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add recipe');
+      }
 
-        // Đặt lại form
-        setRecipe(initialRecipeState);
-        setRecipeImage(null);
-        setIngredientImages([null]);
-        alert('Recipe added successfully!');
+      const responseData = await response.json();
+      console.log('Success:', responseData);
+
+      // Reset form
+      setRecipe(initialRecipeState);
+      setRecipeImage(null);
+      setIngredientImages([null]);
+      alert('Recipe added successfully!');
 
     } catch (error) {
-        console.error('Error adding recipe:', error);
-        setError(error.message);
+      console.error('Error adding recipe:', error);
+      setError(error.message);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
-  // Rest of the component remains the same (JSX)
+  // JSX remains largely the same, but add loading state to submit button
   return (
     <>
       <HeaderAddRecipe />

@@ -39,7 +39,11 @@ def add_new_recipe():
     try:
         # Lấy ID của user hiện tại từ JWT token
         current_user_id = get_jwt_identity()
-        
+        print(current_user_id)
+        if(current_user_id == 'admin'):
+            current_user_id = 1
+        print(current_user_id)
+
         # Lấy form data và files
         recipe_image = request.files.get('image')
         recipe_data = request.form.get('recipe_data')
@@ -382,3 +386,61 @@ def get_user_contributions():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+    
+@jwt_required()
+def get_total_unaccepted_recipes():
+    total_unaccepted_recipes = RecipesContribution.query.filter_by(accept_contribution=False).count()
+    return jsonify({'total_unaccepted_recipes': total_unaccepted_recipes})
+
+def get_unaccepted_recipes():
+    try:
+        unaccepted_recipes = RecipesContribution.query.filter_by(accept_contribution=False).all()
+        
+        recipes_data = []
+        for contribution in unaccepted_recipes:
+            recipe = RecipeInfo.query.get(contribution.id_recipe)
+            if recipe:
+                # Lấy danh sách nguyên liệu
+                ingredients = RecipeIngredients.query.filter_by(id_recipe=recipe.id_recipe).all()
+                ingredients_data = [{'name_ingredient': ing.name_ingredient, 'quantity': ing.quantity, 'unit': ing.unit, 'image': ing.image} for ing in ingredients]
+
+                # Lấy thông tin dinh dưỡng
+                nutrition = RecipeNutrition.query.filter_by(id_recipe=recipe.id_recipe).first()
+                nutrition_data = {
+                    'calories': nutrition.calories,
+                    'fat': nutrition.fat,
+                    'saturated_fat': nutrition.saturated_fat,
+                    'carbohydrates': nutrition.carbohydrates,
+                    'sugar': nutrition.sugar,
+                    'cholesterol': nutrition.cholesterol,
+                    'sodium': nutrition.sodium,
+                    'protein': nutrition.protein,
+                    'alcohol': nutrition.alcohol
+                } if nutrition else {}
+
+                # Lấy thông tin vitamin
+                vitamins = RecipeVitamin.query.filter_by(id_nutrition=nutrition.id_nutrition).all() if nutrition else []
+                vitamins_data = [{'protein': vit.protein, 'calcium': vit.calcium, 'iron': vit.iron, 'vitamin_a': vit.vitamin_a, 'vitamin_c': vit.vitamin_c, 'vitamin_d': vit.vitamin_d, 'vitamin_e': vit.vitamin_e, 'vitamin_k': vit.vitamin_k, 'vitamin_b1': vit.vitamin_b1, 'vitamin_b2': vit.vitamin_b2, 'vitamin_b3': vit.vitamin_b3, 'vitamin_b5': vit.vitamin_b5, 'vitamin_b6': vit.vitamin_b6, 'vitamin_b12': vit.vitamin_b12, 'fiber': vit.fiber} for vit in vitamins]
+
+                # Lấy các bước thực hiện
+                steps = RecipeSteps.query.filter_by(id_recipe=recipe.id_recipe).all()
+                steps_data = [{'step_number': step.step_number, 'content': step.content} for step in steps]
+
+                # Tổng hợp tất cả thông tin
+                recipes_data.append({
+                    'id_recipe': recipe.id_recipe,
+                    'name_recipe': recipe.name_recipe,
+                    'image': recipe.image,
+                    'type': recipe.type,
+                    'status': recipe.status,
+                    'summary': recipe.summary,
+                    'ingredients': ingredients_data,
+                    'nutrition': nutrition_data,
+                    'vitamins': vitamins_data,
+                    'steps': steps_data
+                })
+
+        return jsonify(recipes_data)
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

@@ -1,25 +1,41 @@
-/*!
-
-=========================================================
-* Argon Dashboard React - v1.2.4
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/argon-dashboard-react
-* Copyright 2024 Creative Tim (https://www.creative-tim.com)
-* Licensed under MIT (https://github.com/creativetimofficial/argon-dashboard-react/blob/master/LICENSE.md)
-
-* Coded by Creative Tim
-
-=========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-*/
-
-// reactstrap components
+import React, { useEffect, useState } from "react";
 import { Card, CardBody, CardTitle, Container, Row, Col } from "reactstrap";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 const Header = () => {
+  const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN;
+  const [unacceptedRecipes, setUnacceptedRecipes] = useState(0);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchUnacceptedRecipes = async () => {
+      try {
+        const accessToken = await AsyncStorage.getItem("access_token");
+        if (!accessToken) {
+          throw new Error("Access token is missing");
+        }
+
+        const response = await axios.get(`${apiDomain}/api/recipe/unaccepted_recipes`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+
+        setUnacceptedRecipes(response.data.total_unaccepted_recipes);
+      } catch (error) {
+        if (error.response && error.response.status === 401) {
+          setError("Unauthorized access. Please log in again.");
+        } else {
+          setError("Error fetching unaccepted recipes.");
+        }
+        console.error("Error fetching unaccepted recipes:", error);
+      }
+    };
+
+    fetchUnacceptedRecipes();
+  }, [apiDomain]);
+
   return (
     <>
       <div className="header bg-gradient-warning pb-8 pt-5 pt-md-8">
@@ -36,10 +52,10 @@ const Header = () => {
                           tag="h5"
                           className="text-uppercase text-muted mb-0"
                         >
-                          Traffic
+                          Unaccepted recipes
                         </CardTitle>
                         <span className="h2 font-weight-bold mb-0">
-                          350,897
+                          {error ? "Error" : unacceptedRecipes}
                         </span>
                       </div>
                       <Col className="col-auto">
@@ -150,3 +166,4 @@ const Header = () => {
 };
 
 export default Header;
+

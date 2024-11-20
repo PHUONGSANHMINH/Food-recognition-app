@@ -10,9 +10,9 @@ CORS(app)
 with app.app_context():
     db.create_all()
     # Tạo người dùng mẫu nếu chưa có
-    if not User.query.filter_by(username='test').first():
-        user = User(username='test', email='test@gmail.com')
-        user.set_password('testpassword')
+    if not User.query.filter_by(username='admin').first():
+        user = User(username='admin', email='admin@gmail.com')
+        user.set_password('admin')
         db.session.add(user)
         db.session.commit()
 
