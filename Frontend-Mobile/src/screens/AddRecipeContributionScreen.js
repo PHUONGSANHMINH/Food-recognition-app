@@ -85,6 +85,11 @@ const AddRecipeContributionScreen = () => {
   const removeIngredient = (index) => {
     const updatedIngredients = ingredients.filter((_, i) => i !== index);
     setIngredients(updatedIngredients);
+    
+    // Remove the corresponding ingredient image
+    const updatedIngredientImages = [...ingredientImages];
+    updatedIngredientImages.splice(index, 1);
+    setIngredientImages(updatedIngredientImages);
   };
 
   const removeStep = (index) => {
@@ -176,51 +181,67 @@ const AddRecipeContributionScreen = () => {
 
   const renderIngredientInputs = () => {
     return ingredients.map((ingredient, index) => (
-      <View key={index} style={styles.ingredientRow}>
-        <TextInput
-          style={styles.ingredientInput}
-          placeholder="Ingredient Name"
-          value={ingredient.name_ingredient}
-          onChangeText={(text) => {
-            const newIngredients = [...ingredients];
-            newIngredients[index].name_ingredient = text;
-            setIngredients(newIngredients);
-          }}
-        />
-        <TextInput
-          style={styles.quantityInput}
-          placeholder="Qty"
-          value={ingredient.quantity}
-          keyboardType="numeric"
-          onChangeText={(text) => {
-            const newIngredients = [...ingredients];
-            newIngredients[index].quantity = text;
-            setIngredients(newIngredients);
-          }}
-        />
-        <TextInput
-          style={styles.unitInput}
-          placeholder="Unit"
-          value={ingredient.unit}
-          onChangeText={(text) => {
-            const newIngredients = [...ingredients];
-            newIngredients[index].unit = text;
-            setIngredients(newIngredients);
-          }}
-        />
-        <TouchableOpacity onPress={() => pickIngredientImage(index)}>
-        {ingredientImages[index] ? (
-          <Image
-            source={{ uri: ingredientImages[index].uri }}
-            style={{ width: 50, height: 50, borderRadius: 5, marginRight: 8 }}
-          />
-        ) : (
-          <Ionicons name="camera" size={24} color="#ee4d2d" />
-        )}
-      </TouchableOpacity>
-        <TouchableOpacity onPress={() => removeIngredient(index)}>
-            <Ionicons name="trash" size={24} color="#ee4d2d" />
+      <View key={index} style={styles.ingredientContainer}>
+        <View style={styles.ingredientHeader}>
+        <Text style={styles.ingredientNumber}>Ingredient #{index + 1}</Text>
+        <TouchableOpacity 
+          onPress={() => removeIngredient(index)} 
+          style={styles.deleteIngredientButton}
+        >
+          <Ionicons name="trash-outline" size={24} color="#ee4d2d" />
         </TouchableOpacity>
+      </View>
+        <View style={styles.ingredientDetailsRow}>
+          <TextInput
+            style={styles.ingredientInput}
+            placeholder="Ingredient Name"
+            value={ingredient.name_ingredient}
+            onChangeText={(text) => {
+              const newIngredients = [...ingredients];
+              newIngredients[index].name_ingredient = text;
+              setIngredients(newIngredients);
+            }}
+          />
+          <TextInput
+            style={styles.quantityInput}
+            placeholder="Qty"
+            value={ingredient.quantity}
+            keyboardType="numeric"
+            onChangeText={(text) => {
+              const newIngredients = [...ingredients];
+              newIngredients[index].quantity = text;
+              setIngredients(newIngredients);
+            }}
+          />
+          <TextInput
+            style={styles.unitInput}
+            placeholder="Unit"
+            value={ingredient.unit}
+            onChangeText={(text) => {
+              const newIngredients = [...ingredients];
+              newIngredients[index].unit = text;
+              setIngredients(newIngredients);
+            }}
+          />
+        </View>
+        <View style={styles.ingredientActionRow}>
+          <TouchableOpacity 
+            onPress={() => pickIngredientImage(index)} 
+            style={styles.ingredientImagePicker}
+          >
+            {ingredientImages[index] ? (
+              <Image
+                source={{ uri: ingredientImages[index].uri }}
+                style={styles.ingredientImagePreview}
+              />
+            ) : (
+              <View style={styles.ingredientImagePlaceholder}>
+                <Ionicons name="camera" size={32} color="#ee4d2d" />
+                <Text style={styles.ingredientImageText}>Add Ingredient Image</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     ));
   };
@@ -228,7 +249,15 @@ const AddRecipeContributionScreen = () => {
   const renderStepInputs = () => {
     return steps.map((step, index) => (
       <View key={index} style={styles.stepRow}>
-        <Text style={styles.stepNumber}>Step {index + 1}</Text>
+        <View style={styles.stepHeader}>
+          <Text style={styles.stepNumber}>Step {index + 1}</Text>
+          <TouchableOpacity 
+            onPress={() => removeStep(index)} 
+            style={styles.deleteStepButton}
+          >
+            <Ionicons name="trash" size={24} color="#ee4d2d" />
+          </TouchableOpacity>
+        </View>
         <TextInput
           style={styles.stepInput}
           placeholder="Step description"
@@ -241,9 +270,6 @@ const AddRecipeContributionScreen = () => {
             setSteps(newSteps);
           }}
         />
-        <TouchableOpacity onPress={() => removeStep(index)}>
-            <Ionicons name="trash" size={24} color="#ee4d2d" />
-        </TouchableOpacity>
       </View>
     ));
   };
@@ -331,15 +357,18 @@ const AddRecipeContributionScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#f5f5f5',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   backButton: {
     marginRight: 16,
@@ -349,108 +378,242 @@ const styles = StyleSheet.create({
     height: 24,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#333',
   },
   formContainer: {
     padding: 16,
   },
   imagePicker: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   imagePreview: {
-    width: 200,
-    height: 200,
-    borderRadius: 10,
-  },
-  imagePlaceholder: {
-    width: 200,
-    height: 200,
+    width: 250,
+    height: 250,
+    borderRadius: 15,
     borderWidth: 2,
     borderColor: '#ee4d2d',
-    borderRadius: 10,
+  },
+  imagePlaceholder: {
+    width: 250,
+    height: 250,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#ee4d2d',
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#fff5f0',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
+    borderColor: '#e0e0e0',
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 8,
+    backgroundColor: 'white',
   },
   multilineInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
-    minHeight: 100,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
+    borderColor: '#e0e0e0',
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 8,
+    minHeight: 120,
+    textAlignVertical: 'top',
+    backgroundColor: 'white',
   },
   ingredientRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   ingredientInput: {
     flex: 3,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#e0e0e0',
     padding: 8,
     marginRight: 4,
+    borderRadius: 6,
+    height: 40,
   },
   quantityInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#e0e0e0',
     padding: 8,
     marginRight: 4,
+    borderRadius: 6,
   },
   unitInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#e0e0e0',
     padding: 8,
     marginRight: 4,
+    borderRadius: 6,
+  },
+  ingredientContainer: {
+    marginBottom: 10,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  ingredientDetailsRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  ingredientActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  ingredientHeader: {
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    paddingBottom: 8,
+  },
+  ingredientNumber: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ee4d2d',
+  },
+  ingredientImagePicker: {
+    flex: 1,
+    marginRight: 10,
+  },
+  ingredientImagePlaceholder: {
+    width: '100%',
+    height: 100,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#ee4d2d',
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff5f0',
+  },
+  ingredientImageText: {
+    marginTop: 8,
+    color: '#ee4d2d',
+  },
+  ingredientImagePreview: {
+    width: '100%',
+    height: 100,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: '#ee4d2d',
+  },
+  ingredientHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    paddingBottom: 8,
+  },
+  deleteIngredientButton: {
+    backgroundColor: '#fff0f0',
+    borderRadius: 20,
+    padding: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 12,
+    color: '#333',
+  },
+  stepHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   stepRow: {
     marginBottom: 16,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   stepNumber: {
     fontWeight: 'bold',
     marginBottom: 8,
+    color: '#ee4d2d',
   },
   stepInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#e0e0e0',
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 6,
     minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  deleteStepButton: {
+    backgroundColor: '#fff0f0',
+    borderRadius: 20,
+    padding: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   addButton: {
     backgroundColor: '#ee4d2d',
-    padding: 10,
-    borderRadius: 5,
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
   },
   addButtonText: {
     color: 'white',
     fontWeight: 'bold',
+    fontSize: 16,
   },
   submitButton: {
     backgroundColor: '#ee4d2d',
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 8,
     alignItems: 'center',
     marginTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
   },
   submitButtonText: {
     color: 'white',
