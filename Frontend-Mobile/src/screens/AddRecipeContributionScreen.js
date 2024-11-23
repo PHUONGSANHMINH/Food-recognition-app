@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 const AddRecipeContributionScreen = () => {
   const navigation = useNavigation();
+  const [showVitaminForm, setShowVitaminForm] = useState(false);
   const [recipeName, setRecipeName] = useState('');
   const [recipeType, setRecipeType] = useState('');
   const [recipeSummary, setRecipeSummary] = useState('');
@@ -37,10 +38,10 @@ const AddRecipeContributionScreen = () => {
     alcohol: null
   });
   const [vitamins, setVitamins] = useState([{
-    protein: null, 
-    calcium: null, 
-    iron: null, 
-    vitamin_a: null, 
+    protein: null,
+    calcium: null,
+    iron: null,
+    vitamin_a: null,
     vitamin_c: null,
     vitamin_d: null,
     vitamin_e: null,
@@ -85,7 +86,7 @@ const AddRecipeContributionScreen = () => {
   const removeIngredient = (index) => {
     const updatedIngredients = ingredients.filter((_, i) => i !== index);
     setIngredients(updatedIngredients);
-    
+
     // Remove the corresponding ingredient image
     const updatedIngredientImages = [...ingredientImages];
     updatedIngredientImages.splice(index, 1);
@@ -123,9 +124,9 @@ const AddRecipeContributionScreen = () => {
 
     try {
       const token = await AsyncStorage.getItem('access_token');
-      
+
       const formData = new FormData();
-      
+
       // Add recipe image (optional)
       if (recipeImage) {
         formData.append('image', {
@@ -183,14 +184,14 @@ const AddRecipeContributionScreen = () => {
     return ingredients.map((ingredient, index) => (
       <View key={index} style={styles.ingredientContainer}>
         <View style={styles.ingredientHeader}>
-        <Text style={styles.ingredientNumber}>Ingredient #{index + 1}</Text>
-        <TouchableOpacity 
-          onPress={() => removeIngredient(index)} 
-          style={styles.deleteIngredientButton}
-        >
-          <Ionicons name="trash-outline" size={24} color="#ee4d2d" />
-        </TouchableOpacity>
-      </View>
+          <Text style={styles.ingredientNumber}>Ingredient #{index + 1}</Text>
+          <TouchableOpacity
+            onPress={() => removeIngredient(index)}
+            style={styles.deleteIngredientButton}
+          >
+            <Ionicons name="trash-outline" size={24} color="#ee4d2d" />
+          </TouchableOpacity>
+        </View>
         <View style={styles.ingredientDetailsRow}>
           <TextInput
             style={styles.ingredientInput}
@@ -225,8 +226,8 @@ const AddRecipeContributionScreen = () => {
           />
         </View>
         <View style={styles.ingredientActionRow}>
-          <TouchableOpacity 
-            onPress={() => pickIngredientImage(index)} 
+          <TouchableOpacity
+            onPress={() => pickIngredientImage(index)}
             style={styles.ingredientImagePicker}
           >
             {ingredientImages[index] ? (
@@ -251,8 +252,8 @@ const AddRecipeContributionScreen = () => {
       <View key={index} style={styles.stepRow}>
         <View style={styles.stepHeader}>
           <Text style={styles.stepNumber}>Step {index + 1}</Text>
-          <TouchableOpacity 
-            onPress={() => removeStep(index)} 
+          <TouchableOpacity
+            onPress={() => removeStep(index)}
             style={styles.deleteStepButton}
           >
             <Ionicons name="trash" size={24} color="#ee4d2d" />
@@ -343,6 +344,263 @@ const AddRecipeContributionScreen = () => {
           >
             <Text style={styles.addButtonText}>+ Add Step</Text>
           </TouchableOpacity>
+          <View style={styles.vitaminSection}>
+  <TouchableOpacity 
+    style={styles.vitaminHeader}
+    onPress={() => setShowVitaminForm(!showVitaminForm)}
+  >
+    <Text style={styles.sectionTitle}>Vitamin Information</Text>
+    <Ionicons 
+      name={showVitaminForm ? "chevron-up" : "chevron-down"} 
+      size={24} 
+      color="#ee4d2d" 
+    />
+  </TouchableOpacity>
+
+  {showVitaminForm && (
+    <View style={styles.vitaminForm}>
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Protein (g)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].protein?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              protein: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Calcium (mg)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].calcium?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              calcium: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Iron (mg)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].iron?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              iron: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Vitamin A (IU)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].vitamin_a?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              vitamin_a: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Vitamin C (mg)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].vitamin_c?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              vitamin_c: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Vitamin D (IU)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].vitamin_d?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              vitamin_d: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Vitamin E (mg)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].vitamin_e?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              vitamin_e: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Vitamin K (mcg)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].vitamin_k?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              vitamin_k: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Vitamin B1 (mg)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].vitamin_b1?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              vitamin_b1: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Vitamin B2 (mg)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].vitamin_b2?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              vitamin_b2: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Vitamin B3 (mg)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].vitamin_b3?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              vitamin_b3: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Vitamin B5 (mg)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].vitamin_b5?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              vitamin_b5: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Vitamin B6 (mg)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].vitamin_b6?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              vitamin_b6: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Vitamin B12 (mcg)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].vitamin_b12?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              vitamin_b12: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+
+      <View style={styles.vitaminRow}>
+        <Text style={styles.vitaminLabel}>Fiber (g)</Text>
+        <TextInput
+          style={styles.vitaminInput}
+          placeholder="0"
+          keyboardType="numeric"
+          value={vitamins[0].fiber?.toString()}
+          onChangeText={(text) => {
+            setVitamins([{
+              ...vitamins[0],
+              fiber: text ? parseFloat(text) : null
+            }]);
+          }}
+        />
+      </View>
+    </View>
+  )}
+</View>
 
           {/* Submit Button */}
           <TouchableOpacity style={styles.submitButton} onPress={submitRecipe}>
@@ -585,6 +843,44 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+  },
+  vitaminSection: {
+    marginTop: 16,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  vitaminHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  vitaminForm: {
+    marginTop: 16,
+  },
+  vitaminRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  vitaminLabel: {
+    flex: 2,
+    fontSize: 16,
+    color: '#333',
+  },
+  vitaminInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    padding: 8,
+    borderRadius: 6,
+    textAlign: 'right',
   },
   addButton: {
     backgroundColor: '#ee4d2d',
