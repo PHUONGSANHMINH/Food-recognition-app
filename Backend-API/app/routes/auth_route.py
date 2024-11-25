@@ -1,60 +1,63 @@
-from flask import Blueprint
+from flask import Blueprint, jsonify
 from app.controllers.users_controller import login, register, send_code_forget_password, change_password
 from flasgger import swag_from
-
+from flask_jwt_extended import (
+    jwt_required
+)
 auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/login', methods=['POST'])
+@swag_from({
+    'tags': ['Authentication'],
+    'summary': 'User Login',
+    'description': 'Authenticate a user with username and password, and return JWT tokens if valid.',
+    'parameters': [
+        {
+            'name': 'body',
+            'in': 'body',
+            'required': True,
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'username': {'type': 'string', 'example': 'test'},
+                    'password': {'type': 'string', 'example': 'testpassword'}
+                },
+                'required': ['username', 'password']
+            }
+        }
+    ],
+    'responses': {
+        200: {
+            'description': 'Login successful',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'access_token': {'type': 'string'},
+                    'refresh_token': {'type': 'string'}
+                }
+            }
+        },
+        400: {
+            'description': 'Bad request - Invalid username or password format',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'msg': {'type': 'string', 'example': 'Invalid username. Only 4-16 characters allowed, including letters, numbers, and underscores.'}
+                }
+            }
+        },
+        401: {
+            'description': 'Unauthorized - Invalid credentials',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'msg': {'type': 'string', 'example': 'Invalid login credentials.'}
+                }
+            }
+        }
+    }
+})
 def login_view():
-    """User Login
-    ---
-    tags:
-      - Authentication
-    summary: User Login
-    description: Authenticate a user with username and password, and return JWT tokens if valid.
-    parameters:
-      - name: body
-        in: body
-        required: true
-        schema:
-          type: object
-          properties:
-            username:
-              type: string
-              example: test
-            password:
-              type: string
-              example: testpassword
-          required:
-            - username
-            - password
-    responses:
-      200:
-        description: Login successful
-        schema:
-          type: object
-          properties:
-            access_token:
-              type: string
-            refresh_token:
-              type: string
-      400:
-        description: Bad request - Invalid username or password format
-        schema:
-          type: object
-          properties:
-            msg:
-              type: string
-              example: "Invalid username. Only 4-16 characters allowed, including letters, numbers, and underscores."
-      401:
-        description: Unauthorized - Invalid credentials
-        schema:
-          type: object
-          properties:
-            msg:
-              type: string
-              example: "Invalid login credentials."
-    """
     return login()
 
 @auth_bp.route('/register', methods=['POST'])
@@ -153,3 +156,35 @@ def change_password_view():
         description: Email not found
     """
     return change_password()
+
+@auth_bp.route('/protected', methods=['GET'])
+@jwt_required()
+@swag_from({
+    'tags': ['Authentication'],
+    'summary': 'Protected Endpoint',
+    'description': 'A protected endpoint that requires a valid JWT token.',
+    'security': [{'Bearer': []}],
+    'responses': {
+        200: {
+            'description': 'Request successful',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'msg': {'type': 'string', 'example': 'You have access to this protected endpoint.'}
+                }
+            }
+        },
+        401: {
+            'description': 'Unauthorized - Invalid or missing JWT token',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'msg': {'type': 'string', 'example': 'Missing Authorization Header'}
+                }
+            }
+        }
+    }
+})
+def protected():
+    return jsonify({'msg': 'You have access to this protected endpoint.'}), 200
+

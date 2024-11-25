@@ -1,4 +1,3 @@
-# app/__init__.py
 from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_sqlalchemy import SQLAlchemy
@@ -28,14 +27,36 @@ def create_app():
     mail.init_app(app)
     migrate.init_app(app, db)
 
-    # Khởi tạo Swagger
-    app.config['SWAGGER'] = {
-    "title": "Food Recognition API",
-    "uiversion": 3,  # Sử dụng phiên bản Swagger UI
-    "description": "Description",  # Thêm mô tả nếu muốn
-    "version": "1.0.0"  # Đặt phiên bản cho tài liệu API
+    # Khởi tạo Swagger với security và specs
+    swagger_config = {
+        "headers": [],
+        "specs": [
+            {
+                "endpoint": 'apispec_1',
+                "route": '/apispec_1.json',
+                "rule_filter": lambda rule: True,  # all in
+                "model_filter": lambda tag: True,  # all in
+            }
+        ],
+        "static_url_path": "/flasgger_static",
+        "swagger_ui": True,
+        "specs_route": "/apidocs/",
+        "securityDefinitions": {
+            "Bearer": {
+                "type": "apiKey",
+                "name": "Authorization",
+                "in": "header",
+                "description": "JWT Authorization header using the Bearer scheme. Example: 'Authorization: Bearer {token}'"
+            }
+        },
+        "security": [{"Bearer": []}],
+        "title": "Food Recognition API",
+        "uiversion": 3,  # Sử dụng phiên bản Swagger UI
+        "description": "Description",  # Thêm mô tả nếu muốn
+        "version": "1.0.0"  # Đặt phiên bản cho tài liệu API
     }
-    swagger = Swagger(app)
+    swagger = Swagger(app, config=swagger_config)
+
     # Thiết lập logging
     if not app.debug:
         handler = RotatingFileHandler('app.log', maxBytes=100000, backupCount=10)
@@ -56,7 +77,7 @@ def create_app():
         from app.routes.files_route import file_bp
 
         # Import models để Flask-Migrate nhận diện
-        from app.models.model import Config, AdvertisingBanners, Rating, RecipeInfo, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin, User
+        from app.models.model import Config, AdvertisingBanners, Rating, RecipeInfo, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin, User, CSVExportVersion
 
         app.register_blueprint(auth_bp, url_prefix='/api/auth')
         app.register_blueprint(user_bp, url_prefix='/api/user')
@@ -64,4 +85,5 @@ def create_app():
         app.register_blueprint(recipe_bp, url_prefix='/api/recipe')
         app.register_blueprint(file_bp, url_prefix='/api/file')
         app.register_blueprint(config_bp, url_prefix='/admin/')
+    
     return app
