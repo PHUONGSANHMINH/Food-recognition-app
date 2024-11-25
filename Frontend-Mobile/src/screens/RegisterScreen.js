@@ -1,55 +1,119 @@
-import React, { useState } from 'react'
-import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native'
-import { Text } from 'react-native-paper'
-import axios from 'axios'
-import Background from '../components/Background'
-import Logo from '../components/Logo'
-import Header from '../components/Header'
-import Button from '../components/Button'
-import TextInput from '../components/TextInput'
-import BackButton from '../components/BackButton'
-import { theme } from '../core/theme'
-import { emailValidator } from '../helpers/emailValidator'
-import { passwordValidator } from '../helpers/passwordValidator'
-import { nameValidator } from '../helpers/nameValidator'
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Text } from 'react-native-paper';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Background from '../components/Background';
+import Logo from '../components/Logo';
+import Header from '../components/Header';
+import Button from '../components/Button';
+import TextInput from '../components/TextInput';
+import BackButton from '../components/BackButton';
+import { theme } from '../core/theme';
+import { emailValidator } from '../helpers/emailValidator';
+import { passwordValidator } from '../helpers/passwordValidator';
+import { nameValidator } from '../helpers/nameValidator';
+
+const ACCESS_TOKEN_KEY = 'access_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
 
 export default function RegisterScreen({ navigation }) {
-  const [name, setName] = useState({ value: '', error: '' })
-  const [email, setEmail] = useState({ value: '', error: '' })
-  const [password, setPassword] = useState({ value: '', error: '' })
+  const [formData, setFormData] = useState({
+    name: { value: '', error: '' },
+    email: { value: '', error: '' },
+    password: { value: '', error: '' }
+  });
+  const [loading, setLoading] = useState(false);
 
-  const onSignUpPressed = async () => {
-    const nameError = nameValidator(name.value)
-    const emailError = emailValidator(email.value)
-    const passwordError = passwordValidator(password.value)
-    if (emailError || passwordError || nameError) {
-      setName({ ...name, error: nameError })
-      setEmail({ ...email, error: emailError })
-      setPassword({ ...password, error: passwordError })
-      return
-    }
+  const handleInputChange = useCallback((field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: { value, error: '' }
+    }));
+  }, []);
 
+  const storeTokens = async (tokens) => {
     try {
-      const response = await axios.post('http://192.168.2.2:5000/api/auth/register', {
-        username: name.value,
-        email: email.value,
-        password: password.value,
-      })
-      Alert.alert('Success', response.data.msg)
+      const { access_token, refresh_token } = tokens;
+      if (!access_token || !refresh_token) {
+        throw new Error('Invalid tokens received');
+      }
+      
+      await Promise.all([
+        AsyncStorage.setItem(ACCESS_TOKEN_KEY, access_token),
+        AsyncStorage.setItem(REFRESH_TOKEN_KEY, refresh_token)
+      ]);
+      
+      return true;
+    } catch (error) {
+      console.error('Token storage error:', error);
+      throw new Error('Failed to store authentication tokens');
+    }
+  };
+
+  const validateForm = useCallback(() => {
+    const nameError = nameValidator(formData.name.value);
+    const emailError = emailValidator(formData.email.value);
+    const passwordError = passwordValidator(formData.password.value);
+
+    setFormData(prev => ({
+      name: { ...prev.name, error: nameError },
+      email: { ...prev.email, error: emailError },
+      password: { ...prev.password, error: passwordError }
+    }));
+
+    return !nameError && !emailError && !passwordError;
+  }, [formData]);
+
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_DOMAIN}api/auth/login`, {
+        username: formData.name.value,
+        password: formData.password.value,
+      });
+
+      await storeTokens(response.data);
+      
       navigation.reset({
         index: 0,
         routes: [{ name: 'Dashboard' }],
-      })
+      });
+    } catch (error) {
+      Alert.alert('Error', 'Failed to login after registration. Please try again.');
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!validateForm()) return;
+    setLoading(true);
+
+    try {
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_DOMAIN}api/auth/register`, {
+        username: formData.name.value,
+        email: formData.email.value,
+        password: formData.password.value,
+      });
+
+      Alert.alert('Success', response.data.msg);
+
+      // Thực hiện đăng nhập sau khi đăng ký thành công
+      await handleLogin();
+      
     } catch (error) {
       if (error.response && error.response.status === 400) {
-        const errors = error.response.data.errors
-        setName({ ...name, error: errors.username.join(', ') })
-        setPassword({ ...password, error: errors.password.join(', ') })
+        const errors = error.response.data.errors;
+        setFormData(prev => ({
+          ...prev,
+          name: { ...prev.name, error: errors.username.join(', ') },
+          password: { ...prev.password, error: errors.password.join(', ') }
+        }));
       } else {
-        Alert.alert('Error', 'Something went wrong. Please try again later.')
+        Alert.alert('Error', 'Something went wrong. Please try again later.');
       }
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Background>
@@ -59,18 +123,18 @@ export default function RegisterScreen({ navigation }) {
       <TextInput
         label="Name"
         returnKeyType="next"
-        value={name.value}
-        onChangeText={(text) => setName({ value: text, error: '' })}
-        error={!!name.error}
-        errorText={name.error}
+        value={formData.name.value}
+        onChangeText={(text) => handleInputChange('name', text)}
+        error={!!formData.name.error}
+        errorText={formData.name.error}
       />
       <TextInput
         label="Email"
         returnKeyType="next"
-        value={email.value}
-        onChangeText={(text) => setEmail({ value: text, error: '' })}
-        error={!!email.error}
-        errorText={email.error}
+        value={formData.email.value}
+        onChangeText={(text) => handleInputChange('email', text)}
+        error={!!formData.email.error}
+        errorText={formData.email.error}
         autoCapitalize="none"
         autoCompleteType="email"
         textContentType="emailAddress"
@@ -79,15 +143,16 @@ export default function RegisterScreen({ navigation }) {
       <TextInput
         label="Password"
         returnKeyType="done"
-        value={password.value}
-        onChangeText={(text) => setPassword({ value: text, error: '' })}
-        error={!!password.error}
-        errorText={password.error}
+        value={formData.password.value}
+        onChangeText={(text) => handleInputChange('password', text)}
+        error={!!formData.password.error}
+        errorText={formData.password.error}
         secureTextEntry
       />
       <Button
         mode="contained"
-        onPress={onSignUpPressed}
+        onPress={handleRegister}
+        loading={loading}
         style={{ marginTop: 24 }}
       >
         Sign Up
@@ -99,7 +164,7 @@ export default function RegisterScreen({ navigation }) {
         </TouchableOpacity>
       </View>
     </Background>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -111,4 +176,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.primary,
   },
-})
+});

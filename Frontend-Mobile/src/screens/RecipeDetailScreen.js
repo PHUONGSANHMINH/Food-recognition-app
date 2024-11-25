@@ -1,83 +1,138 @@
-import React, { useState } from 'react';
-import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, SafeAreaView} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function RecipeDetail({ route }) {
   const navigation = useNavigation();
-  const { recipe } = route.params;
+  const { recipe, recipeId } = route.params;
   const [activeTab, setActiveTab] = useState('ingredients');
+  const [customRecipe, setCustomRecipe] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (recipeId) {
+      const fetchRecipeDetail = async () => {
+        try {
+          const token = await AsyncStorage.getItem('access_token');
+          const response = await axios.get(
+            `${process.env.EXPO_PUBLIC_DOMAIN}api/recipe/${recipeId}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          setCustomRecipe(response.data);
+        } catch (err) {
+          setError('Unable to load recipe details');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchRecipeDetail();
+    } else {
+      setLoading(false);
+    }
+  }, [recipeId]);
 
   const handleTabPress = (tab) => {
     setActiveTab(tab);
   };
 
+  if (loading) {
+    return <ActivityIndicator size="large" color="#ee4d2d" />;
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
+  const displayRecipe = customRecipe || recipe;
+
   return (
     <SafeAreaView style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <MaterialIcons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Dish details</Text>
         <View style={styles.headerRight} />
       </View>
+      <Image
+        source={{
+          uri: displayRecipe.image
+            ? `${process.env.EXPO_PUBLIC_DOMAIN}api/file/get-file/recipes/${displayRecipe.image}`
+            : null
+        }}
+        style={styles.image}
+        defaultSource={require('../assets/food-placeholder.png')}
+      />
+      <Text style={styles.title}>{displayRecipe.title || displayRecipe.name_recipe}</Text>
 
-        <Image source={{ uri: recipe.image }} style={styles.image} />
-        <Text style={styles.title}>{recipe.title}</Text>
+      {/* Tab Navigation */}
+      <View style={styles.tabNavigation}>
+        <TouchableOpacity
+          style={[
+            styles.tabItem,
+            activeTab === 'ingredients' && styles.activeTab,
+          ]}
+          onPress={() => handleTabPress('ingredients')}
+        >
+          <Text style={styles.tabText}>Ingredients</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.tabItem,
+            activeTab === 'nutrition' && styles.activeTab,
+          ]}
+          onPress={() => handleTabPress('nutrition')}
+        >
+          <Text style={styles.tabText}>Nutrition</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.tabItem,
+            activeTab === 'instructions' && styles.activeTab,
+          ]}
+          onPress={() => handleTabPress('instructions')}
+        >
+          <Text style={styles.tabText}>Instructions</Text>
+        </TouchableOpacity>
+      </View>
 
-        {/* Tab Navigation */}
-        <View style={styles.tabNavigation}>
-          <TouchableOpacity
-            style={[
-              styles.tabItem,
-              activeTab === 'ingredients' && styles.activeTab,
-            ]}
-            onPress={() => handleTabPress('ingredients')}
-          >
-            <Text style={styles.tabText}>Ingredients</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.tabItem,
-              activeTab === 'nutrition' && styles.activeTab,
-            ]}
-            onPress={() => handleTabPress('nutrition')}
-          >
-            <Text style={styles.tabText}>Nutrition</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.tabItem,
-              activeTab === 'instructions' && styles.activeTab,
-            ]}
-            onPress={() => handleTabPress('instructions')}
-          >
-            <Text style={styles.tabText}>Instructions</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Tab Content */}
-        <ScrollView style={styles.tabContent}>
-          {activeTab === 'ingredients' && (
-            <View style={styles.section}>
-              {recipe.ingredients.map((ingredient, index) => (
-                <View key={index} style={styles.ingredientItem}>
-                  <View style={styles.ingredientBadge}>
-                    <Text style={styles.ingredientAmount}>{ingredient.amount}</Text>
-                    <Text style={styles.ingredientUnit}>{ingredient.unit}</Text>
-                  </View>
-                  <Text style={styles.ingredientName}>{ingredient.name}</Text>
+      {/* Tab Content */}
+      <ScrollView style={styles.tabContent}>
+        {activeTab === 'ingredients' && (
+          <View style={styles.section}>
+            {displayRecipe.ingredients.map((ingredient, index) => (
+              <View key={index} style={styles.ingredientItem}>
+                <View style={styles.ingredientBadge}>
+                  <Text style={styles.ingredientAmount}>{ingredient.amount || ingredient.quantity}</Text>
+                  <Text style={styles.ingredientUnit}>{ingredient.unit}</Text>
                 </View>
-              ))}
-            </View>
-          )}
-          {activeTab === 'nutrition' && (
-            <View style={styles.section}>
-              {recipe.nutrients.map((nutrient, index) => (
+                <Text style={styles.ingredientName}>{ingredient.name || ingredient.name_ingredient}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+        {activeTab === 'nutrition' && (
+          <View style={styles.section}>
+            {customRecipe ? (
+              <View>
+                <Text style={styles.text}>Calories: {customRecipe.nutrition.calories}</Text>
+                <Text style={styles.text}>Fat: {customRecipe.nutrition.fat}</Text>
+                {/* Add other nutrition details here */}
+              </View>
+            ) : (
+              displayRecipe.nutrients.map((nutrient, index) => (
                 <View key={index} style={styles.nutrientItem}>
                   <Text style={styles.nutrientName}>{nutrient.name}</Text>
                   <Text style={styles.nutrientAmount}>
@@ -87,22 +142,32 @@ export default function RecipeDetail({ route }) {
                     ({nutrient.percentOfDailyNeeds.toFixed(2)}%)
                   </Text>
                 </View>
-              ))}
-            </View>
-          )}
-          {activeTab === 'instructions' && (
-            <View style={styles.section}>
-              {recipe.instructions.map((step, index) => (
-                <View key={index} style={styles.instructionItem}>
-                  <View style={styles.instructionNumber}>
-                    <Text style={styles.instructionNumberText}>{step.step_number}</Text>
+              ))
+            )}
+          </View>
+        )}
+        {activeTab === 'instructions' && (
+          <View style={styles.section}>
+            {customRecipe
+              ? customRecipe.steps.map((step, index) => (
+                  <View key={index} style={styles.instructionItem}>
+                    <View style={styles.instructionNumber}>
+                      <Text style={styles.instructionNumberText}>{step.step_number}</Text>
+                    </View>
+                    <Text style={styles.instructionText}>{step.content}</Text>
                   </View>
-                  <Text style={styles.instructionText}>{step.instruction}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </ScrollView>
+                ))
+              : displayRecipe.instructions.map((step, index) => (
+                  <View key={index} style={styles.instructionItem}>
+                    <View style={styles.instructionNumber}>
+                      <Text style={styles.instructionNumberText}>{step.step_number}</Text>
+                    </View>
+                    <Text style={styles.instructionText}>{step.instruction}</Text>
+                  </View>
+                ))}
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
