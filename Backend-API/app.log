@@ -29,3 +29,8 @@
 2024-11-11 23:26:26,220 ERROR: Error during processing: index 0 is out of bounds for axis 0 with size 0 [in D:\Junq\NTCL\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:197]
 2024-11-11 23:29:33,578 ERROR: Error during processing: index 0 is out of bounds for axis 0 with size 0 [in D:\Junq\NTCL\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:197]
 2024-11-11 23:29:43,577 ERROR: Error during processing: index 0 is out of bounds for axis 0 with size 0 [in D:\Junq\NTCL\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:197]
+2024-11-26 17:31:10,420 ERROR: Error in generating daily meal plan: Cannot choose from an empty sequence [in D:\Junq\2024\DOAN\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:386]
+2024-11-26 17:32:34,483 ERROR: Error in generating daily meal plan: No breakfast recipes available. [in D:\Junq\2024\DOAN\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:393]
+2024-11-26 17:33:47,699 ERROR: Error in generating daily meal plan: No breakfast recipes available. [in D:\Junq\2024\DOAN\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:393]
+2024-11-26 17:36:00,554 ERROR: Error in generating daily meal plan: No breakfast recipes available. [in D:\Junq\2024\DOAN\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:397]
+2024-11-26 17:38:04,152 ERROR: Error in generating daily meal plan: No breakfast recipes available. [in D:\Junq\2024\DOAN\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:397]

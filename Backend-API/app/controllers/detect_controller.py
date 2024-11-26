@@ -1,8 +1,5 @@
 # app/controllers/detect_controller.py
-import json
-import re
-import os
-import requests
+import json, re, os, requests, random, json, logging
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required
 from werkzeug.utils import secure_filename
@@ -13,9 +10,7 @@ import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
-import logging
-import pandas as pd
-import json
+from app.models.model import Config, CSVExportVersion, db
 
 # Cấu hình logging để ghi lại các lỗi
 logging.basicConfig(level=logging.INFO)
@@ -31,7 +26,27 @@ FULL_MODEL_PATH = os.path.join(BASE_DIR, MODEL_PATH)
 model = YOLO(FULL_MODEL_PATH)
 
 # CSV recommend system
-CSV_PATH = os.getenv('CSV_RECOMMEND_PATH', 'recommend-dataset/recipes.csv')
+# CSV_PATH = os.getenv('CSV_RECOMMEND_PATH', 'recommend-dataset/recipes.csv')
+# Lấy đường dẫn CSV từ bảng Config
+config = Config.query.filter_by(config_name='data_recommend_csv').first()
+
+if not config:
+    # Nếu config không tồn tại, lấy từ bảng CSVExportVersion và thiết lập config mới
+    csv_export = CSVExportVersion.query.order_by(CSVExportVersion.created_at.desc()).first()
+    if csv_export:
+        CSV_PATH = "recommend-dataset/" + csv_export.filename
+        # Thêm cấu hình mới vào bảng Config
+        new_config = Config(config_name='data_recommend_csv', config_value=CSV_PATH)
+        db.session.add(new_config)
+        db.session.commit()
+    else:
+        CSV_PATH = "recommend-dataset/recipes.csv"
+        new_config = Config(config_name='data_recommend_csv', config_value=CSV_PATH)
+        db.session.add(new_config)
+        db.session.commit()
+else:
+    CSV_PATH = config.config_value
+
 FULL_CSV_PATH = os.path.join(BASE_DIR, CSV_PATH)
 
 # Cấu hình API của Spoonacular
@@ -296,3 +311,91 @@ def get_recipe_instructions(recipe_id):
         'recipe_id': recipe_id,
         'error': 'Unable to fetch instructions after trying all API keys'
     }
+
+from flask import jsonify
+import random
+
+# Function to generate a nutritious daily meal plan
+def get_daily_meal_plan(target_calories=2000):
+    try:
+        # Lấy các công thức từ CSV
+        recipes = df.to_dict(orient='records')
+
+        # Chia các công thức theo loại món ăn
+        breakfast_recipes = [recipe for recipe in recipes if 'breakfast' in recipe['type'].lower()]
+        lunch_recipes = [recipe for recipe in recipes if 'lunch' in recipe['type'].lower()]
+        dinner_recipes = [recipe for recipe in recipes if 'dinner' in recipe['type'].lower()]
+
+        # Kiểm tra nếu có công thức sẵn có cho mỗi loại món ăn
+        if not breakfast_recipes:
+            raise ValueError("No breakfast recipes available.")
+        if not lunch_recipes:
+            raise ValueError("No lunch recipes available.")
+        if not dinner_recipes:
+            raise ValueError("No dinner recipes available.")
+
+        # Chọn ngẫu nhiên công thức cho bữa sáng, trưa và tối
+        breakfast = random.choice(breakfast_recipes)
+        lunch = random.choice(lunch_recipes)
+        dinner = random.choice(dinner_recipes)
+
+        # Tính toán tổng lượng calories
+        total_calories = (breakfast.get('calories', 0) +
+                          lunch.get('calories', 0) +
+                          dinner.get('calories', 0))
+
+        # Nếu tổng calories không đủ, thêm bữa ăn nhẹ để đảm bảo đủ calories
+        snacks = []
+        while total_calories < target_calories:
+            snack = random.choice(recipes)
+            total_calories += snack.get('calories', 0)
+            snacks.append({
+                'recipe': snack['name_recipe'],
+                'ingredients': snack['ingredients'],
+                'calories': snack.get('calories', 'N/A'),
+                'protein': snack.get('protein', 'N/A'),
+                'carbohydrates': snack.get('carbohydrates', 'N/A'),
+                'fat': snack.get('fat', 'N/A'),
+                'sugar': snack.get('sugar', 'N/A')
+            })
+
+        # Tạo khẩu phần ăn cho 1 ngày
+        daily_meal_plan = {
+            'breakfast': {
+                'recipe': breakfast['name_recipe'],
+                'ingredients': breakfast['ingredients'],
+                'calories': breakfast.get('calories', 'N/A'),
+                'protein': breakfast.get('protein', 'N/A'),
+                'carbohydrates': breakfast.get('carbohydrates', 'N/A'),
+                'fat': breakfast.get('fat', 'N/A'),
+                'sugar': breakfast.get('sugar', 'N/A')
+            },
+            'lunch': {
+                'recipe': lunch['name_recipe'],
+                'ingredients': lunch['ingredients'],
+                'calories': lunch.get('calories', 'N/A'),
+                'protein': lunch.get('protein', 'N/A'),
+                'carbohydrates': lunch.get('carbohydrates', 'N/A'),
+                'fat': lunch.get('fat', 'N/A'),
+                'sugar': lunch.get('sugar', 'N/A')
+            },
+            'dinner': {
+                'recipe': dinner['name_recipe'],
+                'ingredients': dinner['ingredients'],
+                'calories': dinner.get('calories', 'N/A'),
+                'protein': dinner.get('protein', 'N/A'),
+                'carbohydrates': dinner.get('carbohydrates', 'N/A'),
+                'fat': dinner.get('fat', 'N/A'),
+                'sugar': dinner.get('sugar', 'N/A')
+            },
+            'snacks': snacks
+        }
+
+        return jsonify({'daily_meal_plan': daily_meal_plan})
+
+    except ValueError as ve:
+        logger.error(f"Error in generating daily meal plan: {ve}")
+        return jsonify({'error': str(ve)}), 400
+    except Exception as e:
+        logger.error(f"Error in generating daily meal plan: {e}")
+        return jsonify({'error': 'Unable to generate daily meal plan'}), 500

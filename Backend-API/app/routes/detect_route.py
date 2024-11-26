@@ -1,9 +1,10 @@
 # app/routes/detect.py
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from app.controllers.detect_controller import (
     detect_recommend_spoonacular,
     get_recipe_instructions,
-    recommend_recipes_by_labels
+    recommend_recipes_by_labels,
+    get_daily_meal_plan
 )
 
 detect_bp = Blueprint('detect', __name__)
@@ -73,7 +74,7 @@ def get_instructions_view(recipe_id):
     """Get Recipe Instructions
     ---
     tags:
-      - Recipes
+      - Detection
     summary: Get Recipe Instructions
     description: Retrieve step-by-step cooking instructions for a specified recipe ID.
     parameters:
@@ -121,7 +122,7 @@ def recommend_by_keyword_view(keyword):
     """Recommend Recipes by Keyword
     ---
     tags:
-      - Recipes
+      - Detection
     summary: Recommend Recipes by Keyword
     description: Recommend recipes based on a keyword (ingredient or recipe type).
     parameters:
@@ -156,3 +157,106 @@ def recommend_by_keyword_view(keyword):
         description: Bad request - Invalid keyword.
     """
     return recommend_recipes_by_labels([keyword])
+
+@detect_bp.route('/daily-meal-plan', methods=['GET'])
+def daily_meal_plan_view():
+    """Get Daily Meal Plan
+    ---
+    tags:
+      - Meal Planning
+    summary: Get Daily Meal Plan
+    description: Generate a nutritious meal plan for one day ensuring sufficient calorie intake.
+    parameters:
+      - name: target_calories
+        in: query
+        required: false
+        schema:
+          type: integer
+          example: 2000
+        description: Target calorie intake for the day.
+    responses:
+      200:
+        description: Daily meal plan generated successfully.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                daily_meal_plan:
+                  type: object
+                  properties:
+                    breakfast:
+                      type: object
+                      properties:
+                        recipe:
+                          type: string
+                        ingredients:
+                          type: string
+                        calories:
+                          type: number
+                        protein:
+                          type: number
+                        carbohydrates:
+                          type: number
+                        fat:
+                          type: number
+                        sugar:
+                          type: number
+                    lunch:
+                      type: object
+                      properties:
+                        recipe:
+                          type: string
+                        ingredients:
+                          type: string
+                        calories:
+                          type: number
+                        protein:
+                          type: number
+                        carbohydrates:
+                          type: number
+                        fat:
+                          type: number
+                        sugar:
+                          type: number
+                    dinner:
+                      type: object
+                      properties:
+                        recipe:
+                          type: string
+                        ingredients:
+                          type: string
+                        calories:
+                          type: number
+                        protein:
+                          type: number
+                        carbohydrates:
+                          type: number
+                        fat:
+                          type: number
+                        sugar:
+                          type: number
+                    snacks:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          recipe:
+                            type: string
+                          ingredients:
+                            type: string
+                          calories:
+                            type: number
+                          protein:
+                            type: number
+                          carbohydrates:
+                            type: number
+                          fat:
+                            type: number
+                          sugar:
+                            type: number
+      500:
+        description: Internal server error during processing
+    """
+    target_calories = request.args.get('target_calories', default=2000, type=int)
+    return get_daily_meal_plan(target_calories)
