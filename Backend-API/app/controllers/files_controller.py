@@ -1,7 +1,5 @@
 from flask import send_from_directory, current_app, abort, jsonify
-import os
-import csv
-import json
+import os, csv, json
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
@@ -9,7 +7,7 @@ from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity
 )
-from app.models.model import RecipeInfo, RecipeIngredients, RecipesContribution, CSVExportVersion
+from app.models.model import RecipeInfo, RecipeIngredients, RecipesContribution, CSVExportVersion, Config
 
 def getFile(filename):
     # Lấy đường dẫn tuyệt đối của thư mục uploads
@@ -136,6 +134,15 @@ def export_recipes_to_csv():
             db.session.add(export_version)
             db.session.commit()
             
+            # Lưu tên file CSV vào bảng config
+            config_entry = db.session.query(Config).filter_by(config_name='data_recommend_csv').first()
+            if config_entry:
+                config_entry.config_value = "recommend-dataset/" + filename
+            else:
+                new_config = Config(config_name='data_recommend_csv', config_value= "recommend-dataset/" + filename)
+                db.session.add(new_config)
+            db.session.commit()
+            
         except SQLAlchemyError as e:
             # Nếu lỗi khi lưu record, xóa file đã tạo
             if os.path.exists(file_path):
@@ -152,35 +159,10 @@ def export_recipes_to_csv():
                 'path': file_path
             }
         }), 200
-        
+
     except Exception as e:
-        # Log lỗi và tạo record thất bại
-        error_message = str(e)
-        try:
-            if 'filename' in locals():
-                error_export = CSVExportVersion(
-                    filename=filename,
-                    exported_by=current_user_id,
-                    total_recipes=0,
-                    file_size=0,
-                    status='failed',
-                    error_message=error_message
-                )
-                db.session.add(error_export)
-                db.session.commit()
-                
-                # Xóa file nếu tồn tại trong trường hợp lỗi
-                if 'file_path' in locals() and os.path.exists(file_path):
-                    os.remove(file_path)
-                    
-        except Exception as inner_e:
-            error_message += f" | Failed to save error record: {str(inner_e)}"
-        
-        return jsonify({
-            'success': False,
-            'message': 'Failed to export recipes dataset',
-            'error': error_message
-        }), 500
+        return jsonify({'error': str(e)}), 500
+
     
 def get_export_history():
     try:

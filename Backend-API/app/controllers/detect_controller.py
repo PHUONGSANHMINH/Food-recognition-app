@@ -7,10 +7,12 @@ from ultralytics import YOLO
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 import pandas as pd
+from sqlalchemy.exc import SQLAlchemyError
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
-from app.models.model import Config, CSVExportVersion, db
+from app.models.model import Config, CSVExportVersion, RecipeInfo, RecipesContribution, RecipeNutrition, db
+
 
 # Cấu hình logging để ghi lại các lỗi
 logging.basicConfig(level=logging.INFO)
@@ -312,21 +314,23 @@ def get_recipe_instructions(recipe_id):
         'error': 'Unable to fetch instructions after trying all API keys'
     }
 
-from flask import jsonify
-import random
-
-# Function to generate a nutritious daily meal plan
 def get_daily_meal_plan(target_calories=2000):
     try:
-        # Lấy các công thức từ CSV
-        recipes = df.to_dict(orient='records')
+        # Lấy các công thức đã được duyệt từ cơ sở dữ liệu
+        recipes = db.session.query(RecipeInfo).join(RecipesContribution).filter(RecipesContribution.accept_contribution == True).all()
+        
+        if not recipes:
+            raise ValueError("No approved recipes available.")
 
-        # Chia các công thức theo loại món ăn
+        # Chuyển đổi các công thức thành danh sách từ điển, bỏ qua các thuộc tính nội bộ của SQLAlchemy
+        recipes = [{col: getattr(recipe, col) for col in recipe.__table__.columns.keys()} for recipe in recipes]
+
+        # Lọc các công thức theo loại bữa ăn
         breakfast_recipes = [recipe for recipe in recipes if 'breakfast' in recipe['type'].lower()]
         lunch_recipes = [recipe for recipe in recipes if 'lunch' in recipe['type'].lower()]
         dinner_recipes = [recipe for recipe in recipes if 'dinner' in recipe['type'].lower()]
 
-        # Kiểm tra nếu có công thức sẵn có cho mỗi loại món ăn
+        # Kiểm tra tính sẵn có của mỗi loại bữa ăn
         if not breakfast_recipes:
             raise ValueError("No breakfast recipes available.")
         if not lunch_recipes:
@@ -334,61 +338,62 @@ def get_daily_meal_plan(target_calories=2000):
         if not dinner_recipes:
             raise ValueError("No dinner recipes available.")
 
-        # Chọn ngẫu nhiên công thức cho bữa sáng, trưa và tối
-        breakfast = random.choice(breakfast_recipes)
-        lunch = random.choice(lunch_recipes)
-        dinner = random.choice(dinner_recipes)
+        # Hàm lấy thông tin dinh dưỡng từ bảng RecipeNutrition
+        def get_nutrition_info(recipe_id):
+            nutrition = db.session.query(RecipeNutrition).filter(RecipeNutrition.id_recipe == recipe_id).first()
+            if not nutrition:
+                return {
+                    'calories': 0,
+                    'protein': 0,
+                    'carbohydrates': 0,
+                    'fat': 0,
+                    'sugar': 0
+                }
+            return {
+                'calories': nutrition.calories or 0,
+                'protein': nutrition.protein or 0,
+                'carbohydrates': nutrition.carbohydrates or 0,
+                'fat': nutrition.fat or 0,
+                'sugar': nutrition.sugar or 0
+            }
 
-        # Tính toán tổng lượng calories
-        total_calories = (breakfast.get('calories', 0) +
-                          lunch.get('calories', 0) +
-                          dinner.get('calories', 0))
+        # Hàm kiểm tra tổng lượng calo
+        def calculate_total_calories(meals):
+            return sum(meal['calories'] for meal in meals)
 
-        # Nếu tổng calories không đủ, thêm bữa ăn nhẹ để đảm bảo đủ calories
-        snacks = []
-        while total_calories < target_calories:
-            snack = random.choice(recipes)
-            total_calories += snack.get('calories', 0)
-            snacks.append({
-                'recipe': snack['name_recipe'],
-                'ingredients': snack['ingredients'],
-                'calories': snack.get('calories', 'N/A'),
-                'protein': snack.get('protein', 'N/A'),
-                'carbohydrates': snack.get('carbohydrates', 'N/A'),
-                'fat': snack.get('fat', 'N/A'),
-                'sugar': snack.get('sugar', 'N/A')
-            })
+        while True:
+            # Chọn ngẫu nhiên công thức cho các bữa ăn
+            breakfast = random.choice(breakfast_recipes)
+            lunch = random.choice(lunch_recipes)
+            dinner = random.choice(dinner_recipes)
 
-        # Tạo khẩu phần ăn cho 1 ngày
+            # Lấy thông tin dinh dưỡng cho từng bữa ăn
+            breakfast_nutrition = get_nutrition_info(breakfast['id_recipe'])
+            lunch_nutrition = get_nutrition_info(lunch['id_recipe'])
+            dinner_nutrition = get_nutrition_info(dinner['id_recipe'])
+
+            # Kiểm tra tổng lượng calo
+            total_calories = calculate_total_calories([breakfast_nutrition, lunch_nutrition, dinner_nutrition])
+            if total_calories >= target_calories:
+                break
+
+        # Tạo kế hoạch bữa ăn hàng ngày
         daily_meal_plan = {
             'breakfast': {
                 'recipe': breakfast['name_recipe'],
-                'ingredients': breakfast['ingredients'],
-                'calories': breakfast.get('calories', 'N/A'),
-                'protein': breakfast.get('protein', 'N/A'),
-                'carbohydrates': breakfast.get('carbohydrates', 'N/A'),
-                'fat': breakfast.get('fat', 'N/A'),
-                'sugar': breakfast.get('sugar', 'N/A')
+                'ingredients': [],  # 'ingredients' nên lấy từ bảng RecipeIngredients, không phải từ RecipeInfo
+                **breakfast_nutrition
             },
             'lunch': {
                 'recipe': lunch['name_recipe'],
-                'ingredients': lunch['ingredients'],
-                'calories': lunch.get('calories', 'N/A'),
-                'protein': lunch.get('protein', 'N/A'),
-                'carbohydrates': lunch.get('carbohydrates', 'N/A'),
-                'fat': lunch.get('fat', 'N/A'),
-                'sugar': lunch.get('sugar', 'N/A')
+                'ingredients': [],  # 'ingredients' nên lấy từ bảng RecipeIngredients, không phải từ RecipeInfo
+                **lunch_nutrition
             },
             'dinner': {
                 'recipe': dinner['name_recipe'],
-                'ingredients': dinner['ingredients'],
-                'calories': dinner.get('calories', 'N/A'),
-                'protein': dinner.get('protein', 'N/A'),
-                'carbohydrates': dinner.get('carbohydrates', 'N/A'),
-                'fat': dinner.get('fat', 'N/A'),
-                'sugar': dinner.get('sugar', 'N/A')
-            },
-            'snacks': snacks
+                'ingredients': [],  # 'ingredients' nên lấy từ bảng RecipeIngredients, không phải từ RecipeInfo
+                **dinner_nutrition
+            }
         }
 
         return jsonify({'daily_meal_plan': daily_meal_plan})
@@ -396,6 +401,10 @@ def get_daily_meal_plan(target_calories=2000):
     except ValueError as ve:
         logger.error(f"Error in generating daily meal plan: {ve}")
         return jsonify({'error': str(ve)}), 400
+    except SQLAlchemyError as e:
+        logger.error(f"Database error when fetching recipes: {e}")
+        return jsonify({'error': 'Unable to fetch recipes from the database'}), 500
     except Exception as e:
         logger.error(f"Error in generating daily meal plan: {e}")
         return jsonify({'error': 'Unable to generate daily meal plan'}), 500
+
