@@ -147,7 +147,6 @@ export default function RegisterScreen({ navigation }) {
         onChangeText={(text) => handleInputChange('password', text)}
         error={!!formData.password.error}
         errorText={formData.password.error}
-        secureTextEntry
       />
       <Button
         mode="contained"

@@ -160,16 +160,14 @@ def send_code_forget_password():
     
     return jsonify({"msg": get_message('successfully_send_code', lang)}), 200
 
-def change_password():
+def verify_code():
     lang = get_locale()
     data = request.get_json()
     email = data.get("email")
-    old_password = data.get("oldpassword")
-    new_password = data.get("newpassword")
     verify_code = data.get("verifycode")
 
     # Kiểm tra các trường bắt buộc
-    if not email or not new_password or not verify_code:
+    if not email or not verify_code:
         return jsonify({"msg": get_message('missing_fields', lang)}), 400
 
     user = User.query.filter_by(email=email).first()
@@ -186,10 +184,37 @@ def change_password():
         elif reason == "expired_code":
             return jsonify({"msg": get_message('expired_verify_code', lang)}), 400
 
-    # Kiểm tra mật khẩu cũ nếu yêu cầu
-    if old_password:
-        if not user.check_password(old_password):
-            return jsonify({"msg": get_message('incorrect_old_password', lang)}), 400
+    return jsonify({"msg": get_message('code_verified', lang)}), 200
+
+def change_password():
+    lang = get_locale()
+    data = request.get_json()
+    email = data.get("email")
+    new_password = data.get("newpassword")
+    confirm_password = data.get("confirmpassword")
+    verify_code = data.get("verifycode")
+
+    # Kiểm tra các trường bắt buộc
+    if not email or not new_password or not confirm_password or not verify_code:
+        return jsonify({"msg": get_message('missing_fields', lang)}), 400
+
+    # Kiểm tra mật khẩu xác nhận
+    if new_password != confirm_password:
+        return jsonify({"msg": get_message('passwords_do_not_match', lang)}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"msg": get_message('email_does_not_exist', lang)}), 404
+
+    # Kiểm tra mã xác thực
+    is_valid, reason = is_verify_code_valid(user, verify_code)
+    if not is_valid:
+        if reason == "max_attempts_exceeded":
+            return jsonify({"msg": get_message('max_attempts_exceeded', lang)}), 403
+        elif reason == "invalid_code":
+            return jsonify({"msg": get_message('invalid_verify_code', lang)}), 400
+        elif reason == "expired_code":
+            return jsonify({"msg": get_message('expired_verify_code', lang)}), 400
 
     # Kiểm tra độ mạnh của mật khẩu mới
     if not is_strong_password(new_password):
@@ -208,9 +233,6 @@ def change_password():
     )
     msg.body = "Your password has been successfully changed. If you did not perform this action, please contact support immediately."
     mail.send(msg)
-
-    # Ghi log sự kiện
-    #logger.info(f"Password changed for email: {email}")
 
     return jsonify({"msg": get_message('password_changed', lang)}), 200
 

@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { TouchableOpacity, StyleSheet, View, Alert, Image } from 'react-native';
 import { Text } from 'react-native-paper';
+import { Feather } from '@expo/vector-icons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Background from '../components/Background';
@@ -12,7 +13,7 @@ import { theme } from '../core/theme';
 import { usernameValidator } from '../helpers/usernameValidator';
 import { passwordValidator } from '../helpers/passwordValidator';
 import Modal from 'react-native-modal';
-import Config from 'react-native-config'; // Add this
+import Config from 'react-native-config';
 
 const ACCESS_TOKEN_KEY = 'access_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
@@ -25,6 +26,7 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isModalVisible, setModalVisible] = useState(false);
+  const [isPasswordVisible, setPasswordVisible] = useState(false);
 
   const handleInputChange = useCallback((field, value) => {
     setFormData(prev => ({
@@ -56,7 +58,6 @@ export default function LoginScreen({ navigation }) {
     if (!access_token) return;
     
     axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-    // Add request interceptor for token refresh
     axios.interceptors.response.use(
       (response) => response,
       async (error) => {
@@ -74,7 +75,6 @@ export default function LoginScreen({ navigation }) {
             originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
             return axios(originalRequest);
           } catch (refreshError) {
-            // Token refresh failed, redirect to login
             navigation.reset({
               index: 0,
               routes: [{ name: 'LoginScreen' }],
@@ -88,8 +88,8 @@ export default function LoginScreen({ navigation }) {
   }, [navigation]);
 
   const validateForm = useCallback(() => {
-    const usernameError = usernameValidator(formData.username.value);
-    const passwordError = passwordValidator(formData.password.value);
+    const usernameError = "";//usernameValidator(formData.username.value);
+    const passwordError = "";//passwordValidator(formData.password.value);
     
     setFormData(prev => ({
       username: { ...prev.username, error: usernameError },
@@ -120,7 +120,7 @@ export default function LoginScreen({ navigation }) {
       });
     } catch (error) {
       const errorMessage = error.response?.data?.message || 
-                          'Unable to connect to the server. Please check your internet connection.';
+                          'Username or password incorrect.';
       setError(errorMessage);
       setModalVisible(true);
     } finally {
@@ -147,16 +147,30 @@ export default function LoginScreen({ navigation }) {
         testID="login-username-input"
       />
 
-      <TextInput
-        label="Password"
-        returnKeyType="done"
-        value={formData.password.value}
-        onChangeText={(text) => handleInputChange('password', text)}
-        error={!!formData.password.error}
-        errorText={formData.password.error}
-        secureTextEntry
-        testID="login-password-input"
-      />
+      <View style={styles.passwordWrapper}>
+        <TextInput
+          label="Password"
+          returnKeyType="done"
+          value={formData.password.value}
+          onChangeText={(text) => handleInputChange('password', text)}
+          error={!!formData.password.error}
+          errorText={formData.password.error}
+          secureTextEntry={!isPasswordVisible}
+          testID="login-password-input"
+          style={styles.passwordInput}
+        />
+        <TouchableOpacity 
+          style={styles.eyeIconContainer} 
+          onPress={() => setPasswordVisible(!isPasswordVisible)}
+          testID="password-visibility-toggle"
+        >
+          <Feather 
+            name={isPasswordVisible ? 'eye-off' : 'eye'} 
+            size={24} 
+            color={theme.colors.secondary} 
+          />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.forgotPassword}>
         <TouchableOpacity
@@ -215,6 +229,29 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  passwordContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordWrapper: {
+    width: '100%',
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingRight: 50, // Make space for the eye icon
+  },
+  eyeIconContainer: {
+    position: 'absolute', 
+    right: 12,
+    top: '55%',
+    transform: [{ translateY: -12 }], // Center vertically
+  },
+  eyeIcon: {
+    position: 'absolute', 
+    right: 15,
+    top: '40%',
+  },
   forgotPassword: {
     width: '100%',
     alignItems: 'flex-end',

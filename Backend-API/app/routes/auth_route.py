@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from app.controllers.users_controller import login, register, send_code_forget_password, change_password
+from app.controllers.users_controller import login, register, send_code_forget_password, change_password, verify_code
 from flasgger import swag_from
 from flask_jwt_extended import (
     jwt_required
@@ -118,6 +118,39 @@ def send_code_forget_password_view():
     """
     return send_code_forget_password()
 
+@auth_bp.route('/forget-password/verify-code', methods=['POST'])
+def verify_code_view():
+    """Verify Code
+    ---
+    tags:
+      - Authentication
+    summary: Verify Code
+    description: Verify the code sent to user’s email for password reset.
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            email:
+              type: string
+              example: user@example.com
+            verifycode:
+              type: string
+              example: 123456
+    responses:
+      200:
+        description: Code verified successfully
+      400:
+        description: Invalid verification code
+      403:
+        description: Maximum verification attempts exceeded
+      404:
+        description: Email not found
+    """
+    return verify_code()
+
 @auth_bp.route('/forget-password/change', methods=['POST'])
 def change_password_view():
     """Change Password
@@ -136,10 +169,10 @@ def change_password_view():
             email:
               type: string
               example: user@example.com
-            oldpassword:
-              type: string
-              example: OldPassword123!
             newpassword:
+              type: string
+              example: NewPassword123!
+            confirmpassword:
               type: string
               example: NewPassword123!
             verifycode:
