@@ -11,9 +11,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
-from app.models.model import Config, CSVExportVersion, RecipeInfo, RecipesContribution, RecipeNutrition, db
+from app.models.model import Config, CSVExportVersion, RecipeInfo, RecipesContribution, RecipeNutrition, RecipeIngredients, db
 
-
+global tfidf, tfidf_matrix, cosine_sim_text, indices, df
+global CSV_PATH, FULL_CSV_PATH
 # Cấu hình logging để ghi lại các lỗi
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,35 +27,53 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 MODEL_PATH = os.getenv('YOLOV8_MODEL_PATH', 'yolov8-model/best.pt')
 FULL_MODEL_PATH = os.path.join(BASE_DIR, MODEL_PATH)
 model = YOLO(FULL_MODEL_PATH)
-
-# CSV recommend system
-# CSV_PATH = os.getenv('CSV_RECOMMEND_PATH', 'recommend-dataset/recipes.csv')
-# Lấy đường dẫn CSV từ bảng Config
-config = Config.query.filter_by(config_name='data_recommend_csv').first()
-
-if not config:
-    # Nếu config không tồn tại, lấy từ bảng CSVExportVersion và thiết lập config mới
-    csv_export = CSVExportVersion.query.order_by(CSVExportVersion.created_at.desc()).first()
-    if csv_export:
-        CSV_PATH = "recommend-dataset/" + csv_export.filename
-        # Thêm cấu hình mới vào bảng Config
-        new_config = Config(config_name='data_recommend_csv', config_value=CSV_PATH)
-        db.session.add(new_config)
-        db.session.commit()
-    else:
-        CSV_PATH = "recommend-dataset/recipes.csv"
-        new_config = Config(config_name='data_recommend_csv', config_value=CSV_PATH)
-        db.session.add(new_config)
-        db.session.commit()
-else:
-    CSV_PATH = config.config_value
-
-FULL_CSV_PATH = os.path.join(BASE_DIR, CSV_PATH)
-
 # Cấu hình API của Spoonacular
 SPOONACULAR_API_KEY = os.getenv('SPOONACULAR_API_KEY', '').split(',')
 SPOONACULAR_SEARCH_URL = 'https://api.spoonacular.com/recipes/complexSearch'
 SPOONACULAR_NUTRITION_URL = 'https://api.spoonacular.com/recipes/{id}/nutritionWidget.json'
+
+
+# CSV recommend system
+def update_csv_path():   
+    global tfidf, tfidf_matrix, cosine_sim_text, indices, df
+    global CSV_PATH, FULL_CSV_PATH
+    # Ưu tiên kiếm tra từ bảng Config trước
+    config = Config.query.filter_by(config_name='data_recommend_csv').first()
+    
+    if config:
+        CSV_PATH = config.config_value
+    else:
+        # Nếu không có config, kiểm tra bảng CSVExportVersion
+        csv_export = CSVExportVersion.query.order_by(CSVExportVersion.created_at.desc()).first()
+        
+        if csv_export:
+            CSV_PATH = "recommend-dataset/" + csv_export.filename
+            
+            # Tạo config mới nếu chưa tồn tại
+            new_config = Config(config_name='data_recommend_csv', config_value=CSV_PATH)
+            db.session.add(new_config)
+            db.session.commit()
+        else:
+            # Fallback về giá trị mặc định
+            CSV_PATH = "recommend-dataset/recipes.csv"
+            new_config = Config(config_name='data_recommend_csv', config_value=CSV_PATH)
+            db.session.add(new_config)
+            db.session.commit()
+    
+    # Cập nhật đường dẫn đầy đủ
+    FULL_CSV_PATH = os.path.join(BASE_DIR, CSV_PATH)
+    
+    # Nạp lại DataFrame và tái tạo ma trận TF-IDF
+    df = pd.read_csv(FULL_CSV_PATH)
+    df['ingredients'] = df['ingredients'].apply(lambda x: ' '.join([ingredient['name_ingredient'] for ingredient in json.loads(x.replace("'", '"'))]))
+    df['text'] = df['name_recipe'] + " " + df['summary'].fillna('') + " " + df['ingredients']
+    
+    tfidf = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = tfidf.fit_transform(df['text'])
+    cosine_sim_text = cosine_similarity(tfidf_matrix, tfidf_matrix)
+    indices = pd.Series(df.index, index=df['id_recipe']).drop_duplicates()
+    
+    return CSV_PATH
 
 # Kiểm tra nếu danh sách API_KEYS trống
 if not SPOONACULAR_API_KEY or SPOONACULAR_API_KEY == ['']:
@@ -70,27 +89,11 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
-# Đọc dữ liệu từ CSV với các trường mới
-df = pd.read_csv(FULL_CSV_PATH)
-
-# Chuyển đổi cột 'ingredients' từ chuỗi JSON sang danh sách các thành phần
-df['ingredients'] = df['ingredients'].apply(lambda x: ' '.join([ingredient['name_ingredient'] for ingredient in json.loads(x.replace("'", '"'))]))
-
-# Tạo cột văn bản tổng hợp từ 'name_recipe', 'summary' và 'ingredients'
-df['text'] = df['name_recipe'] + " " + df['summary'].fillna('') + " " + df['ingredients']
-
-# Tạo ma trận TF-IDF cho các cột văn bản
-tfidf = TfidfVectorizer(stop_words='english')
-tfidf_matrix = tfidf.fit_transform(df['text'])
-
-# Tính toán độ tương đồng cosine cho văn bản
-cosine_sim_text = cosine_similarity(tfidf_matrix, tfidf_matrix)
-
-# Tạo Series chỉ số dựa vào 'id_recipe'
-indices = pd.Series(df.index, index=df['id_recipe']).drop_duplicates()
-
 # Hàm recommend dựa trên các nhãn từ khóa
 def recommend_recipes_by_labels(labels, threshold=0.3):  # threshold: ngưỡng độ tương đồng
+    global tfidf, tfidf_matrix, df
+    csv = update_csv_path()
+    print(f"CSV path updated to: {csv}")
     recommendations = []
     for label in labels:
         keyword_tfidf = tfidf.transform([label])
@@ -361,7 +364,15 @@ def get_daily_meal_plan(target_calories=2000):
         def calculate_total_calories(meals):
             return sum(meal['calories'] for meal in meals)
 
-        while True:
+        # Biến để theo dõi kế hoạch bữa ăn gần nhất với target_calories
+        best_meal_plan = None
+        smallest_calorie_diff = float('inf')
+
+        # Giới hạn số lần lặp để tránh vòng lặp vô hạn
+        max_iterations = 200
+        iterations = 0
+
+        while iterations < max_iterations:
             # Chọn ngẫu nhiên công thức cho các bữa ăn
             breakfast = random.choice(breakfast_recipes)
             lunch = random.choice(lunch_recipes)
@@ -374,29 +385,46 @@ def get_daily_meal_plan(target_calories=2000):
 
             # Kiểm tra tổng lượng calo
             total_calories = calculate_total_calories([breakfast_nutrition, lunch_nutrition, dinner_nutrition])
-            if total_calories >= target_calories:
-                break
+            
+            # Tính hiệu số với target_calories
+            calorie_diff = abs(total_calories - target_calories)
 
-        # Tạo kế hoạch bữa ăn hàng ngày
-        daily_meal_plan = {
-            'breakfast': {
-                'recipe': breakfast['name_recipe'],
-                'ingredients': [],  # 'ingredients' nên lấy từ bảng RecipeIngredients, không phải từ RecipeInfo
-                **breakfast_nutrition
-            },
-            'lunch': {
-                'recipe': lunch['name_recipe'],
-                'ingredients': [],  # 'ingredients' nên lấy từ bảng RecipeIngredients, không phải từ RecipeInfo
-                **lunch_nutrition
-            },
-            'dinner': {
-                'recipe': dinner['name_recipe'],
-                'ingredients': [],  # 'ingredients' nên lấy từ bảng RecipeIngredients, không phải từ RecipeInfo
-                **dinner_nutrition
-            }
-        }
+            # Cập nhật kế hoạch bữa ăn gần nhất
+            if calorie_diff < smallest_calorie_diff:
+                smallest_calorie_diff = calorie_diff
+                best_meal_plan = {
+                    'breakfast': {
+                        'recipe_id': breakfast['id_recipe'],
+                        'recipe_name': breakfast['name_recipe'],
+                        'ingredients': [],
+                        **breakfast_nutrition
+                    },
+                    'lunch': {
+                        'recipe_id': lunch['id_recipe'],
+                        'recipe_name': lunch['name_recipe'],
+                        'ingredients': [],
+                        **lunch_nutrition
+                    },
+                    'dinner': {
+                        'recipe_id': dinner['id_recipe'],
+                        'recipe_name': dinner['name_recipe'],
+                        'ingredients': [],
+                        **dinner_nutrition
+                    },
+                    'total_calories': total_calories
+                }
 
-        return jsonify({'daily_meal_plan': daily_meal_plan})
+            iterations += 1
+
+        if best_meal_plan is None:
+            raise ValueError("Could not generate a meal plan")
+
+        return jsonify({
+            'daily_meal_plan': best_meal_plan,
+            'target_calories': target_calories,
+            'actual_calories': best_meal_plan['total_calories'],
+            'calorie_difference': abs(best_meal_plan['total_calories'] - target_calories)
+        })
 
     except ValueError as ve:
         logger.error(f"Error in generating daily meal plan: {ve}")
@@ -407,4 +435,3 @@ def get_daily_meal_plan(target_calories=2000):
     except Exception as e:
         logger.error(f"Error in generating daily meal plan: {e}")
         return jsonify({'error': 'Unable to generate daily meal plan'}), 500
-
