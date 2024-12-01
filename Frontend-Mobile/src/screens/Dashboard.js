@@ -12,30 +12,276 @@ import {
   Pressable,
   ActivityIndicator,
   RefreshControl,
-  Alert,
+  Dimensions,
 } from 'react-native';
+import { Calendar } from 'react-native-calendars';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import debounce from 'lodash/debounce';
-import axios from 'axios'; // Thêm import axios
+import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const { width } = Dimensions.get('window');
+
 const api = {
-  // Sử dụng biến môi trường cho URL
-  
-  async fetchRecipes(page = 1, limit = 10, search = '') {
+  async fetchDailyMealPlan(targetCalories = 2000) {
     try {
-      const response = await axios.get(`${process.env.EXPO_PUBLIC_DOMAIN}api/recipe`, {
-        params: { page, limit, search }, // Sử dụng params để truyền tham số
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_DOMAIN}api/detect/daily-meal-plan`, {
+        params: { target_calories: targetCalories },
       });
-      return response.data; // Trả về dữ liệu từ response
+      return response.data.daily_meal_plan;
     } catch (error) {
-      console.error('Error fetching recipes:', error);
+      console.error('Error fetching daily meal plan:', error);
       throw error;
     }
-  }
+  },
 };
+
+const RecipeList = () => {
+  const navigation = useNavigation();
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [weeklyMeals, setWeeklyMeals] = useState({});
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentMealPlan, setCurrentMealPlan] = useState(null);
+  const [targetCalories, setTargetCalories] = useState(2000);
+  const [error, setError] = useState(null);
+
+  const loadWeeklyMealPlan = async () => {
+    try {
+      setLoading(true);
+  
+      // Tính ngày hôm nay
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+  
+      // Tính số ngày chênh lệch để lùi về Thứ Hai
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  
+      // Tính ngày bắt đầu tuần (Thứ Hai gần nhất)
+      const startOfWeek = new Date(today.getTime());
+      startOfWeek.setDate(today.getDate() + diffToMonday);
+      startOfWeek.setHours(0, 0, 0, 0); // Đặt giờ về 00:00:00
+  
+      // Log kiểm tra
+      console.log("Ngày bắt đầu tuần (Thứ Hai):", startOfWeek);
+  
+      // Lưu trữ theo tuần
+      const storageKey = `weeklyMealPlan_${startOfWeek.toISOString().split('T')[0]}`;
+      const storedWeeklyData = await AsyncStorage.getItem(storageKey);
+  
+      // Lấy thông tin tuần hiện tại
+      const storedStartOfWeek = storedWeeklyData ? JSON.parse(storedWeeklyData).startOfWeek : null;
+      const currentStartOfWeek = startOfWeek.toISOString().split('T')[0];
+  
+      // Xóa dữ liệu tuần cũ nếu cần
+      if (!storedWeeklyData || storedStartOfWeek !== currentStartOfWeek) {
+        await AsyncStorage.removeItem(storageKey); // Xóa dữ liệu tuần cũ nếu có
+      }
+  
+      // Chuẩn bị dữ liệu tuần mới
+      let weeklyData = storedWeeklyData ? JSON.parse(storedWeeklyData) : {};
+  
+      if (Object.keys(weeklyData).length < 7) {
+        for (let i = 0; i < 7; i++) {
+          const currentDate = new Date(startOfWeek.getTime());
+          currentDate.setDate(startOfWeek.getDate() + i);
+          const dateString = currentDate.toISOString().split('T')[0];
+  
+          if (!weeklyData[dateString]) {
+            const dailyMealPlan = await api.fetchDailyMealPlan(targetCalories);
+            weeklyData[dateString] = dailyMealPlan;
+          }
+        }
+  
+        // Lưu lại dữ liệu tuần
+        console.log("Dữ liệu tuần:", weeklyData);
+        await AsyncStorage.setItem(storageKey, JSON.stringify(weeklyData));
+      }
+  
+      // Cập nhật state
+      setWeeklyMeals(weeklyData);
+  
+      // Set meal plan cho ngày hôm nay
+      const todayString = today.toISOString().split('T')[0];
+      setCurrentMealPlan(weeklyData[todayString]);
+      setSelectedDate(todayString);
+  
+    } catch (err) {
+      setError('Cannot load weekly meal plan. Please try again later.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+  
+  
+  useEffect(() => {
+    loadWeeklyMealPlan();
+  }, []);
+
+  const handleDayPress = (day) => {
+    console.log(day)
+    const selectedMealPlan = weeklyMeals[day.dateString];
+    setSelectedDate(day.dateString);
+    setCurrentMealPlan(selectedMealPlan);
+  };
+
+  const handleCameraPress = () => {
+    navigation.navigate('Camera');
+  };
+
+  const renderMealPlanItems = () => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#ee4d2d" />
+          <Text style={styles.loadingText}>Loading Meal Plan...</Text>
+        </View>
+      );
+    }
+
+    if (!currentMealPlan) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>No meal plan available</Text>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        data={[
+          { ...currentMealPlan.breakfast, mealType: 'breakfast' },
+          { ...currentMealPlan.lunch, mealType: 'lunch' },
+          { ...currentMealPlan.dinner, mealType: 'dinner' },
+        ]}
+        renderItem={({ item }) => (
+          <MealPlanItem item={item} mealType={item.mealType} />
+        )}
+        keyExtractor={(item) => item.recipe_id.toString()}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={loadWeeklyMealPlan}
+            colors={['#ee4d2d']}
+          />
+        }
+      />
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <StatusBar style="dark" />
+      <Header />
+
+      {/* <Calendar
+  current={selectedDate}
+  minDate={new Date().toISOString().split('T')[0]} // Ngày hiện tại
+  maxDate={new Date(new Date().setDate(new Date().getDate() + 6)).toISOString().split('T')[0]} // 7 ngày sau
+  markedDates={{
+    ...Object.keys(weeklyMeals).reduce((acc, dateKey) => {
+      acc[dateKey] = { marked: true, dotColor: '#ee4d2d' };
+      return acc;
+    }, {}),
+    [selectedDate]: { selected: true, selectedColor: '#ee4d2d' }
+  }}
+  onDayPress={handleDayPress}
+  theme={{
+    selectedDayBackgroundColor: '#ee4d2d',
+    selectedDayTextColor: 'white',
+    todayTextColor: '#ee4d2d',
+  }}
+  style={styles.calendar}
+/> */}
+      <FlatList
+        data={Array.from({ length: 7 }, (_, i) => {
+          const today = new Date(); // Giữ nguyên giá trị của today
+          const dayOfWeek = today.getDay();
+          const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Tính ngày Thứ Hai của tuần hiện tại
+
+          // Tạo bản sao của today để tính ngày chính xác
+          const currentDate = new Date(today);
+          currentDate.setDate(today.getDate() + diffToMonday + i); // Tính ngày trong tuần
+
+          return {
+            date: currentDate.toISOString().split('T')[0], // Lấy định dạng ngày chuẩn
+            label: currentDate.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }), // Lấy ngày theo định dạng ngắn
+          };
+        })}
+        horizontal
+        keyExtractor={(item) => item.date}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={[
+              styles.dayItem,
+              selectedDate === item.date && styles.selectedDay,
+            ]}
+            onPress={() => handleDayPress({ dateString: item.date })}
+          >
+            <Text style={styles.dayText}>{item.label}</Text>
+          </TouchableOpacity>
+        )}
+        showsHorizontalScrollIndicator={false}
+      />
+
+
+
+
+      <View style={styles.mealPlanSummary}>
+        <Text style={styles.mealPlanSummaryText}>
+          {new Date(selectedDate).toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric'
+          })} Meal Plan
+        </Text>
+        {currentMealPlan && (
+          <Text style={styles.mealPlanCaloriesText}>
+            Total Calories: {Math.round(currentMealPlan.total_calories)} kcal
+          </Text>
+        )}
+      </View>
+
+      {renderMealPlanItems()}
+      <View style={styles.bounceButtonContainer}>
+        <TouchableOpacity style={styles.bounceButton} onPress={handleCameraPress}>
+          <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+
+const MealPlanItem = ({ item, mealType }) => (
+  <View style={styles.mealPlanContainer}>
+    <View style={styles.mealTypeHeader}>
+      <Text style={styles.mealTypeText}>{mealType.charAt(0).toUpperCase() + mealType.slice(1)}</Text>
+    </View>
+    <View style={styles.recipeContainer}>
+      <View style={styles.recipeContent}>
+        <Text style={styles.recipeTitle}>{item.recipe_name}</Text>
+        <View style={styles.nutritionDetails}>
+          <Text style={styles.nutritionText}>
+            Calories: {Math.round(item.calories)} kcal
+          </Text>
+          <Text style={styles.nutritionText}>
+            Protein: {Math.round(item.protein)}g
+          </Text>
+          <Text style={styles.nutritionText}>
+            Carbs: {Math.round(item.carbohydrates)}g
+          </Text>
+          <Text style={styles.nutritionText}>
+            Fat: {Math.round(item.fat)}g
+          </Text>
+        </View>
+      </View>
+    </View>
+  </View>
+);
 
 const Header = ({ onSearch, onLogout }) => {
   const [searchText, setSearchText] = useState('');
@@ -108,253 +354,57 @@ const Header = ({ onSearch, onLogout }) => {
         </TouchableOpacity>
 
         <Modal
-        visible={showModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowModal(false)}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setShowModal(false)}
+          visible={showModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowModal(false)}
         >
-          <View style={styles.logoutContainer}>
-            <View style={styles.additionalButtonsContainer}>
-              <TouchableOpacity style={styles.squareButton}
-                onPress={handleContributionPress}
+          <Pressable
+            style={styles.modalOverlay}
+            onPress={() => setShowModal(false)}
+          >
+            <View style={styles.logoutContainer}>
+              <View style={styles.additionalButtonsContainer}>
+                <TouchableOpacity style={styles.squareButton}
+                  onPress={handleContributionPress}
+                >
+                  <Image
+                    source={require('../assets/star.png')}
+                    style={styles.squareButtonIcon}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.squareButton}>
+                  <Image
+                    source={require('../assets/blender.png')}
+                    style={styles.squareButtonIcon}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.squareButton}
+                  onPress={handleFavouritesPress}
+                >
+                  <Image
+                    source={require('../assets/favourite.png')}
+                    style={styles.squareButtonIcon}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.squareButton}>
+                  <Image
+                    source={require('../assets/chef.png')}
+                    style={styles.squareButtonIcon}
+                  />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={handleLogout}
               >
-                <Image 
-                  source={require('../assets/star.png')} 
-                  style={styles.squareButtonIcon} 
-                />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.squareButton}>
-                <Image 
-                  source={require('../assets/blender.png')} 
-                  style={styles.squareButtonIcon} 
-                />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.squareButton}
-                onPress={handleFavouritesPress}
-              >
-                <Image 
-                  source={require('../assets/favourite.png')} 
-                  style={styles.squareButtonIcon} 
-                />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.squareButton}>
-                <Image 
-                  source={require('../assets/chef.png')} 
-                  style={styles.squareButtonIcon} 
-                />
+                <Text style={styles.logoutText}>Logout</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={handleLogout}
-            >
-              <Text style={styles.logoutText}>Logout</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Modal>
+          </Pressable>
+        </Modal>
       </View>
     </SafeAreaView>
-  );
-};
-
-const RecipeItem = ({ item }) => (
-  <View style={styles.recipeContainer}>
-    <Image 
-      source={{ uri: item.image }}
-      style={styles.recipeImage}
-      defaultSource={require('../assets/food-placeholder.png')}
-    />
-    <View style={styles.recipeContent}>
-      <Text style={styles.recipeTitle}>{item.name_recipe}</Text>
-      <Text style={styles.recipeSummary} numberOfLines={2}>
-        {item.summary}
-      </Text>
-      <View style={styles.recipeFooter}>
-        <Text style={styles.recipeType}>{item.type}</Text>
-        {item.status.includes('featured') && (
-          <View style={styles.featuredBadge}>
-            <Text style={styles.featuredText}>Featured</Text>
-          </View>
-        )}
-      </View>
-    </View>
-  </View>
-);
-
-const SkeletonItem = () => (
-  <View style={styles.recipeContainer}>
-    <View style={styles.skeletonImage}>
-      <LinearGradient
-        colors={['#f0f0f0', '#e0e0e0', '#f0f0f0']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.skeletonGradient}
-      />
-    </View>
-    <View style={styles.recipeContent}>
-      <View style={[styles.skeletonText, { width: '80%' }]}>
-        <LinearGradient
-          colors={['#f0f0f0', '#e0e0e0', '#f0f0f0']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.skeletonGradient}
-        />
-      </View>
-      <View style={[styles.skeletonText, { width: '60%' }]}>
-        <LinearGradient
-          colors={['#f0f0f0', '#e0e0e0', '#f0f0f0']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.skeletonGradient}
-        />
-      </View>
-    </View>
-  </View>
-);
-
-const RecipeList = () => {
-  const navigation = useNavigation();
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [recipes, setRecipes] = useState([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [error, setError] = useState(null);
-
-  const loadRecipes = async (pageNum = 1, search = '') => {
-    try {
-      const data = await api.fetchRecipes(pageNum, 10, search);
-      
-      if (pageNum === 1) {
-        setRecipes(data);
-      } else {
-        setRecipes(prev => [...prev, ...data]);
-      }
-      
-      setHasMore(data.length === 10);
-      setError(null);
-    } catch (err) {
-      setError('Cannot load data. Please try again later.');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    loadRecipes();
-  }, []);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    setPage(1);
-    loadRecipes(1, "");
-  };
-
-  const handleLoadMore = () => {
-    if (!loading && hasMore) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      loadRecipes(nextPage, searchQuery);
-    }
-  };
-
-  const handleSearch = (text) => {
-    setSearchQuery(text);
-    setPage(1);
-    setLoading(true);
-    loadRecipes(1, text);
-  };
-
-  const handleCameraPress = () => {
-    navigation.navigate('Camera');
-  };
-
-  const renderFooter = () => {
-    if (!loading || !hasMore) return null;
-    return (
-      <View style={styles.footer}>
-        <ActivityIndicator size="small" color="#ee4d2d" />
-      </View>
-    );
-  };
-
-  const renderEmptyList = () => {
-    if (loading) return null;
-    return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No recipes found</Text>
-        <Text style={styles.emptySubText}>
-          Try adjusting your search or add a new recipe using the camera button
-        </Text>
-      </View>
-    );
-  };
-
-  const renderItem = ({ item }) => <RecipeItem item={item} />;
-
-  if (loading && page === 1) {
-    return (
-      <View style={styles.container}>
-        <Header onSearch={handleSearch} />
-        <FlatList
-          data={[1, 2, 3, 4, 5]}
-          renderItem={() => <SkeletonItem />}
-          keyExtractor={(item) => item.toString()}
-        />
-        <View style={styles.bounceButtonContainer}>
-          <TouchableOpacity style={styles.bounceButton} onPress={handleCameraPress}>
-            <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
-      <Header onSearch={handleSearch} />
-      {error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => loadRecipes(page, searchQuery)}
-          >
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={recipes}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id_recipe.toString()}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={renderFooter}
-          ListEmptyComponent={renderEmptyList}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={['#ee4d2d']}
-            />
-          }
-        />
-      )}
-      <View style={styles.bounceButtonContainer}>
-        <TouchableOpacity style={styles.bounceButton} onPress={handleCameraPress}>
-          <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
-        </TouchableOpacity>
-      </View>
-    </View>
   );
 };
 
@@ -580,6 +630,92 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '300%',
     opacity: 0.8,
+  },
+
+  // New styles for meal plan
+  mealPlanContainer: {
+    marginBottom: 12,
+    marginHorizontal: 12,
+  },
+  mealTypeHeader: {
+    backgroundColor: '#ee4d2d',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  mealTypeText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  nutritionDetails: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  nutritionText: {
+    fontSize: 12,
+    color: '#666',
+    marginRight: 8,
+  },
+  mealPlanSummary: {
+    backgroundColor: 'white',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    marginTop: 0, // Xóa bất kỳ khoảng cách thừa nào
+  },
+  mealPlanSummaryText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  mealPlanCaloriesText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+  },
+  flatListContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+  },
+  dayItem: {
+    width: 40,
+    height: 40,
+    backgroundColor: 'transparent',
+    borderRadius: 8,
+    marginHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 50, // Đảm bảo mỗi item có kích thước tối thiểu
+  },
+  selectedDay: {
+    backgroundColor: '#FF7F32', // Màu nền cam cho ngày được chọn
+    borderRadius: 12,  // Tạo viền bo tròn cho ngày được chọn
+  },
+  dayText: {
+    color: '#333',  // Màu chữ ngày mặc định
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  selectedDayText: {
+    color: '#fff',  // Màu chữ trắng khi ngày được chọn
+  },
+  flatListContentContainer: {
+    alignItems: 'center', // Canh giữa các item
   },
 });
 
