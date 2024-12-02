@@ -8,3 +8,4 @@ Backend-API/.venv/
 Backend-API/uploads/
 Frontend-Mobile/.expo/
 Frontend-Mobile/node_modules/
+.vscode/extensions.json
