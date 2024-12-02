@@ -152,6 +152,153 @@ def add_new_recipe():
             os.remove(os.path.join(UPLOAD_FOLDER, 'recipes', recipe_image_filename))
         return jsonify({'error': str(e)}), 400
 
+@jwt_required()
+def update_recipe(id_recipe):
+    try:
+        # Lấy ID của user hiện tại từ JWT token
+        current_user_id = get_jwt_identity()
+        
+        # Lấy form data và files
+        recipe_image = request.files.get('image')
+        recipe_data = request.form.get('recipe_data')
+        ingredients_images = request.files.getlist('ingredients_images')
+        
+        if not recipe_data:
+            return jsonify({'error': 'Recipe data is required'}), 400
+            
+        data = json.loads(recipe_data)
+        
+        # Tìm recipe hiện tại
+        recipe = RecipeInfo.query.filter_by(id_recipe=id_recipe).first()
+        if not recipe:
+            return jsonify({'error': 'Recipe not found'}), 404
+        
+        # Cập nhật thông tin recipe
+        if recipe_image:
+            recipe.image = save_uploaded_file(recipe_image, 'recipes')
+        recipe.name_recipe = data['name_recipe']
+        recipe.type = data.get('type')
+        recipe.status = data.get('status')
+        recipe.summary = data.get('summary')
+        
+        # Xóa các bản ghi vitamin liên quan trước
+        nutrition = RecipeNutrition.query.filter_by(id_recipe=id_recipe).first()
+        if nutrition:
+            RecipeVitamin.query.filter_by(id_nutrition=nutrition.id_nutrition).delete()
+        
+        # Xóa các nguyên liệu, dinh dưỡng và bước hiện có
+        RecipeIngredients.query.filter_by(id_recipe=id_recipe).delete()
+        RecipeNutrition.query.filter_by(id_recipe=id_recipe).delete()
+        RecipeSteps.query.filter_by(id_recipe=id_recipe).delete()
+        
+        # Thêm mới ingredients
+        for idx, ingredient in enumerate(data['ingredients']):
+            ingredient_image = ingredients_images[idx] if idx < len(ingredients_images) else None
+            ingredient_image_filename = save_uploaded_file(ingredient_image, 'ingredients') if ingredient_image else None
+            
+            new_ingredient = RecipeIngredients(
+                id_recipe=id_recipe,
+                name_ingredient=ingredient['name_ingredient'],
+                quantity=ingredient['quantity'],
+                unit=ingredient.get('unit'),
+                image=ingredient_image_filename
+            )
+            db.session.add(new_ingredient)
+        
+        # Thêm mới nutrition nếu có
+        if 'nutrition' in data:
+            new_nutrition = RecipeNutrition(
+                id_recipe=id_recipe,
+                calories=data['nutrition'].get('calories'),
+                fat=data['nutrition'].get('fat'),
+                saturated_fat=data['nutrition'].get('saturated_fat'),
+                carbohydrates=data['nutrition'].get('carbohydrates'),
+                sugar=data['nutrition'].get('sugar'),
+                cholesterol=data['nutrition'].get('cholesterol'),
+                sodium=data['nutrition'].get('sodium'),
+                protein=data['nutrition'].get('protein'),
+                alcohol=data['nutrition'].get('alcohol')
+            )
+            db.session.add(new_nutrition)
+            db.session.flush()  # Lấy id_nutrition sau khi chèn mới
+
+            # Thêm vitamin
+            for vitamin in data['vitamins']:
+                new_vitamin = RecipeVitamin(
+                    id_nutrition=new_nutrition.id_nutrition,
+                    protein=vitamin.get('protein'),
+                    calcium=vitamin.get('calcium'),
+                    iron=vitamin.get('iron'),
+                    vitamin_a=vitamin.get('vitamin_a'),
+                    vitamin_c=vitamin.get('vitamin_c'),
+                    vitamin_d=vitamin.get('vitamin_d'),
+                    vitamin_e=vitamin.get('vitamin_e'),
+                    vitamin_k=vitamin.get('vitamin_k'),
+                    vitamin_b1=vitamin.get('vitamin_b1'),
+                    vitamin_b2=vitamin.get('vitamin_b2'),
+                    vitamin_b3=vitamin.get('vitamin_b3'),
+                    vitamin_b5=vitamin.get('vitamin_b5'),
+                    vitamin_b6=vitamin.get('vitamin_b6'),
+                    vitamin_b12=vitamin.get('vitamin_b12'),
+                    fiber=vitamin.get('fiber')
+                )
+                db.session.add(new_vitamin)
+        
+        # Thêm mới steps
+        for step in data['steps']:
+            new_step = RecipeSteps(
+                id_recipe=id_recipe,
+                step_number=step['step_number'],
+                content=step['content']
+            )
+            db.session.add(new_step)
+
+        # Lưu tất cả thay đổi
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Recipe updated successfully'
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@jwt_required()
+def delete_recipe(id_recipe):
+    try:
+        # Lấy ID của user hiện tại từ JWT token
+        current_user_id = get_jwt_identity()
+        
+        # Xác thực admin
+        if current_user_id != 'admin' and current_user_id != 1:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        # Xóa recipe
+        recipe = RecipeInfo.query.filter_by(id_recipe=id_recipe).first()
+        if not recipe:
+            return jsonify({'error': 'Recipe not found'}), 404
+
+        # Xóa các nguyên liệu, dinh dưỡng và bước
+        RecipeVitamin.query.filter_by(id_nutrition=RecipeNutrition.query.filter_by(id_recipe=id_recipe).first().id_nutrition).delete()
+        RecipeIngredients.query.filter_by(id_recipe=id_recipe).delete()
+        RecipeNutrition.query.filter_by(id_recipe=id_recipe).delete()
+        RecipeSteps.query.filter_by(id_recipe=id_recipe).delete()
+        RecipesContribution.query.filter_by(id_recipe=id_recipe).delete()
+
+        db.session.delete(recipe)
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Recipe deleted successfully'
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+
 # Lấy tổng số bản ghi của tất cả công thức
 def get_total_records():
     search = request.args.get('search', '', type=str)
@@ -406,8 +553,8 @@ def get_user_contributions():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 400
-    
-@jwt_required()
+
+
 def get_total_unaccepted_recipes():
     total_unaccepted_recipes = RecipesContribution.query.filter_by(accept_contribution=False).count()
     return jsonify({'total_unaccepted_recipes': total_unaccepted_recipes})

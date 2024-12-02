@@ -11,7 +11,9 @@ from app.controllers.recipes_controller import (
     toggle_favourite_recipe,
     get_user_contributions,
     get_total_unaccepted_recipes,
-    get_unaccepted_recipes
+    get_unaccepted_recipes,
+    update_recipe,
+    delete_recipe
 )
 
 recipe_bp = Blueprint('recipe', __name__)
@@ -330,6 +332,192 @@ def get_recipes_total():
 })
 def add_recipe_view():
     return add_new_recipe()
+
+@recipe_bp.route('/update/<int:id_recipe>', methods=['PUT'])
+@swag_from({
+    'tags': ['Recipes'],
+    'summary': 'Update Existing Recipe',
+    'description': 'Update an existing recipe with all details including images',
+    'security': [{'Bearer': []}],
+    'consumes': ['multipart/form-data'],
+    'parameters': [
+        {
+            'name': 'id_recipe',
+            'in': 'path',
+            'type': 'integer',
+            'required': True,
+            'description': 'Recipe ID'
+        },
+        {
+            'name': 'image',
+            'in': 'formData',
+            'type': 'file',
+            'required': False,
+            'description': 'Main recipe image'
+        },
+        {
+            'name': 'recipe_data',
+            'in': 'formData',
+            'type': 'string',
+            'format': 'textarea',
+            'required': True,
+            'description': '''Recipe data in JSON format. Example:
+```json
+{
+  "name_recipe": "Updated Recipe",
+  "type": "Dessert",
+  "status": "Published",
+  "summary": "This is an updated recipe.",
+  "ingredients": [
+    {
+      "name_ingredient": "Sugar",
+      "quantity": 100,
+      "unit": "grams"
+    },
+    {
+      "name_ingredient": "Flour",
+      "quantity": 200,
+      "unit": "grams"
+    }
+  ],
+  "nutrition": {
+    "calories": 300,
+    "fat": 10,
+    "saturated_fat": 2,
+    "carbohydrates": 50,
+    "sugar": 20,
+    "cholesterol": 0,
+    "sodium": 5,
+    "protein": 5,
+    "alcohol": 0
+  },
+  "vitamins": [
+    {
+      "protein": 5,
+      "calcium": 0,
+      "iron": 2,
+      "vitamin_a": 5,
+      "vitamin_c": 10,
+      "vitamin_d": 1,
+      "vitamin_e": 1,
+      "vitamin_k": 0.5,
+      "vitamin_b1": 0.3,
+      "vitamin_b2": 0.2,
+      "vitamin_b3": 0.4,
+      "vitamin_b5": 0.6,
+      "vitamin_b6": 0.1,
+      "vitamin_b12": 0.01,
+      "fiber": 2
+    }
+  ],
+  "steps": [
+    {
+      "step_number": 1,
+      "content": "Mix the dry ingredients."
+    },
+    {
+      "step_number": 2,
+      "content": "Add the wet ingredients and mix well."
+    },
+    {
+      "step_number": 3,
+      "content": "Bake in the oven at 180°C for 25 minutes."
+    }
+  ]
+}
+```'''
+        },
+        {
+            'name': 'ingredients_images',
+            'in': 'formData',
+            'type': 'array',
+            'items': {'type': 'file'},
+            'required': False,
+            'description': 'Images for ingredients'
+        }
+    ],
+    'responses': {
+        200: {
+            'description': 'Recipe updated successfully',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'}
+                }
+            }
+        },
+        400: {
+            'description': 'Invalid input',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'error': {'type': 'string'}
+                }
+            }
+        },
+        404: {
+            'description': 'Recipe not found',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'error': {'type': 'string'}
+                }
+            }
+        }
+    }
+})
+def update_recipe_view(id_recipe):
+    return update_recipe(id_recipe)
+
+
+@recipe_bp.route('/delete/<int:id_recipe>', methods=['DELETE'])
+@swag_from({
+    'tags': ['Recipes'],
+    'summary': 'Delete Existing Recipe',
+    'description': 'Delete an existing recipe by its ID',
+    'security': [{'Bearer': []}],
+    'parameters': [
+        {
+            'name': 'id_recipe',
+            'in': 'path',
+            'type': 'integer',
+            'required': True,
+            'description': 'Recipe ID'
+        }
+    ],
+    'responses': {
+        200: {
+            'description': 'Recipe deleted successfully',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'}
+                }
+            }
+        },
+        403: {
+            'description': 'Unauthorized',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'error': {'type': 'string'}
+                }
+            }
+        },
+        404: {
+            'description': 'Recipe not found',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'error': {'type': 'string'}
+                }
+            }
+        }
+    }
+})
+def delete_recipe_view(id_recipe):
+    return delete_recipe(id_recipe)
+
 
 @recipe_bp.route('/<int:recipe_id>/favourite', methods=['POST'])
 @swag_from({
