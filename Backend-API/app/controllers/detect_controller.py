@@ -396,18 +396,21 @@ def get_daily_meal_plan(target_calories=2000):
                     'breakfast': {
                         'recipe_id': breakfast['id_recipe'],
                         'recipe_name': breakfast['name_recipe'],
+                        'image': breakfast['image'],
                         'ingredients': [],
                         **breakfast_nutrition
                     },
                     'lunch': {
                         'recipe_id': lunch['id_recipe'],
                         'recipe_name': lunch['name_recipe'],
+                        'image': lunch['image'],
                         'ingredients': [],
                         **lunch_nutrition
                     },
                     'dinner': {
                         'recipe_id': dinner['id_recipe'],
                         'recipe_name': dinner['name_recipe'],
+                        'image': dinner['image'],
                         'ingredients': [],
                         **dinner_nutrition
                     },
