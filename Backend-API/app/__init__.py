@@ -75,6 +75,7 @@ def create_app():
         from app.routes.recipes_route import recipe_bp
         from app.routes.config_route import config_bp
         from app.routes.files_route import file_bp
+        from app.routes.csv_route import csv_bp
 
         # Import models để Flask-Migrate nhận diện
         from app.models.model import Config, AdvertisingBanners, Rating, RecipeInfo, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin, User, CSVExportVersion
@@ -84,6 +85,7 @@ def create_app():
         app.register_blueprint(detect_bp, url_prefix='/api/detect')
         app.register_blueprint(recipe_bp, url_prefix='/api/recipe')
         app.register_blueprint(file_bp, url_prefix='/api/file')
+        app.register_blueprint(csv_bp, url_prefix='/api/csv')
         app.register_blueprint(config_bp, url_prefix='/admin/')
     
     return app
