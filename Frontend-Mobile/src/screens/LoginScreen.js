@@ -9,6 +9,7 @@ import Logo from '../components/Logo';
 import Header from '../components/Header';
 import Button from '../components/Button';
 import TextInput from '../components/TextInput';
+import SafeAreaWrapper from '../components/SafeAreaWrapper'
 import { theme } from '../core/theme';
 import { usernameValidator } from '../helpers/usernameValidator';
 import { passwordValidator } from '../helpers/passwordValidator';
@@ -129,6 +130,7 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
+    <SafeAreaWrapper>
     <Background>
       <Logo />
       <Header>Welcome back</Header>
@@ -225,6 +227,7 @@ export default function LoginScreen({ navigation }) {
         </View>
       </Modal>
     </Background>
+    </SafeAreaWrapper>
   );
 }
 

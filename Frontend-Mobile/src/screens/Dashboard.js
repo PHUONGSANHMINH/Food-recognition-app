@@ -21,6 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 import debounce from 'lodash/debounce';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import SafeAreaWrapper from '../components/SafeAreaWrapper'
 
 const { width } = Dimensions.get('window');
 
@@ -139,6 +140,81 @@ const RecipeList = () => {
   const handleFavouritesPress = () => {
     navigation.navigate('Favourites');
   };
+
+  const handleRecipePress = async (recipeId) => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const response = await axios.get(
+        `${process.env.EXPO_PUBLIC_DOMAIN}api/recipe/${recipeId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+  
+      // Navigate to the Recipe Detail screen and pass the recipe data
+      navigation.navigate('RecipeDetail', { 
+        recipeId: recipeId,
+        recipeDetails: response.data 
+      });
+    } catch (error) {
+      console.error('Error fetching recipe details:', error);
+      alert('Failed to fetch recipe details. Please try again.');
+    }
+  };
+  
+  const MealPlanItem = ({ item, mealType }) => (
+    <TouchableOpacity onPress={() => handleRecipePress(item.recipe_id)}>
+    <View style={styles.mealPlanContainer}>
+      <View style={styles.recipeContainer}>
+        {item.image && (
+          <Image
+            source={{
+              uri: item.image
+                ? `${process.env.EXPO_PUBLIC_DOMAIN}api/file/get-file/recipes/${item.image}`
+                : null
+            }}
+            style={styles.mealImage}
+            defaultSource={require('../assets/food-placeholder.png')}
+          />
+        )}
+        <View style={styles.recipeContent}>
+          <View style={styles.mealTypeHeader}>
+            <Text style={styles.mealTypeText}>{mealType.charAt(0).toUpperCase() + mealType.slice(1)}</Text>
+          </View>
+          <Text style={styles.recipeTitle} numberOfLines={2}>
+            {item.recipe_name}
+          </Text>
+          <View style={styles.nutritionDetailsEnhanced}>
+            <View style={styles.nutritionColumn}>
+              <Text style={styles.nutritionLabelText}>Calories</Text>
+              <Text style={styles.nutritionValueText}>
+                {Math.round(item.calories)} kcal
+              </Text>
+            </View>
+            <View style={styles.nutritionColumn}>
+              <Text style={styles.nutritionLabelText}>Protein</Text>
+              <Text style={styles.nutritionValueText}>
+                {Math.round(item.protein)}g
+              </Text>
+            </View>
+            <View style={styles.nutritionColumn}>
+              <Text style={styles.nutritionLabelText}>Carbs</Text>
+              <Text style={styles.nutritionValueText}>
+                {Math.round(item.carbohydrates)}g
+              </Text>
+            </View>
+            <View style={styles.nutritionColumn}>
+              <Text style={styles.nutritionLabelText}>Fat</Text>
+              <Text style={styles.nutritionValueText}>
+                {Math.round(item.fat)}g
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </View>
+    </TouchableOpacity>
+  );
 
   const renderMealPlanItems = () => {
     if (loading) {
@@ -281,60 +357,6 @@ const RecipeList = () => {
     </View>
   );
 };
-
-
-const MealPlanItem = ({ item, mealType }) => (
-
-  <View style={styles.mealPlanContainer}>
-    <View style={styles.recipeContainer}>
-      {item.image && (
-        <Image
-          source={{
-            uri: item.image
-              ? `${process.env.EXPO_PUBLIC_DOMAIN}api/file/get-file/recipes/${item.image}`
-              : null
-          }}
-          style={styles.mealImage}
-          defaultSource={require('../assets/food-placeholder.png')}
-        />
-      )}
-      <View style={styles.recipeContent}>
-        <View style={styles.mealTypeHeader}>
-          <Text style={styles.mealTypeText}>{mealType.charAt(0).toUpperCase() + mealType.slice(1)}</Text>
-        </View>
-        <Text style={styles.recipeTitle} numberOfLines={2}>
-          {item.recipe_name}
-        </Text>
-        <View style={styles.nutritionDetailsEnhanced}>
-          <View style={styles.nutritionColumn}>
-            <Text style={styles.nutritionLabelText}>Calories</Text>
-            <Text style={styles.nutritionValueText}>
-              {Math.round(item.calories)} kcal
-            </Text>
-          </View>
-          <View style={styles.nutritionColumn}>
-            <Text style={styles.nutritionLabelText}>Protein</Text>
-            <Text style={styles.nutritionValueText}>
-              {Math.round(item.protein)}g
-            </Text>
-          </View>
-          <View style={styles.nutritionColumn}>
-            <Text style={styles.nutritionLabelText}>Carbs</Text>
-            <Text style={styles.nutritionValueText}>
-              {Math.round(item.carbohydrates)}g
-            </Text>
-          </View>
-          <View style={styles.nutritionColumn}>
-            <Text style={styles.nutritionLabelText}>Fat</Text>
-            <Text style={styles.nutritionValueText}>
-              {Math.round(item.fat)}g
-            </Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  </View>
-);
 
 const Header = ({ onSearch, onLogout }) => {
   const [searchText, setSearchText] = useState('');

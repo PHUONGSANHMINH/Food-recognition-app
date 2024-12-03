@@ -100,9 +100,18 @@ export default function CameraScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar style="light" />
       <View style={styles.header}>
+      <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Image
+            source={require('../assets/arrow_back.png')}
+            style={styles.backIcon}
+          />
+        </TouchableOpacity>
         <View style={styles.profileContainer}>
-          <Image source={require('../assets/chef.png')} style={styles.profileImage} />
           <Text style={styles.title}>Recognition Camera</Text>
+          {/* <Image source={require('../assets/chef.png')} style={styles.profileImage} /> */}
         </View>
       </View>
 
@@ -188,7 +197,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#ed5c01',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   camera: {
@@ -284,5 +293,12 @@ const styles = StyleSheet.create({
     color: '#ed5c01',
     marginTop: 10,
     fontSize: 16,
+  },
+  backButton: {
+    marginRight: 16,
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
   },
 });

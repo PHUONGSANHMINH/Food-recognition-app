@@ -66,15 +66,25 @@ export default function RecipeDetail({ route }) {
         <Text style={styles.headerTitle}>Dish details</Text>
         <View style={styles.headerRight} />
       </View>
-      <Image
-        source={{
-          uri: displayRecipe.image
-            ? `${process.env.EXPO_PUBLIC_DOMAIN}api/file/get-file/recipes/${displayRecipe.image}`
-            : null
-        }}
-        style={styles.image}
-        defaultSource={require('../assets/food-placeholder.png')}
-      />
+      {customRecipe ? (
+            <Image
+              source={{
+                uri: displayRecipe.image
+                  ? `${process.env.EXPO_PUBLIC_DOMAIN}api/file/get-file/recipes/${displayRecipe.image}`
+                  : null
+              }}
+              style={styles.image}
+              defaultSource={require('../assets/food-placeholder.png')}
+            />
+            ) : (
+              <Image
+              source={{
+                uri: displayRecipe.image
+              }}
+              style={styles.image}
+              defaultSource={require('../assets/food-placeholder.png')}
+            />
+            )}
       <Text style={styles.title}>{displayRecipe.title || displayRecipe.name_recipe}</Text>
 
       {/* Tab Navigation */}
@@ -127,8 +137,12 @@ export default function RecipeDetail({ route }) {
           <View style={styles.section}>
             {customRecipe ? (
               <View>
-                <Text style={styles.text}>Calories: {customRecipe.nutrition.calories}</Text>
-                <Text style={styles.text}>Fat: {customRecipe.nutrition.fat}</Text>
+                {Object.keys(displayRecipe.nutrition).map((key, index) => (
+                <View key={index} style={styles.nutrientItem}>
+                  <Text style={styles.nutrientName}>{key.charAt(0).toUpperCase() + key.slice(1)}</Text>
+                  <Text style={styles.nutrientAmount}>{displayRecipe.nutrition[key]}</Text>
+                </View>
+                ))}
                 {/* Add other nutrition details here */}
               </View>
             ) : (

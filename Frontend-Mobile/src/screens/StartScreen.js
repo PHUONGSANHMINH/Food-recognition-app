@@ -4,9 +4,11 @@ import Logo from '../components/Logo'
 import Header from '../components/Header'
 import Button from '../components/Button'
 import Paragraph from '../components/Paragraph'
+import SafeAreaWrapper from '../components/SafeAreaWrapper'
 
 export default function StartScreen({ navigation }) {
   return (
+    <SafeAreaWrapper>
     <Background>
       <Logo />
       <Header>Food Recognition</Header>
@@ -26,5 +28,6 @@ export default function StartScreen({ navigation }) {
         Sign Up
       </Button>
     </Background>
+    </SafeAreaWrapper>
   )
 }
