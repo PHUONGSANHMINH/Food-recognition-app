@@ -58,6 +58,8 @@ const AddRecipe = () => {
   const [ingredientImages, setIngredientImages] = useState([null]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [recipeImagePreview, setRecipeImagePreview] = useState(null);
+
 
   // Handlers remain the same until handleSubmit
   const handleRecipeChange = (e) => {
@@ -252,7 +254,7 @@ const AddRecipe = () => {
                     {error}
                   </div>
                 )}
-                
+
                 <Form onSubmit={handleSubmit}>
                   {/* Basic Recipe Information */}
                   <h6 className="heading-small text-muted mb-4">Recipe Information</h6>
@@ -302,9 +304,19 @@ const AddRecipe = () => {
                           <label className="form-control-label">Recipe Image</label>
                           <Input
                             type="file"
-                            onChange={(e) => setRecipeImage(e.target.files[0])}
+                            onChange={(e) => {
+                              setRecipeImage(e.target.files[0]);
+                              const reader = new FileReader();
+                              reader.onload = () => {
+                                setRecipeImagePreview(reader.result);
+                              };
+                              reader.readAsDataURL(e.target.files[0]);
+                            }}
                             accept="image/*"
                           />
+                          {recipeImagePreview && (
+                            <img src={recipeImagePreview} alt="Recipe Preview" style={{ width: '100%', marginTop: '10px' }} />
+                          )}
                         </FormGroup>
                       </Col>
                     </Row>
@@ -358,9 +370,21 @@ const AddRecipe = () => {
                               <label className="form-control-label">Image</label>
                               <Input
                                 type="file"
-                                onChange={(e) => handleIngredientImageChange(index, e)}
+                                onChange={(e) => {
+                                  handleIngredientImageChange(index, e);
+                                  const reader = new FileReader();
+                                  reader.onload = () => {
+                                    const newIngredientImages = [...ingredientImages];
+                                    newIngredientImages[index] = reader.result;
+                                    setIngredientImages(newIngredientImages);
+                                  };
+                                  reader.readAsDataURL(e.target.files[0]);
+                                }}
                                 accept="image/*"
                               />
+                              {ingredientImages[index] && (
+                                <img src={ingredientImages[index]} alt={`Ingredient Preview ${index}`} style={{ width: '100%', marginTop: '10px' }} />
+                              )}
                             </FormGroup>
                           </Col>
                           {index > 0 && (
@@ -493,13 +517,13 @@ const AddRecipe = () => {
                   </div>
 
                   <div className="pl-lg-4 mt-4">
-                  <Button 
-                  color="primary" 
-                  type="submit"
-                  disabled={loading}
-                >
-                  {loading ? 'Saving...' : 'Save Recipe'}
-                </Button>
+                    <Button
+                      color="primary"
+                      type="submit"
+                      disabled={loading}
+                    >
+                      {loading ? 'Saving...' : 'Save Recipe'}
+                    </Button>
                   </div>
                 </Form>
               </CardBody>
