@@ -19,6 +19,7 @@ import Index from "views/Index.js";
 import Login from "views/Login.js";
 import AddRecipe from "views/AddRecipe.js";
 import Recipes from "views/Recipes.js";
+import VersionsCSV from "views/VersionCSV.js";
 
 var routes = [
   {
@@ -56,6 +57,14 @@ var routes = [
     name: "Recipes",
     icon: "ni ni-bullet-list-67 text-red",
     component: <Recipes />,
+    layout: "/admin",
+    displayInSidebar: true,
+  },
+  {
+    path: "/versions-csv",
+    name: "VersionsCSV",
+    icon: "ni ni-bullet-list-67 text-red",
+    component: <VersionsCSV />,
     layout: "/admin",
     displayInSidebar: true,
   },

@@ -7,11 +7,19 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 import os
 
+
 @jwt_required()
 def get_csv_versions():
     versions = CSVExportVersion.query.all()
-    result = [
-        {
+    result = []
+
+    for version in versions:
+        file_path = os.path.join('recommend-dataset', version.filename)
+        if not os.path.exists(file_path):
+            version.status = 'file not found'
+            db.session.commit()
+        
+        result.append({
             "id": version.id,
             "filename": version.filename,
             "created_at": version.created_at,
@@ -20,9 +28,10 @@ def get_csv_versions():
             "file_size": version.file_size,
             "status": version.status,
             "error_message": version.error_message
-        } for version in versions
-    ]
+        })
+    
     return jsonify(result), 200
+
 
 @jwt_required()
 def get_csv_version(version_id):
