@@ -53,6 +53,14 @@ var routes = [
     displayInSidebar: false,
   },
   {
+    path: "/recipes/update-recipe/{id}",
+    name: "UpdateRecipe",
+    icon: "ni ni-single-02 text-yellow",
+    component: <AddRecipe />,
+    layout: "/admin",
+    displayInSidebar: false,
+  },
+  {
     path: "/recipes",
     name: "Recipes",
     icon: "ni ni-bullet-list-67 text-red",

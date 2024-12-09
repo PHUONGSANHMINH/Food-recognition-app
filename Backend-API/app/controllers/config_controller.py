@@ -36,6 +36,27 @@ def superadmin_login():
         lang = get_locale()
         return jsonify({"msg": get_message('config_not_found', lang)}), 404
 
+
+@jwt_required()
+def get_config():
+    config_name = request.args.get('config_name')
+
+    if not config_name:
+        lang = get_locale()
+        return jsonify({"msg": get_message('invalid_input', lang)}), 400
+
+    # Tìm cấu hình hiện tại
+    config = Config.query.filter_by(config_name=config_name).first()
+    
+    if not config:
+        lang = get_locale()
+        return jsonify({"msg": get_message('config_not_found', lang)}), 404
+
+    return jsonify({
+        'config_name': config.config_name,
+        'config_value': config.config_value
+    }), 200
+
 @jwt_required()
 def update_config():
     data = request.get_json()

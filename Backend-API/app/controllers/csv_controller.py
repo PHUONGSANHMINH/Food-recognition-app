@@ -6,7 +6,29 @@ from app.models.model import CSVExportVersion, Config
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 import os
+import pandas as pd
 
+
+@jwt_required()
+def get_csv_version_content(version_id):
+    version = CSVExportVersion.query.filter_by(id=version_id).first()
+    if not version:
+        return jsonify({"msg": "Version not found"}), 404
+
+    try:
+        # Construct full file path
+        file_path = os.path.join('recommend-dataset', version.filename)
+        
+        # Read CSV file
+        df = pd.read_csv(file_path)
+        
+        # Convert DataFrame to list of dictionaries
+        result = df.to_dict(orient='records')
+        
+        return jsonify(result), 200
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @jwt_required()
 def get_csv_versions():
@@ -85,4 +107,36 @@ def set_csv_config():
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@jwt_required()
+def delete_csv_version(version_id):
+    try:
+        # Tìm phiên bản cần xóa
+        version = CSVExportVersion.query.filter_by(id=version_id).first()
+        if not version:
+            return jsonify({"msg": "Version not found"}), 404
+
+        # Kiểm tra xem phiên bản có đang được sử dụng trong cấu hình hay không
+        config = Config.query.filter_by(config_name="data_recommend_csv").first()
+        if config and config.config_value == f"recommend-dataset/{version.filename}":
+            return jsonify({"msg": "Cannot delete this version because it is currently in use"}), 400
+
+        # Xóa file liên quan nếu tồn tại
+        file_path = os.path.join('recommend-dataset', version.filename)
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                return jsonify({"msg": f"Failed to delete file: {str(e)}"}), 500
+
+        # Xóa record trong database
+        db.session.delete(version)
+        db.session.commit()
+
+        return jsonify({"msg": "Version deleted successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 

@@ -39,116 +39,87 @@ def export_recipes_to_csv():
     try:
         # Lấy current user từ JWT token
         current_user_id = get_jwt_identity()
-        
+        if current_user_id == 'admin': current_user_id = 1
+
         # Tạo tên file với timestamp
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f'recipes_export_{timestamp}.csv'
-        
-        try:
-            # Tạo đường dẫn đến folder recommend-dataset
-            dataset_folder = os.path.abspath(os.path.join(current_app.root_path, '..', 'recommend-dataset'))
-            if not os.path.exists(dataset_folder):
-                os.makedirs(dataset_folder)
-                
-            file_path = os.path.join(dataset_folder, filename)
-        except OSError as e:
-            raise Exception(f"Failed to create directory or file path: {str(e)}")
-        
-        try:
-            # Query các recipe đã được duyệt
-            approved_recipes = db.session.query(RecipeInfo)\
-                .join(RecipesContribution)\
-                .filter(RecipesContribution.accept_contribution == True)\
-                .all()
-                
-            if not approved_recipes:
-                raise Exception("No approved recipes found to export")
-                
-        except SQLAlchemyError as e:
-            raise Exception(f"Database error while fetching recipes: {str(e)}")
-        
-        try:
-            # Mở file CSV để ghi
-            with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-                fieldnames = ['id_recipe', 'name_recipe', 'image', 'type', 'status', 'summary', 'ingredients']
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writeheader()
-                
-                for recipe in approved_recipes:
-                    try:
-                        # Lấy danh sách ingredients
-                        ingredients = db.session.query(RecipeIngredients)\
-                            .filter(RecipeIngredients.id_recipe == recipe.id_recipe)\
-                            .all()
-                        
-                        ingredients_list = []
-                        for ing in ingredients:
-                            ingredient_dict = {
-                                'id_ingredient': ing.id_ingredient,
-                                'name_ingredient': ing.name_ingredient
-                            }
-                            if hasattr(ing, 'quantity') and ing.quantity is not None:
-                                ingredient_dict['quantity'] = ing.quantity
-                            if hasattr(ing, 'unit') and ing.unit is not None:
-                                ingredient_dict['unit'] = ing.unit
-                            if hasattr(ing, 'image') and ing.image is not None:
-                                ingredient_dict['image'] = ing.image
-                            
-                            ingredients_list.append(ingredient_dict)
-                        
-                        status_list = []
-                        if recipe.status:
-                            status_list = [s.strip() for s in recipe.status.split(',')]
-                        
-                        row = {
-                            'id_recipe': recipe.id_recipe,
-                            'name_recipe': recipe.name_recipe,
-                            'image': recipe.image,
-                            'type': recipe.type,
-                            'status': ','.join(status_list) if status_list else '',
-                            'summary': recipe.summary,
-                            'ingredients': json.dumps(ingredients_list)
-                        }
-                        writer.writerow(row)
-                        
-                    except SQLAlchemyError as e:
-                        raise Exception(f"Error processing recipe {recipe.id_recipe}: {str(e)}")
-                        
-                    except (AttributeError, KeyError) as e:
-                        raise Exception(f"Data format error for recipe {recipe.id_recipe}: {str(e)}")
-                        
-        except IOError as e:
-            raise Exception(f"Error writing to CSV file: {str(e)}")
-        
-        try:
-            # Tạo record trong CSVExportVersion
-            file_size = os.path.getsize(file_path) / 1024  # Convert to KB
-            export_version = CSVExportVersion(
-                filename=filename,
-                exported_by=current_user_id,
-                total_recipes=len(approved_recipes),
-                file_size=file_size,
-                status='completed'
-            )
-            
-            db.session.add(export_version)
-            db.session.commit()
-            
-            # Lưu tên file CSV vào bảng config
-            config_entry = db.session.query(Config).filter_by(config_name='data_recommend_csv').first()
-            if config_entry:
-                config_entry.config_value = "recommend-dataset/" + filename
-            else:
-                new_config = Config(config_name='data_recommend_csv', config_value= "recommend-dataset/" + filename)
-                db.session.add(new_config)
-            db.session.commit()
-            
-        except SQLAlchemyError as e:
-            # Nếu lỗi khi lưu record, xóa file đã tạo
-            if os.path.exists(file_path):
-                os.remove(file_path)
-            raise Exception(f"Failed to save export record: {str(e)}")
-        
+
+        # Tạo đường dẫn đến folder recommend-dataset
+        dataset_folder = os.path.abspath(os.path.join(current_app.root_path, '..', 'recommend-dataset'))
+        os.makedirs(dataset_folder, exist_ok=True)
+        file_path = os.path.join(dataset_folder, filename)
+
+        # Query các recipe đã được duyệt
+        approved_recipes = (
+            db.session.query(RecipeInfo)
+            .join(RecipesContribution)
+            .filter(RecipesContribution.accept_contribution == True)
+            .all()
+        )
+
+        if not approved_recipes:
+            return jsonify({'error': 'No approved recipes found to export'}), 404
+
+        # Mở file CSV để ghi
+        with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+            fieldnames = ['id_recipe', 'name_recipe', 'image', 'type', 'status', 'summary', 'ingredients']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+
+            for recipe in approved_recipes:
+                # Lấy danh sách ingredients
+                ingredients = (
+                    db.session.query(RecipeIngredients)
+                    .filter(RecipeIngredients.id_recipe == recipe.id_recipe)
+                    .all()
+                )
+
+                ingredients_list = [
+                    {
+                        'id_ingredient': ing.id_ingredient,
+                        'name_ingredient': ing.name_ingredient,
+                        'quantity': getattr(ing, 'quantity', None),
+                        'unit': getattr(ing, 'unit', None),
+                        'image': getattr(ing, 'image', None)
+                    }
+                    for ing in ingredients
+                ]
+
+                status_list = [s.strip() for s in recipe.status.split(',')] if recipe.status else []
+
+                row = {
+                    'id_recipe': recipe.id_recipe,
+                    'name_recipe': recipe.name_recipe,
+                    'image': recipe.image,
+                    'type': recipe.type,
+                    'status': ','.join(status_list),
+                    'summary': recipe.summary,
+                    'ingredients': json.dumps(ingredients_list)
+                }
+                writer.writerow(row)
+
+        # Tạo record trong CSVExportVersion
+        file_size = os.path.getsize(file_path) / 1024  # Convert to KB
+        export_version = CSVExportVersion(
+            filename=filename,
+            exported_by=current_user_id,
+            total_recipes=len(approved_recipes),
+            file_size=file_size,
+            status='completed'
+        )
+        db.session.add(export_version)
+
+        # Lưu tên file CSV vào bảng config
+        config_entry = db.session.query(Config).filter_by(config_name='data_recommend_csv').first()
+        if config_entry:
+            config_entry.config_value = f"recommend-dataset/{filename}"
+        else:
+            new_config = Config(config_name='data_recommend_csv', config_value=f"recommend-dataset/{filename}")
+            db.session.add(new_config)
+
+        db.session.commit()
+
         return jsonify({
             'success': True,
             'message': 'Recipe dataset has been exported successfully',
@@ -159,6 +130,13 @@ def export_recipes_to_csv():
                 'path': file_path
             }
         }), 200
+
+    except SQLAlchemyError as db_error:
+        db.session.rollback()
+        return jsonify({'error': f'Database error: {str(db_error)}'}), 500
+
+    except OSError as os_error:
+        return jsonify({'error': f'File system error: {str(os_error)}'}), 500
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

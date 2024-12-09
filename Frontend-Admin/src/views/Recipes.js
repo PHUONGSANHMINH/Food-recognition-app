@@ -107,6 +107,11 @@ const Recipes = () => {
     navigate('/admin/recipes/add-recipe');
   };
 
+  const handleUpdateRecipe = (id) => {
+    // Navigate to the update page with the recipe ID
+    navigate(`/admin/recipes/update-recipe/${id}`);
+  };
+
   return (
     <>
       <Header />
@@ -141,6 +146,7 @@ const Recipes = () => {
                       <th scope="col">Image</th>
                       <th scope="col">Status</th>
                       <th scope="col">Summary</th>
+                      <th scope="col">Edit</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -149,6 +155,7 @@ const Recipes = () => {
                         <tr key={index} className="skeleton-row">
                           <td><div className="skeleton skeleton-text" /></td>
                           <td><div className="skeleton skeleton-image" /></td>
+                          <td><div className="skeleton skeleton-text" /></td>
                           <td><div className="skeleton skeleton-text" /></td>
                           <td><div className="skeleton skeleton-text" /></td>
                         </tr>
@@ -182,6 +189,15 @@ const Recipes = () => {
                           </td>
                           <td>{item.status}</td>
                           <td>{item.summary}</td>
+                          <td>
+                            <Button
+                              color="primary"
+                              size="sm"
+                              onClick={() => handleUpdateRecipe(item.id_recipe)}
+                            >
+                              Update
+                            </Button>
+                          </td>
                         </tr>
                       ))
                     ) : (

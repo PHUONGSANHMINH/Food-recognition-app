@@ -1,5 +1,5 @@
 from flask import Blueprint
-from app.controllers.config_controller import superadmin_login, update_config
+from app.controllers.config_controller import superadmin_login, update_config, get_config
 from flasgger import swag_from
 
 config_bp = Blueprint('config', __name__)
@@ -66,7 +66,7 @@ config_bp = Blueprint('config', __name__)
 def login_superadmin():
     return superadmin_login()
 
-@config_bp.route('/update', methods=['POST'])
+@config_bp.route('/config/update', methods=['POST'])
 @swag_from({
     'tags': ['Config'],
     'summary': 'Update Config Value',
@@ -128,3 +128,52 @@ def login_superadmin():
 })
 def update_config_view():
     return update_config()
+
+@config_bp.route('/config/get', methods=['GET'])
+@swag_from({
+    'tags': ['Config'],
+    'summary': 'Get Config Value',
+    'description': 'Get the value of a specific configuration from the Config table',
+    'security': [{'Bearer': []}],
+    'parameters': [
+        {
+            'name': 'config_name',
+            'in': 'query',
+            'type': 'string',
+            'required': True,
+            'description': 'Name of the configuration to retrieve'
+        }
+    ],
+    'responses': {
+        200: {
+            'description': 'Config value retrieved successfully',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'config_name': {'type': 'string'},
+                    'config_value': {'type': 'string'}
+                }
+            }
+        },
+        400: {
+            'description': 'Invalid input',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'msg': {'type': 'string'}
+                }
+            }
+        },
+        404: {
+            'description': 'Config not found',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'msg': {'type': 'string'}
+                }
+            }
+        }
+    }
+})
+def get_config_view():
+    return get_config()
