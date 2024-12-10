@@ -12,6 +12,7 @@ export default function RecipeDetail({ route }) {
   const [customRecipe, setCustomRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isFavourite, setIsFavourite] = useState(false);
 
   useEffect(() => {
     if (recipeId) {
@@ -25,6 +26,8 @@ export default function RecipeDetail({ route }) {
             }
           );
           setCustomRecipe(response.data);
+          const isFav = response.data.is_favourite; // Giả sử API trả về trạng thái yêu thích
+          setIsFavourite(isFav);
         } catch (err) {
           setError('Unable to load recipe details');
         } finally {
@@ -37,6 +40,24 @@ export default function RecipeDetail({ route }) {
       setLoading(false);
     }
   }, [recipeId]);
+
+  const toggleFavourite = async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const response = await axios.post(
+        `${process.env.EXPO_PUBLIC_DOMAIN}api/recipe/${recipeId}/favourite`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (response.data.is_favourite !== undefined) {
+        setIsFavourite(response.data.is_favourite);
+      }
+    } catch (err) {
+      setError('Unable to toggle favourite status');
+    }
+  };
 
   const handleTabPress = (tab) => {
     setActiveTab(tab);
@@ -64,7 +85,13 @@ export default function RecipeDetail({ route }) {
           <MaterialIcons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Dish details</Text>
-        <View style={styles.headerRight} />
+        <TouchableOpacity style={styles.favouriteButton} onPress={toggleFavourite}>
+          <MaterialIcons
+            name={isFavourite ? 'favorite' : 'favorite-border'}
+            size={28}
+            color={isFavourite ? '#FF6B6B' : '#333'}
+          />
+        </TouchableOpacity>
       </View>
       {customRecipe ? (
             <Image
@@ -211,6 +238,9 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     width: 40,
+  },
+  favouriteButton: {
+    padding: 8,
   },
   image: {
     width: '100%',

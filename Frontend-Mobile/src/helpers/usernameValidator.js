@@ -9,4 +9,10 @@ export const usernameValidator = (username) => {
       return 'Username can only contain letters and numbers.'
     return ''
   }
-  
+
+  export const usernameLoginValidator = (username) => {
+    if (!username || username.trim().length === 0) {
+      return 'Username is required.';
+    }
+    return '';
+  };

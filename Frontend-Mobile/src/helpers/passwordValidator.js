@@ -12,7 +12,14 @@ export function passwordValidator(password) {
     return 'Password must contain at least one number.';
   }
   if (!/[@#$%^&+=]/.test(password)) {
-    return 'Password must contain at least one special character (@#$%^&+=).';
+    return 'Password must contain at least one special character.';
   }
   return '';
 }
+
+export const passwordLoginValidator = (password) => {
+  if (!password || password.trim().length === 0) {
+    return 'Password is required.';
+  }
+  return '';
+};

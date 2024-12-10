@@ -11,8 +11,8 @@ import Button from '../components/Button';
 import TextInput from '../components/TextInput';
 import SafeAreaWrapper from '../components/SafeAreaWrapper'
 import { theme } from '../core/theme';
-import { usernameValidator } from '../helpers/usernameValidator';
-import { passwordValidator } from '../helpers/passwordValidator';
+import { usernameLoginValidator } from '../helpers/usernameValidator';
+import { passwordLoginValidator } from '../helpers/passwordValidator';
 import Modal from 'react-native-modal';
 import Config from 'react-native-config';
 
@@ -89,8 +89,8 @@ export default function LoginScreen({ navigation }) {
   }, [navigation]);
 
   const validateForm = useCallback(() => {
-    const usernameError = "";//usernameValidator(formData.username.value);
-    const passwordError = "";//passwordValidator(formData.password.value);
+    const usernameError = usernameLoginValidator(formData.username.value);
+    const passwordError = passwordLoginValidator(formData.password.value);
     
     setFormData(prev => ({
       username: { ...prev.username, error: usernameError },
@@ -135,36 +135,34 @@ export default function LoginScreen({ navigation }) {
       <Logo />
       <Header>Welcome back</Header>
       
+      <View style={styles.inputWrapper}>
       <TextInput
         label="Username"
-        returnKeyType="next" 
+        returnKeyType="next"
         value={formData.username.value}
         onChangeText={(text) => handleInputChange('username', text)}
         error={!!formData.username.error}
-        errorText={formData.username.error}
-        autoCapitalize="none"
-        autoComplete="username"
-        textContentType="username"
-        keyboardType="default"
-        testID="login-username-input"
+        style={styles.input}
       />
-
+      {!!formData.username.error && (
+        <Text style={styles.errorText}>{formData.username.error}</Text>
+      )}
+    </View>
+    
+    <View style={styles.inputWrapper}>
       <View style={styles.passwordWrapper}>
         <TextInput
           label="Password"
           returnKeyType="done"
           value={formData.password.value}
           onChangeText={(text) => handleInputChange('password', text)}
-          error={!!formData.password.error}
-          errorText={formData.password.error}
           secureTextEntry={!isPasswordVisible}
-          testID="login-password-input"
           style={styles.passwordInput}
+          error={!!formData.password.error}
         />
         <TouchableOpacity 
           style={styles.eyeIconContainer} 
           onPress={() => setPasswordVisible(!isPasswordVisible)}
-          testID="password-visibility-toggle"
         >
           <Feather 
             name={isPasswordVisible ? 'eye-off' : 'eye'} 
@@ -173,6 +171,11 @@ export default function LoginScreen({ navigation }) {
           />
         </TouchableOpacity>
       </View>
+      {!!formData.password.error && (
+        <Text style={styles.errorText}>{formData.password.error}</Text>
+      )}
+    </View>
+    
 
       <View style={styles.forgotPassword}>
         <TouchableOpacity
@@ -237,18 +240,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  passwordWrapper: {
+  inputWrapper: {
     width: '100%',
+    marginBottom: 10, // Khoảng cách giữa các input
+  },
+  input: {
+    paddingRight: 50, // Chừa khoảng trống cho icon nếu cần
+  },
+  passwordWrapper: {
     position: 'relative',
+    width: '100%',
   },
   passwordInput: {
-    paddingRight: 50, // Make space for the eye icon
+    paddingRight: 50, // Chừa khoảng trống cho icon
   },
   eyeIconContainer: {
-    position: 'absolute', 
+    position: 'absolute',
     right: 12,
-    top: '55%',
-    transform: [{ translateY: -12 }], // Center vertically
+    top: 7,
+    bottom: 0,
+    justifyContent: 'center',
+  },
+  errorText: {
+    color: '#D32F2F', // Màu đỏ cho lỗi
+    fontSize: 12,
+    height: 16, // Chiều cao cố định để đảm bảo luôn có khoảng trống
+    marginTop: 4, // Khoảng cách giữa input và lỗi
   },
   eyeIcon: {
     position: 'absolute', 

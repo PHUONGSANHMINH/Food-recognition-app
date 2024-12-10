@@ -13,11 +13,13 @@ import { theme } from '../core/theme';
 import { emailValidator } from '../helpers/emailValidator';
 import { passwordValidator } from '../helpers/passwordValidator';
 import { nameValidator } from '../helpers/nameValidator';
+import { Feather } from '@expo/vector-icons';
 
 const ACCESS_TOKEN_KEY = 'access_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 
 export default function RegisterScreen({ navigation }) {
+  const [isPasswordVisible, setPasswordVisible] = useState(false);
   const [formData, setFormData] = useState({
     name: { value: '', error: '' },
     email: { value: '', error: '' },
@@ -120,34 +122,65 @@ export default function RegisterScreen({ navigation }) {
       <BackButton goBack={navigation.goBack} />
       <Logo />
       <Header>Create Account</Header>
-      <TextInput
-        label="Name"
-        returnKeyType="next"
-        value={formData.name.value}
-        onChangeText={(text) => handleInputChange('name', text)}
-        error={!!formData.name.error}
-        errorText={formData.name.error}
+      <View style={styles.inputWrapper}>
+  <TextInput
+    label="Name"
+    returnKeyType="next"
+    value={formData.name.value}
+    onChangeText={(text) => handleInputChange('name', text)}
+    error={!!formData.name.error}
+    style={styles.input}
+  />
+  {!!formData.name.error && (
+    <Text style={styles.errorText}>{formData.name.error}</Text>
+  )}
+</View>
+
+<View style={styles.inputWrapper}>
+  <TextInput
+    label="Email"
+    returnKeyType="next"
+    value={formData.email.value}
+    onChangeText={(text) => handleInputChange('email', text)}
+    error={!!formData.email.error}
+    autoCapitalize="none"
+    autoCompleteType="email"
+    textContentType="emailAddress"
+    keyboardType="email-address"
+    style={styles.input}
+  />
+  {!!formData.email.error && (
+    <Text style={styles.errorText}>{formData.email.error}</Text>
+  )}
+</View>
+
+<View style={styles.inputWrapper}>
+  <View style={styles.passwordWrapper}>
+    <TextInput
+      label="Password"
+      returnKeyType="done"
+      value={formData.password.value}
+      onChangeText={(text) => handleInputChange('password', text)}
+      error={!!formData.password.error}
+      secureTextEntry={!isPasswordVisible}
+      style={styles.passwordInput}
+    />
+    <TouchableOpacity
+      style={styles.eyeIconContainer}
+      onPress={() => setPasswordVisible(!isPasswordVisible)}
+    >
+      <Feather
+        name={isPasswordVisible ? 'eye-off' : 'eye'}
+        size={24}
+        color={theme.colors.secondary}
       />
-      <TextInput
-        label="Email"
-        returnKeyType="next"
-        value={formData.email.value}
-        onChangeText={(text) => handleInputChange('email', text)}
-        error={!!formData.email.error}
-        errorText={formData.email.error}
-        autoCapitalize="none"
-        autoCompleteType="email"
-        textContentType="emailAddress"
-        keyboardType="email-address"
-      />
-      <TextInput
-        label="Password"
-        returnKeyType="done"
-        value={formData.password.value}
-        onChangeText={(text) => handleInputChange('password', text)}
-        error={!!formData.password.error}
-        errorText={formData.password.error}
-      />
+    </TouchableOpacity>
+  </View>
+  {!!formData.password.error && (
+    <Text style={styles.errorText}>{formData.password.error}</Text>
+  )}
+</View>
+
       <Button
         mode="contained"
         onPress={handleRegister}
@@ -169,10 +202,44 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    marginTop: 4,
+    marginTop: 24,
   },
   link: {
     fontWeight: 'bold',
     color: theme.colors.primary,
+  },
+  inputWrapper: {
+    width: '100%',
+    marginBottom: 20, // Khoảng cách giữa các input
+  },
+  input: {
+    width: '100%',
+  },
+  errorText: {
+    color: '#D32F2F', // Màu đỏ cho lỗi
+    fontSize: 12,
+    height: 16, // Chiều cao cố định
+    marginTop: 4, // Khoảng cách giữa input và lỗi
+  },
+  link: {
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+  },
+  inputWrapper: {
+    width: '100%',
+    marginBottom: 20, // Khoảng cách giữa các input
+  },
+  passwordWrapper: {
+    position: 'relative',
+    width: '100%',
+  },
+  passwordInput: {
+    paddingRight: 50, // Chừa không gian cho icon mắt
+  },
+  eyeIconContainer: {
+    position: 'absolute',
+    right: 10,
+    top: '55%',
+    transform: [{ translateY: -12 }], // Canh giữa theo chiều dọc
   },
 });

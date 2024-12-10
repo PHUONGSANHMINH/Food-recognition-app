@@ -38,11 +38,15 @@ export default function CameraScreen({ navigation }) {
 
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.message}>We need your permission to show the camera</Text>
-        <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-          <Text>Grant Permission</Text>
-        </TouchableOpacity>
+      <View style={styles.permissionContainer}>
+        <View style={styles.permissionBox}>
+          <Text style={styles.permissionMessage}>
+            Camera access is required to use this feature.
+          </Text>
+          <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+            <Text style={styles.permissionButtonText}>Grant Permission</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -273,11 +277,37 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  permissionBox: {
+    width: '80%',
+    padding: 20,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    alignItems: 'center',
+  },
+  permissionMessage: {
+    fontSize: 16,
+    color: '#333333',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
   permissionButton: {
-    backgroundColor: 'white',
-    padding: 10,
+    backgroundColor: '#ed5c01',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 5,
-    alignSelf: 'center',
+  },
+  permissionButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   loadingContainer: {
     ...StyleSheet.absoluteFillObject,

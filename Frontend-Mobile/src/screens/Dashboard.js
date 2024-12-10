@@ -705,7 +705,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', // Căn giữa theo chiều dọc
   },
   mealTypeText: {
-    width: 70,
+    width: 90,
     color: 'white', // Màu chữ
     backgroundColor: 'green', // Màu nền của badge
     fontSize: 12, // Kích thước font
@@ -713,6 +713,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4, // Khoảng cách dọc bên trong badge
     paddingHorizontal: 8, // Khoảng cách ngang bên trong badge
     borderRadius: 12, // Bo tròn góc
+    textAlign: 'center',
   },
   recipeContainer: {
     flexDirection: 'row',
