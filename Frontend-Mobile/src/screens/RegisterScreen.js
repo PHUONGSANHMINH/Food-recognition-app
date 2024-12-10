@@ -40,12 +40,12 @@ export default function RegisterScreen({ navigation }) {
       if (!access_token || !refresh_token) {
         throw new Error('Invalid tokens received');
       }
-      
+
       await Promise.all([
         AsyncStorage.setItem(ACCESS_TOKEN_KEY, access_token),
         AsyncStorage.setItem(REFRESH_TOKEN_KEY, refresh_token)
       ]);
-      
+
       return true;
     } catch (error) {
       console.error('Token storage error:', error);
@@ -75,7 +75,7 @@ export default function RegisterScreen({ navigation }) {
       });
 
       await storeTokens(response.data);
-      
+
       navigation.reset({
         index: 0,
         routes: [{ name: 'Dashboard' }],
@@ -100,7 +100,7 @@ export default function RegisterScreen({ navigation }) {
 
       // Thực hiện đăng nhập sau khi đăng ký thành công
       await handleLogin();
-      
+
     } catch (error) {
       if (error.response && error.response.status === 400) {
         const errors = error.response.data.errors;
@@ -123,63 +123,63 @@ export default function RegisterScreen({ navigation }) {
       <Logo />
       <Header>Create Account</Header>
       <View style={styles.inputWrapper}>
-  <TextInput
-    label="Name"
-    returnKeyType="next"
-    value={formData.name.value}
-    onChangeText={(text) => handleInputChange('name', text)}
-    error={!!formData.name.error}
-    style={styles.input}
-  />
-  {!!formData.name.error && (
-    <Text style={styles.errorText}>{formData.name.error}</Text>
-  )}
-</View>
+        <TextInput
+          label="Username"
+          returnKeyType="next"
+          value={formData.name.value}
+          onChangeText={(text) => handleInputChange('name', text)}
+          error={!!formData.name.error}
+          style={styles.input}
+        />
+        {!!formData.name.error && (
+          <Text style={styles.errorText}>{formData.name.error}</Text>
+        )}
+      </View>
 
-<View style={styles.inputWrapper}>
-  <TextInput
-    label="Email"
-    returnKeyType="next"
-    value={formData.email.value}
-    onChangeText={(text) => handleInputChange('email', text)}
-    error={!!formData.email.error}
-    autoCapitalize="none"
-    autoCompleteType="email"
-    textContentType="emailAddress"
-    keyboardType="email-address"
-    style={styles.input}
-  />
-  {!!formData.email.error && (
-    <Text style={styles.errorText}>{formData.email.error}</Text>
-  )}
-</View>
+      <View style={styles.inputWrapper}>
+        <TextInput
+          label="Email"
+          returnKeyType="next"
+          value={formData.email.value}
+          onChangeText={(text) => handleInputChange('email', text)}
+          error={!!formData.email.error}
+          autoCapitalize="none"
+          autoCompleteType="email"
+          textContentType="emailAddress"
+          keyboardType="email-address"
+          style={styles.input}
+        />
+        {!!formData.email.error && (
+          <Text style={styles.errorText}>{formData.email.error}</Text>
+        )}
+      </View>
 
-<View style={styles.inputWrapper}>
-  <View style={styles.passwordWrapper}>
-    <TextInput
-      label="Password"
-      returnKeyType="done"
-      value={formData.password.value}
-      onChangeText={(text) => handleInputChange('password', text)}
-      error={!!formData.password.error}
-      secureTextEntry={!isPasswordVisible}
-      style={styles.passwordInput}
-    />
-    <TouchableOpacity
-      style={styles.eyeIconContainer}
-      onPress={() => setPasswordVisible(!isPasswordVisible)}
-    >
-      <Feather
-        name={isPasswordVisible ? 'eye-off' : 'eye'}
-        size={24}
-        color={theme.colors.secondary}
-      />
-    </TouchableOpacity>
-  </View>
-  {!!formData.password.error && (
-    <Text style={styles.errorText}>{formData.password.error}</Text>
-  )}
-</View>
+      <View style={styles.inputWrapper}>
+        <View style={styles.passwordWrapper}>
+          <TextInput
+            label="Password"
+            returnKeyType="done"
+            value={formData.password.value}
+            onChangeText={(text) => handleInputChange('password', text)}
+            error={!!formData.password.error}
+            secureTextEntry={!isPasswordVisible}
+            style={styles.passwordInput}
+          />
+          <TouchableOpacity
+            style={styles.eyeIconContainer}
+            onPress={() => setPasswordVisible(!isPasswordVisible)}
+          >
+            <Feather
+              name={isPasswordVisible ? 'eye-off' : 'eye'}
+              size={24}
+              color={theme.colors.secondary}
+            />
+          </TouchableOpacity>
+        </View>
+        {!!formData.password.error && (
+          <Text style={styles.errorText}>{formData.password.error}</Text>
+        )}
+      </View>
 
       <Button
         mode="contained"

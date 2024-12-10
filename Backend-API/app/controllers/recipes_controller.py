@@ -321,7 +321,8 @@ def get_recipes():
     search = request.args.get('search', '', type=str)
 
     query = RecipeInfo.query
-
+    # Lọc thêm điều kiện status = 'Published'        
+    query = query.filter(RecipeInfo.status == 'Published')
     if search:
         query = query.filter(RecipeInfo.name_recipe.like(f'%{search}%'))
 

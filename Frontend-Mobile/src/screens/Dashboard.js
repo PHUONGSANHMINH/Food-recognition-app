@@ -141,6 +141,10 @@ const RecipeList = () => {
     navigation.navigate('Favourites');
   };
 
+  const handleListRecipesPress = () => {
+    navigation.navigate('ListRecipes');
+  };
+
   const handleRecipePress = async (recipeId) => {
     try {
       const token = await AsyncStorage.getItem('access_token');
@@ -328,7 +332,9 @@ const RecipeList = () => {
             style={styles.squareButtonIcon}
           />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.squareButton}>
+        <TouchableOpacity style={styles.squareButton}
+          onPress={handleListRecipesPress}
+        >
           <Image
             source={require('../assets/blender.png')}
             style={styles.squareButtonIcon}
@@ -340,7 +346,9 @@ const RecipeList = () => {
             style={styles.cameraIcon}
           />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.squareButton}>
+        <TouchableOpacity style={styles.squareButton}
+          onPress={handleFavouritesPress}
+        >
           <Image
             source={require('../assets/favourite.png')}
             style={styles.squareButtonIcon}

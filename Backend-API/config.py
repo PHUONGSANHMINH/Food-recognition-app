@@ -8,7 +8,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwtsecretkey')
 
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=120)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=10080) # 7 days
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
     MAIL_PORT = int(os.getenv('MAIL_PORT', '465'))

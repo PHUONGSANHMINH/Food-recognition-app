@@ -50,7 +50,11 @@ const FavouriteRecipes = () => {
       onPress={() => navigation.navigate('RecipeDetail', { recipeId: item.id_recipe })}
     >
       <Image 
-        source={{ uri: item.image }} 
+        source={{
+          uri: item.image
+            ? `${process.env.EXPO_PUBLIC_DOMAIN}api/file/get-file/recipes/${item.image}`
+            : null
+        }}
         style={styles.recipeImage} 
         defaultSource={require('../assets/food-placeholder.png')}
       />

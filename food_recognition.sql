@@ -11,7 +11,7 @@
  Target Server Version : 80036
  File Encoding         : 65001
 
- Date: 09/12/2024 20:13:37
+ Date: 10/12/2024 20:11:21
 */
 
 SET NAMES utf8mb4;
@@ -30,7 +30,7 @@ CREATE TABLE `advertising_banners`  (
   `activate` tinyint(1) NOT NULL,
   `image_background` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of advertising_banners
@@ -51,7 +51,7 @@ CREATE TABLE `config`  (
 -- ----------------------------
 -- Records of config
 -- ----------------------------
-INSERT INTO `config` VALUES ('data_recommend_csv', 'recommend-dataset/recipes_export_20241209_195529.csv');
+INSERT INTO `config` VALUES ('data_recommend_csv', 'recommend-dataset/recipes_export_20241210_195528.csv');
 INSERT INTO `config` VALUES ('superadmin_password', 'admin');
 INSERT INTO `config` VALUES ('superadmin_username', 'admin');
 INSERT INTO `config` VALUES ('test', 'test1t1t1t1');
@@ -72,7 +72,7 @@ CREATE TABLE `csv_export_version`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `exported_by`(`exported_by` ASC) USING BTREE,
   CONSTRAINT `csv_export_version_ibfk_1` FOREIGN KEY (`exported_by`) REFERENCES `user` (`id_user`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of csv_export_version
@@ -83,6 +83,7 @@ INSERT INTO `csv_export_version` VALUES (4, 'recipes_export_20241127_150220.csv'
 INSERT INTO `csv_export_version` VALUES (5, 'recipes_export_20241127_155926.csv', '2024-11-27 08:59:26', 1, 10, 4.10156, 'completed', NULL);
 INSERT INTO `csv_export_version` VALUES (6, 'recipes_export_20241209_195159.csv', '2024-12-09 12:51:59', 1, 10, 3.79883, 'completed', NULL);
 INSERT INTO `csv_export_version` VALUES (7, 'recipes_export_20241209_195529.csv', '2024-12-09 12:55:30', 1, 10, 3.79883, 'completed', NULL);
+INSERT INTO `csv_export_version` VALUES (8, 'recipes_export_20241210_195528.csv', '2024-12-10 12:55:29', 1, 12, 4.23438, 'completed', NULL);
 
 -- ----------------------------
 -- Table structure for rating
@@ -99,7 +100,7 @@ CREATE TABLE `rating`  (
   INDEX `id_user`(`id_user` ASC) USING BTREE,
   CONSTRAINT `rating_ibfk_1` FOREIGN KEY (`id_recipe`) REFERENCES `recipe_info` (`id_recipe`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `rating_ibfk_2` FOREIGN KEY (`id_user`) REFERENCES `user` (`id_user`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of rating
@@ -119,7 +120,7 @@ CREATE TABLE `recipe_info`  (
   `status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL,
   `summary` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL,
   PRIMARY KEY (`id_recipe`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 52 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 53 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_info
@@ -170,6 +171,7 @@ INSERT INTO `recipe_info` VALUES (48, 'Vegan Pancakes', 'url_to_image', 'breakfa
 INSERT INTO `recipe_info` VALUES (49, 'Chicken Salad', 'url_to_image', 'lunch', 'active', 'Healthy chicken salad.');
 INSERT INTO `recipe_info` VALUES (50, 'Spaghetti Bolognese', 'url_to_image', 'dinner', 'active', 'Classic Italian dish.');
 INSERT INTO `recipe_info` VALUES (52, 'test', '20241209_195913_lovepik-abstract-background-mobile-phone-wallpaper-image_400624615.jpg', 'test', 'pending', 'test');
+INSERT INTO `recipe_info` VALUES (53, 'Test', '20241210_163523_recipe_image.jpg', '1231', 'Published', '23');
 
 -- ----------------------------
 -- Table structure for recipe_ingredients
@@ -185,7 +187,7 @@ CREATE TABLE `recipe_ingredients`  (
   PRIMARY KEY (`id_ingredient`) USING BTREE,
   INDEX `id_recipe`(`id_recipe` ASC) USING BTREE,
   CONSTRAINT `recipe_ingredients_ibfk_1` FOREIGN KEY (`id_recipe`) REFERENCES `recipe_info` (`id_recipe`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 100 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 102 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_ingredients
@@ -272,6 +274,7 @@ INSERT INTO `recipe_ingredients` VALUES (98, 1, 'Flour', 200, 'grams', '20241202
 INSERT INTO `recipe_ingredients` VALUES (99, 24, 'Sugar', 100, 'grams', '20241202_155914_1381232.png');
 INSERT INTO `recipe_ingredients` VALUES (100, 24, 'Flour', 200, 'grams', '20241202_155914_1381232.png');
 INSERT INTO `recipe_ingredients` VALUES (101, 52, 'test', 1, 'test', NULL);
+INSERT INTO `recipe_ingredients` VALUES (102, 53, 'Chicken meat', 1, 'c', '20241210_163523_ingredient_image_0.jpg');
 
 -- ----------------------------
 -- Table structure for recipe_nutrition
@@ -292,7 +295,7 @@ CREATE TABLE `recipe_nutrition`  (
   PRIMARY KEY (`id_nutrition`) USING BTREE,
   INDEX `id_recipe`(`id_recipe` ASC) USING BTREE,
   CONSTRAINT `recipe_nutrition_ibfk_1` FOREIGN KEY (`id_recipe`) REFERENCES `recipe_info` (`id_recipe`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 37 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 39 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_nutrition
@@ -323,6 +326,7 @@ INSERT INTO `recipe_nutrition` VALUES (30, 50, 600, 20, 6, 80, 10, 75, 250, 30, 
 INSERT INTO `recipe_nutrition` VALUES (36, 1, 300, 10, 2, 50, 20, 0, 5, 5, 0);
 INSERT INTO `recipe_nutrition` VALUES (37, 24, 300, 10, 2, 50, 20, 0, 5, 5, 0);
 INSERT INTO `recipe_nutrition` VALUES (38, 52, 1000, 0, 0, 0, 0, 0, 0, 0, 0);
+INSERT INTO `recipe_nutrition` VALUES (39, 53, 1200, 30, 40, 20, 10, 300, 0, 600, 0);
 
 -- ----------------------------
 -- Table structure for recipe_steps
@@ -336,7 +340,7 @@ CREATE TABLE `recipe_steps`  (
   PRIMARY KEY (`id_step`) USING BTREE,
   INDEX `id_recipe`(`id_recipe` ASC) USING BTREE,
   CONSTRAINT `recipe_steps_ibfk_1` FOREIGN KEY (`id_recipe`) REFERENCES `recipe_info` (`id_recipe`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 109 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 111 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_steps
@@ -430,6 +434,8 @@ INSERT INTO `recipe_steps` VALUES (107, 24, 1, 'Mix the dry ingredients.');
 INSERT INTO `recipe_steps` VALUES (108, 24, 2, 'Add the wet ingredients and mix well.');
 INSERT INTO `recipe_steps` VALUES (109, 24, 3, 'Bake in the oven at 180°C for 25 minutes.');
 INSERT INTO `recipe_steps` VALUES (110, 52, 1, 'test');
+INSERT INTO `recipe_steps` VALUES (111, 53, 1, 'Cooking');
+INSERT INTO `recipe_steps` VALUES (112, 53, 2, 'eating');
 
 -- ----------------------------
 -- Table structure for recipe_vitamin
@@ -456,7 +462,7 @@ CREATE TABLE `recipe_vitamin`  (
   PRIMARY KEY (`id_vitamin`) USING BTREE,
   INDEX `id_nutrition`(`id_nutrition` ASC) USING BTREE,
   CONSTRAINT `recipe_vitamin_ibfk_1` FOREIGN KEY (`id_nutrition`) REFERENCES `recipe_nutrition` (`id_nutrition`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 31 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 33 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_vitamin
@@ -487,6 +493,7 @@ INSERT INTO `recipe_vitamin` VALUES (25, 30, 30, 200, 7, 900, 70, 20, 4, 3, 3, 3
 INSERT INTO `recipe_vitamin` VALUES (30, 36, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
 INSERT INTO `recipe_vitamin` VALUES (31, 37, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
 INSERT INTO `recipe_vitamin` VALUES (32, 38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+INSERT INTO `recipe_vitamin` VALUES (33, 39, NULL, 100, 20, 100, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 100);
 
 -- ----------------------------
 -- Table structure for recipes_contribution
@@ -515,7 +522,8 @@ INSERT INTO `recipes_contribution` VALUES (44, 1, 1);
 INSERT INTO `recipes_contribution` VALUES (45, 1, 1);
 INSERT INTO `recipes_contribution` VALUES (46, 1, 1);
 INSERT INTO `recipes_contribution` VALUES (47, 1, 1);
-INSERT INTO `recipes_contribution` VALUES (52, 1, 0);
+INSERT INTO `recipes_contribution` VALUES (52, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (53, 14, 1);
 
 -- ----------------------------
 -- Table structure for recipes_favourite
@@ -537,6 +545,7 @@ INSERT INTO `recipes_favourite` VALUES (1, 1);
 INSERT INTO `recipes_favourite` VALUES (34, 1);
 INSERT INTO `recipes_favourite` VALUES (35, 1);
 INSERT INTO `recipes_favourite` VALUES (2, 2);
+INSERT INTO `recipes_favourite` VALUES (53, 14);
 
 -- ----------------------------
 -- Table structure for user
@@ -554,7 +563,7 @@ CREATE TABLE `user`  (
   PRIMARY KEY (`id_user`) USING BTREE,
   UNIQUE INDEX `username`(`username` ASC) USING BTREE,
   UNIQUE INDEX `email`(`email` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of user
@@ -568,5 +577,10 @@ INSERT INTO `user` VALUES (9, 'junq29', 'scrypt:32768:8:1$7KQ4dpFD9jCy61RF$58f69
 INSERT INTO `user` VALUES (10, 'baoquoc', 'scrypt:32768:8:1$lQw17qBkVCxUP1h8$5e16a84bc979f2b30a1f28d9657557e3ec3d50bb87111d89a14eb969e7c7a5d0dbcf5917436b02bf8636bde2f59409d9f71ef5f1c5415de46da9effe56a387ab', 'tranbaoquoc@luvina.net', '582701', '2024-11-04 08:09:50', 0, NULL);
 INSERT INTO `user` VALUES (11, 'admin', 'scrypt:32768:8:1$VeDEuApRep7q8WFQ$0d808cb5c25d360a37b449a0d55cab2d91678eb65e317a236f9963043cb7bdbc5ab1c4f94e8c21d7d8ad1a42b1cd48f1bf592f87f300dafbe20d08e6bf871ed7', 'admin@gmail.com', NULL, NULL, 0, NULL);
 INSERT INTO `user` VALUES (13, 'newuser1', 'scrypt:32768:8:1$DRvQfoNhJ0SpxUCw$a9bab758a5a72fe70fbf776c3fee18259c45b9dd4d7cf314ae929f658c647a332d7fdc90d8e55082df07efaf8f2fbcca7a1ce6f263fd8397f62a6e5d8789bd42', 'newuser1@example.com', NULL, NULL, 0, NULL);
+INSERT INTO `user` VALUES (14, 'testuser', 'scrypt:32768:8:1$dBB3kOposankFrzn$0e8cd4e827c4de1b10ac1846e4e4a7200c0912bdcaecf91a1e7870095e49319277c0e77e60feec36f85ef7bfd63f415a2406b2a80045e783d94a33f41d570f9a', 'test123213213@gmail.com', NULL, NULL, 0, NULL);
+INSERT INTO `user` VALUES (15, 'tesa', 'scrypt:32768:8:1$eTrE1Pi5LckrBjuX$709029224eefd2caa23e96f9c3b963270ecc34ff4b1b288eb834083ca9db33f8796c8f1f1b44aae0093251351509932c05fe5966f9d787eba396943d66ed33e6', 'test@gamil.com', NULL, NULL, 0, NULL);
+INSERT INTO `user` VALUES (16, 'testuser2', 'scrypt:32768:8:1$qJzuI87J2VXhrJkX$71bb7be7b71494414bb4e3af08ab18465a1c52caea68ead82b33f4deeaf68571f5fa45feac91388cd0bac79599c9c270eeee33bcde159f11a3154bc086660093', 'testuser2@gmail.com', NULL, NULL, 0, NULL);
+INSERT INTO `user` VALUES (17, 'testuser3', 'scrypt:32768:8:1$tOTU7hP1hbAh1Ccp$2506e267711da49599dbf58e5db77ce57476994a04c5b02b429dc7226adc3734201deb13493987cf43e133271e551fc7f34fd8931776a536a9bafa578da348bf', 'newuser1123@example.com', NULL, NULL, 0, NULL);
+INSERT INTO `user` VALUES (18, 'testuser4', 'scrypt:32768:8:1$FAtm3N5pn4B4ODrr$df848c5d4a69cc99bd4f98d1842a4490f91f9e08f4824a0b29c2def389c67fe2792a04f02157d8a914e7ff2e9379ad3e7b97b9cec70d86777eacd9dc31e00ba0', 'testuser4@gmail.com', NULL, NULL, 0, NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;

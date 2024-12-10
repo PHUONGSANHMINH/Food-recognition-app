@@ -94,24 +94,24 @@ export default function RecipeDetail({ route }) {
         </TouchableOpacity>
       </View>
       {customRecipe ? (
-            <Image
-              source={{
-                uri: displayRecipe.image
-                  ? `${process.env.EXPO_PUBLIC_DOMAIN}api/file/get-file/recipes/${displayRecipe.image}`
-                  : null
-              }}
-              style={styles.image}
-              defaultSource={require('../assets/food-placeholder.png')}
-            />
-            ) : (
-              <Image
-              source={{
-                uri: displayRecipe.image
-              }}
-              style={styles.image}
-              defaultSource={require('../assets/food-placeholder.png')}
-            />
-            )}
+        <Image
+          source={{
+            uri: displayRecipe.image
+              ? `${process.env.EXPO_PUBLIC_DOMAIN}api/file/get-file/recipes/${displayRecipe.image}`
+              : null
+          }}
+          style={styles.image}
+          defaultSource={require('../assets/food-placeholder.png')}
+        />
+      ) : (
+        <Image
+          source={{
+            uri: displayRecipe.image
+          }}
+          style={styles.image}
+          defaultSource={require('../assets/food-placeholder.png')}
+        />
+      )}
       <Text style={styles.title}>{displayRecipe.title || displayRecipe.name_recipe}</Text>
 
       {/* Tab Navigation */}
@@ -165,10 +165,10 @@ export default function RecipeDetail({ route }) {
             {customRecipe ? (
               <View>
                 {Object.keys(displayRecipe.nutrition).map((key, index) => (
-                <View key={index} style={styles.nutrientItem}>
-                  <Text style={styles.nutrientName}>{key.charAt(0).toUpperCase() + key.slice(1)}</Text>
-                  <Text style={styles.nutrientAmount}>{displayRecipe.nutrition[key]}</Text>
-                </View>
+                  <View key={index} style={styles.nutrientItem}>
+                    <Text style={styles.nutrientName}>{key.charAt(0).toUpperCase() + key.slice(1)}</Text>
+                    <Text style={styles.nutrientAmount}>{displayRecipe.nutrition[key]}</Text>
+                  </View>
                 ))}
                 {/* Add other nutrition details here */}
               </View>
@@ -191,21 +191,21 @@ export default function RecipeDetail({ route }) {
           <View style={styles.section}>
             {customRecipe
               ? customRecipe.steps.map((step, index) => (
-                  <View key={index} style={styles.instructionItem}>
-                    <View style={styles.instructionNumber}>
-                      <Text style={styles.instructionNumberText}>{step.step_number}</Text>
-                    </View>
-                    <Text style={styles.instructionText}>{step.content}</Text>
+                <View key={index} style={styles.instructionItem}>
+                  <View style={styles.instructionNumber}>
+                    <Text style={styles.instructionNumberText}>{step.step_number}</Text>
                   </View>
-                ))
+                  <Text style={styles.instructionText}>{step.content}</Text>
+                </View>
+              ))
               : displayRecipe.instructions.map((step, index) => (
-                  <View key={index} style={styles.instructionItem}>
-                    <View style={styles.instructionNumber}>
-                      <Text style={styles.instructionNumberText}>{step.step_number}</Text>
-                    </View>
-                    <Text style={styles.instructionText}>{step.instruction}</Text>
+                <View key={index} style={styles.instructionItem}>
+                  <View style={styles.instructionNumber}>
+                    <Text style={styles.instructionNumberText}>{step.step_number}</Text>
                   </View>
-                ))}
+                  <Text style={styles.instructionText}>{step.instruction}</Text>
+                </View>
+              ))}
           </View>
         )}
       </ScrollView>
