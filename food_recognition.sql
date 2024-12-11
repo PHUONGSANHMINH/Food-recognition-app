@@ -11,7 +11,7 @@
  Target Server Version : 80036
  File Encoding         : 65001
 
- Date: 10/12/2024 20:11:21
+ Date: 11/12/2024 19:32:57
 */
 
 SET NAMES utf8mb4;
@@ -72,7 +72,7 @@ CREATE TABLE `csv_export_version`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `exported_by`(`exported_by` ASC) USING BTREE,
   CONSTRAINT `csv_export_version_ibfk_1` FOREIGN KEY (`exported_by`) REFERENCES `user` (`id_user`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of csv_export_version
@@ -120,7 +120,7 @@ CREATE TABLE `recipe_info`  (
   `status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL,
   `summary` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL,
   PRIMARY KEY (`id_recipe`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 53 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 54 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_info
@@ -172,6 +172,10 @@ INSERT INTO `recipe_info` VALUES (49, 'Chicken Salad', 'url_to_image', 'lunch', 
 INSERT INTO `recipe_info` VALUES (50, 'Spaghetti Bolognese', 'url_to_image', 'dinner', 'active', 'Classic Italian dish.');
 INSERT INTO `recipe_info` VALUES (52, 'test', '20241209_195913_lovepik-abstract-background-mobile-phone-wallpaper-image_400624615.jpg', 'test', 'pending', 'test');
 INSERT INTO `recipe_info` VALUES (53, 'Test', '20241210_163523_recipe_image.jpg', '1231', 'Published', '23');
+INSERT INTO `recipe_info` VALUES (54, 'Chicken fried', '20241211_154207_recipe_image.jpg', 'Dinner', 'public', 'Dinner chicken');
+INSERT INTO `recipe_info` VALUES (55, 'Test', '20241211_170404_recipe_image.jpg', 'breakfast', 'public', 'Test');
+INSERT INTO `recipe_info` VALUES (56, 'Fire chicken', '20241211_182921_recipe_image.jpg', 'dinner', 'public', 'ababab');
+INSERT INTO `recipe_info` VALUES (57, 'TAATATAT', '20241211_183030_recipe_image.jpg', 'dinner', 'Pending Review', 'ababab');
 
 -- ----------------------------
 -- Table structure for recipe_ingredients
@@ -187,7 +191,7 @@ CREATE TABLE `recipe_ingredients`  (
   PRIMARY KEY (`id_ingredient`) USING BTREE,
   INDEX `id_recipe`(`id_recipe` ASC) USING BTREE,
   CONSTRAINT `recipe_ingredients_ibfk_1` FOREIGN KEY (`id_recipe`) REFERENCES `recipe_info` (`id_recipe`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 102 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 103 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_ingredients
@@ -275,6 +279,10 @@ INSERT INTO `recipe_ingredients` VALUES (99, 24, 'Sugar', 100, 'grams', '2024120
 INSERT INTO `recipe_ingredients` VALUES (100, 24, 'Flour', 200, 'grams', '20241202_155914_1381232.png');
 INSERT INTO `recipe_ingredients` VALUES (101, 52, 'test', 1, 'test', NULL);
 INSERT INTO `recipe_ingredients` VALUES (102, 53, 'Chicken meat', 1, 'c', '20241210_163523_ingredient_image_0.jpg');
+INSERT INTO `recipe_ingredients` VALUES (103, 54, 'chicken meat', 1, 'c', '20241211_154207_ingredient_image_0.jpg');
+INSERT INTO `recipe_ingredients` VALUES (104, 55, 'Chicken meat', 1, '1', '20241211_170404_ingredient_image_0.jpg');
+INSERT INTO `recipe_ingredients` VALUES (105, 56, 'Chicken', 1, 'c', '20241211_182921_ingredient_image_0.jpg');
+INSERT INTO `recipe_ingredients` VALUES (106, 57, 'Chicken meat', 1, 'c', '20241211_183030_ingredient_image_0.jpg');
 
 -- ----------------------------
 -- Table structure for recipe_nutrition
@@ -295,7 +303,7 @@ CREATE TABLE `recipe_nutrition`  (
   PRIMARY KEY (`id_nutrition`) USING BTREE,
   INDEX `id_recipe`(`id_recipe` ASC) USING BTREE,
   CONSTRAINT `recipe_nutrition_ibfk_1` FOREIGN KEY (`id_recipe`) REFERENCES `recipe_info` (`id_recipe`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 39 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 40 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_nutrition
@@ -327,6 +335,10 @@ INSERT INTO `recipe_nutrition` VALUES (36, 1, 300, 10, 2, 50, 20, 0, 5, 5, 0);
 INSERT INTO `recipe_nutrition` VALUES (37, 24, 300, 10, 2, 50, 20, 0, 5, 5, 0);
 INSERT INTO `recipe_nutrition` VALUES (38, 52, 1000, 0, 0, 0, 0, 0, 0, 0, 0);
 INSERT INTO `recipe_nutrition` VALUES (39, 53, 1200, 30, 40, 20, 10, 300, 0, 600, 0);
+INSERT INTO `recipe_nutrition` VALUES (40, 54, 450, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_nutrition` VALUES (41, 55, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_nutrition` VALUES (42, 56, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_nutrition` VALUES (43, 57, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- ----------------------------
 -- Table structure for recipe_steps
@@ -340,7 +352,7 @@ CREATE TABLE `recipe_steps`  (
   PRIMARY KEY (`id_step`) USING BTREE,
   INDEX `id_recipe`(`id_recipe` ASC) USING BTREE,
   CONSTRAINT `recipe_steps_ibfk_1` FOREIGN KEY (`id_recipe`) REFERENCES `recipe_info` (`id_recipe`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 111 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 113 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_steps
@@ -436,6 +448,10 @@ INSERT INTO `recipe_steps` VALUES (109, 24, 3, 'Bake in the oven at 180°C for 2
 INSERT INTO `recipe_steps` VALUES (110, 52, 1, 'test');
 INSERT INTO `recipe_steps` VALUES (111, 53, 1, 'Cooking');
 INSERT INTO `recipe_steps` VALUES (112, 53, 2, 'eating');
+INSERT INTO `recipe_steps` VALUES (113, 54, 1, 'Cooking');
+INSERT INTO `recipe_steps` VALUES (114, 55, 1, 'Cooking');
+INSERT INTO `recipe_steps` VALUES (115, 56, 1, 'Cooking');
+INSERT INTO `recipe_steps` VALUES (116, 57, 1, 'Cooking');
 
 -- ----------------------------
 -- Table structure for recipe_vitamin
@@ -444,7 +460,6 @@ DROP TABLE IF EXISTS `recipe_vitamin`;
 CREATE TABLE `recipe_vitamin`  (
   `id_vitamin` int NOT NULL AUTO_INCREMENT,
   `id_nutrition` int NOT NULL,
-  `protein` float NULL DEFAULT NULL,
   `calcium` float NULL DEFAULT NULL,
   `iron` float NULL DEFAULT NULL,
   `vitamin_a` float NULL DEFAULT NULL,
@@ -462,38 +477,42 @@ CREATE TABLE `recipe_vitamin`  (
   PRIMARY KEY (`id_vitamin`) USING BTREE,
   INDEX `id_nutrition`(`id_nutrition` ASC) USING BTREE,
   CONSTRAINT `recipe_vitamin_ibfk_1` FOREIGN KEY (`id_nutrition`) REFERENCES `recipe_nutrition` (`id_nutrition`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 33 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 34 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_vitamin
 -- ----------------------------
-INSERT INTO `recipe_vitamin` VALUES (2, 2, 5, 10, 8, 600, 30, 5, 3, 80, 0.3, 0.2, 5, 1, 0.4, 0.001, 4);
-INSERT INTO `recipe_vitamin` VALUES (3, 3, 5, 10, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (5, 5, 5, 10, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (6, 6, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (7, 7, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (8, 8, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (9, 9, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (10, 10, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (11, 11, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (12, 12, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (13, 13, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (14, 14, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (15, 15, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (16, 16, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (17, 17, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (18, 18, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (19, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-INSERT INTO `recipe_vitamin` VALUES (20, 25, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (21, 26, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (22, 27, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (23, 28, 10, 100, 2, 500, 30, 10, 2, 1, 1, 1, 1, 1, 1, 0, 5);
-INSERT INTO `recipe_vitamin` VALUES (24, 29, 25, 150, 5, 700, 50, 15, 3, 2, 2, 2, 2, 2, 2, 0, 10);
-INSERT INTO `recipe_vitamin` VALUES (25, 30, 30, 200, 7, 900, 70, 20, 4, 3, 3, 3, 3, 3, 3, 0, 15);
-INSERT INTO `recipe_vitamin` VALUES (30, 36, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (31, 37, 5, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
-INSERT INTO `recipe_vitamin` VALUES (32, 38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-INSERT INTO `recipe_vitamin` VALUES (33, 39, NULL, 100, 20, 100, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 100);
+INSERT INTO `recipe_vitamin` VALUES (2, 2, 10, 8, 600, 30, 5, 3, 80, 0.3, 0.2, 5, 1, 0.4, 0.001, 4);
+INSERT INTO `recipe_vitamin` VALUES (3, 3, 10, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (5, 5, 10, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (6, 6, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (7, 7, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (8, 8, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (9, 9, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (10, 10, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (11, 11, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (12, 12, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (13, 13, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (14, 14, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (15, 15, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (16, 16, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (17, 17, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (18, 18, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (19, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+INSERT INTO `recipe_vitamin` VALUES (20, 25, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (21, 26, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (22, 27, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (23, 28, 100, 2, 500, 30, 10, 2, 1, 1, 1, 1, 1, 1, 0, 5);
+INSERT INTO `recipe_vitamin` VALUES (24, 29, 150, 5, 700, 50, 15, 3, 2, 2, 2, 2, 2, 2, 0, 10);
+INSERT INTO `recipe_vitamin` VALUES (25, 30, 200, 7, 900, 70, 20, 4, 3, 3, 3, 3, 3, 3, 0, 15);
+INSERT INTO `recipe_vitamin` VALUES (30, 36, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (31, 37, 0, 2, 5, 10, 1, 1, 0.5, 0.3, 0.2, 0.4, 0.6, 0.1, 0.01, 2);
+INSERT INTO `recipe_vitamin` VALUES (32, 38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+INSERT INTO `recipe_vitamin` VALUES (33, 39, 100, 20, 100, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 100);
+INSERT INTO `recipe_vitamin` VALUES (34, 40, 100, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (35, 41, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (36, 42, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (37, 43, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- ----------------------------
 -- Table structure for recipes_contribution
@@ -524,6 +543,10 @@ INSERT INTO `recipes_contribution` VALUES (46, 1, 1);
 INSERT INTO `recipes_contribution` VALUES (47, 1, 1);
 INSERT INTO `recipes_contribution` VALUES (52, 1, 1);
 INSERT INTO `recipes_contribution` VALUES (53, 14, 1);
+INSERT INTO `recipes_contribution` VALUES (54, 14, 0);
+INSERT INTO `recipes_contribution` VALUES (55, 14, 0);
+INSERT INTO `recipes_contribution` VALUES (56, 14, 0);
+INSERT INTO `recipes_contribution` VALUES (57, 14, 0);
 
 -- ----------------------------
 -- Table structure for recipes_favourite
@@ -545,7 +568,7 @@ INSERT INTO `recipes_favourite` VALUES (1, 1);
 INSERT INTO `recipes_favourite` VALUES (34, 1);
 INSERT INTO `recipes_favourite` VALUES (35, 1);
 INSERT INTO `recipes_favourite` VALUES (2, 2);
-INSERT INTO `recipes_favourite` VALUES (53, 14);
+INSERT INTO `recipes_favourite` VALUES (37, 14);
 
 -- ----------------------------
 -- Table structure for user
@@ -563,7 +586,7 @@ CREATE TABLE `user`  (
   PRIMARY KEY (`id_user`) USING BTREE,
   UNIQUE INDEX `username`(`username` ASC) USING BTREE,
   UNIQUE INDEX `email`(`email` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 19 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of user
