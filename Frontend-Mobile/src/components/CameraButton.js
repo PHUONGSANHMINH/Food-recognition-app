@@ -41,7 +41,6 @@ const CameraButton = () => {
         },
       });
 
-      console.log(response.data);
     } catch (error) {
       console.error('Error uploading image:', error);
     }

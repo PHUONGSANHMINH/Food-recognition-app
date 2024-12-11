@@ -145,7 +145,7 @@ def detect_recommend_spoonacular():
             ingredients = ','.join(detected_labels)
             params = {
                 'includeIngredients': ingredients,
-                'number': 5,
+                'number': 10, # Số món được gợi ý từ spoonacular
                 'ranking': 1,
                 'addRecipeInformation': True
             }

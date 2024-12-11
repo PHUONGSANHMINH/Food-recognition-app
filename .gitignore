@@ -4,7 +4,13 @@ Frontend-Admin/package-lock.json
 Frontend-Admin/.eslintcache
 Backend-API/venv/
 Backend-API/__pycache__/
+Backend-API/app/__pycache__/
+Backend-API/app/controllers/__pycache__/
+Backend-API/app/models/__pycache__/
+Backend-API/app/routes/__pycache__/
+Backend-API/app/utils/__pycache__/
 Backend-API/.venv/
+Backend-API/migrations/
 Frontend-Mobile/.expo/
 Frontend-Mobile/node_modules/
 .vscode/extensions.json

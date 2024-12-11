@@ -110,7 +110,6 @@ def add_new_recipe():
             for vitamin in data['vitamins']:
                 new_vitamin = RecipeVitamin(
                     id_nutrition=new_nutrition.id_nutrition,
-                    protein=vitamin.get('protein'),
                     calcium=vitamin.get('calcium'),
                     iron=vitamin.get('iron'),
                     vitamin_a=vitamin.get('vitamin_a'),
@@ -226,7 +225,6 @@ def update_recipe(id_recipe):
             for vitamin in data['vitamins']:
                 new_vitamin = RecipeVitamin(
                     id_nutrition=new_nutrition.id_nutrition,
-                    protein=vitamin.get('protein'),
                     calcium=vitamin.get('calcium'),
                     iron=vitamin.get('iron'),
                     vitamin_a=vitamin.get('vitamin_a'),
@@ -373,7 +371,6 @@ def get_recipe_detail(id_recipe):
                 'alcohol': nutrition.alcohol
             } if nutrition else None,
             'vitamins': {
-                'protein': vitamins.protein,
                 'calcium': vitamins.calcium,
                 'iron': vitamins.iron,
                 'vitamin_a': vitamins.vitamin_a,
@@ -588,7 +585,7 @@ def get_unaccepted_recipes():
 
                 # Lấy thông tin vitamin
                 vitamins = RecipeVitamin.query.filter_by(id_nutrition=nutrition.id_nutrition).all() if nutrition else []
-                vitamins_data = [{'protein': vit.protein, 'calcium': vit.calcium, 'iron': vit.iron, 'vitamin_a': vit.vitamin_a, 'vitamin_c': vit.vitamin_c, 'vitamin_d': vit.vitamin_d, 'vitamin_e': vit.vitamin_e, 'vitamin_k': vit.vitamin_k, 'vitamin_b1': vit.vitamin_b1, 'vitamin_b2': vit.vitamin_b2, 'vitamin_b3': vit.vitamin_b3, 'vitamin_b5': vit.vitamin_b5, 'vitamin_b6': vit.vitamin_b6, 'vitamin_b12': vit.vitamin_b12, 'fiber': vit.fiber} for vit in vitamins]
+                vitamins_data = [{'calcium': vit.calcium, 'iron': vit.iron, 'vitamin_a': vit.vitamin_a, 'vitamin_c': vit.vitamin_c, 'vitamin_d': vit.vitamin_d, 'vitamin_e': vit.vitamin_e, 'vitamin_k': vit.vitamin_k, 'vitamin_b1': vit.vitamin_b1, 'vitamin_b2': vit.vitamin_b2, 'vitamin_b3': vit.vitamin_b3, 'vitamin_b5': vit.vitamin_b5, 'vitamin_b6': vit.vitamin_b6, 'vitamin_b12': vit.vitamin_b12, 'fiber': vit.fiber} for vit in vitamins]
 
                 # Lấy các bước thực hiện
                 steps = RecipeSteps.query.filter_by(id_recipe=recipe.id_recipe).all()

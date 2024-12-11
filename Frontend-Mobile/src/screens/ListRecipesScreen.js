@@ -41,20 +41,35 @@ const Header = ({ onSearch, onLogout }) => {
     const [showModal, setShowModal] = useState(false);
     const navigation = useNavigation();
 
-    const debouncedSearch = useCallback(
-        debounce((text) => {
-            onSearch(text);
-        }, 500),
-        []
-    );
+    useEffect(() => {
+        const loadSearchText = async () => {
+            try {
+                const savedSearchText = await AsyncStorage.getItem('lastSearchText');
+                if (savedSearchText) {
+                    setSearchText(savedSearchText); // Gán lại giá trị cho searchText
+                }
+            } catch (error) {
+                console.error('Failed to load search text:', error);
+            }
+        };
+    
+        loadSearchText();
+    }, []);
+    
 
     const handleSearchChange = (text) => {
         setSearchText(text);
     };
 
-    const handleSearchPress = () => {
-        onSearch(searchText);
+    const handleSearchPress = async () => {
+        try {
+            await AsyncStorage.setItem('lastSearchText', searchText); // Lưu vào AsyncStorage
+            onSearch(searchText);
+        } catch (error) {
+            console.error('Failed to save search text:', error);
+        }
     };
+    
 
     const handleLogout = async () => {
         try {
@@ -259,9 +274,30 @@ const ListRecipes = () => {
             setRefreshing(false);
         }
     };
+
     useEffect(() => {
-        loadRecipes();
-    }, []);
+        const fetchSavedSearchQuery = async () => {
+            try {
+                // Lấy giá trị searchQuery đã lưu
+                const savedSearchQuery = await AsyncStorage.getItem('lastSearchText');
+
+                if (savedSearchQuery) {
+                    setSearchQuery(savedSearchQuery);
+
+                    // Gọi API với searchQuery đã lưu
+                    loadRecipes(1, savedSearchQuery);
+                } else {
+                    // Nếu không có giá trị lưu, tải danh sách mặc định
+                    loadRecipes(1, '');
+                }
+            } catch (error) {
+                console.error('Error fetching saved search query:', error);
+            }
+        };
+
+        fetchSavedSearchQuery();
+    }, []); // Chỉ chạy khi màn hình được truy cập lại
+
     const handleRefresh = () => {
         setRefreshing(true);
         setPage(1);
@@ -574,6 +610,20 @@ const styles = StyleSheet.create({
         width: 24,
         height: 24,
         tintColor: '#333',
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f0f4f8',
+        padding: 20,
+        height: 600,
+    },
+    emptyText: {
+        fontSize: 20,
+        color: '#444',
+        textAlign: 'center',
+        fontWeight: '500',
     },
 });
 

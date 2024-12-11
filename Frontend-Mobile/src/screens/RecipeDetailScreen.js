@@ -26,20 +26,30 @@ export default function RecipeDetail({ route }) {
             }
           );
           setCustomRecipe(response.data);
-          const isFav = response.data.is_favourite; // Giả sử API trả về trạng thái yêu thích
-          setIsFavourite(isFav);
+          // Lấy danh sách favourite recipes
+          const favouritesResponse = await axios.get(
+            `${process.env.EXPO_PUBLIC_DOMAIN}api/recipe/favourites`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          // Kiểm tra xem recipe hiện tại có trong danh sách không
+          const isFavouriteRecipe = favouritesResponse.data.recipes.some(
+            recipe => recipe.id_recipe === recipeId
+          );
+          setIsFavourite(isFavouriteRecipe); // set trạng thái favourite để hiển thị css.
         } catch (err) {
           setError('Unable to load recipe details');
         } finally {
           setLoading(false);
         }
       };
-
       fetchRecipeDetail();
     } else {
       setLoading(false);
     }
   }, [recipeId]);
+  
 
   const toggleFavourite = async () => {
     try {
@@ -85,6 +95,7 @@ export default function RecipeDetail({ route }) {
           <MaterialIcons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Dish details</Text>
+        {customRecipe && (
         <TouchableOpacity style={styles.favouriteButton} onPress={toggleFavourite}>
           <MaterialIcons
             name={isFavourite ? 'favorite' : 'favorite-border'}
@@ -92,6 +103,7 @@ export default function RecipeDetail({ route }) {
             color={isFavourite ? '#FF6B6B' : '#333'}
           />
         </TouchableOpacity>
+        )}
       </View>
       {customRecipe ? (
         <Image
@@ -170,7 +182,6 @@ export default function RecipeDetail({ route }) {
                     <Text style={styles.nutrientAmount}>{displayRecipe.nutrition[key]}</Text>
                   </View>
                 ))}
-                {/* Add other nutrition details here */}
               </View>
             ) : (
               displayRecipe.nutrients.map((nutrient, index) => (

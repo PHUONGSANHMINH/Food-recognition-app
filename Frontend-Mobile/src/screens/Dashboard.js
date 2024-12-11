@@ -123,7 +123,6 @@ const RecipeList = () => {
   }, []);
 
   const handleDayPress = (day) => {
-    console.log(day)
     const selectedMealPlan = weeklyMeals[day.dateString];
     setSelectedDate(day.dateString);
     setCurrentMealPlan(selectedMealPlan);
@@ -275,8 +274,6 @@ const RecipeList = () => {
             const currentDate = new Date(today);
             
             currentDate.setDate(today.getDate() + diffToMonday + i);
-            console.log(currentDate.toISOString())
-            console.log(currentDate.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }))
             return {
               date: currentDate.toISOString().split('T')[0],
               label: currentDate.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),

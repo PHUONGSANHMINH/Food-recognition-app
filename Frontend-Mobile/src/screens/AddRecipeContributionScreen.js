@@ -15,6 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
 
 const AddRecipeContributionScreen = () => {
   const navigation = useNavigation();
@@ -39,7 +40,6 @@ const AddRecipeContributionScreen = () => {
     alcohol: null
   });
   const [vitamins, setVitamins] = useState([{
-    protein: null,
     calcium: null,
     iron: null,
     vitamin_a: null,
@@ -153,7 +153,7 @@ const AddRecipeContributionScreen = () => {
         name_recipe: recipeName,
         type: recipeType,
         summary: recipeSummary,
-        status: 'public', // Default status
+        status: 'Pending Review', // Default status
         ingredients: ingredients.filter(ing => ing.name_ingredient && ing.quantity),
         steps: steps.filter(step => step.content.trim() !== ''),
         nutrition: nutrition, // Send even if values are null
@@ -312,12 +312,18 @@ const AddRecipeContributionScreen = () => {
             value={recipeName}
             onChangeText={setRecipeName}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Recipe Type"
-            value={recipeType}
-            onChangeText={setRecipeType}
-          />
+          <View style={[styles.input, styles.pickerContainer]}>
+            <Picker
+              selectedValue={recipeType}
+              onValueChange={(itemValue) => setRecipeType(itemValue)}
+              style={styles.pickerStyle}
+            >
+              <Picker.Item label="Select Recipe Type" value="" />
+              <Picker.Item label="Breakfast" value="breakfast" />
+              <Picker.Item label="Lunch" value="lunch" />
+              <Picker.Item label="Dinner" value="dinner" />
+            </Picker>
+          </View>
           <TextInput
             style={styles.multilineInput}
             placeholder="Recipe Summary"
@@ -521,22 +527,6 @@ const AddRecipeContributionScreen = () => {
 
             {showVitaminForm && (
               <View style={styles.vitaminForm}>
-                <View style={styles.vitaminRow}>
-                  <Text style={styles.vitaminLabel}>Protein (g)</Text>
-                  <TextInput
-                    style={styles.vitaminInput}
-                    placeholder="0"
-                    keyboardType="numeric"
-                    value={vitamins[0].protein?.toString()}
-                    onChangeText={(text) => {
-                      setVitamins([{
-                        ...vitamins[0],
-                        protein: text ? parseFloat(text) : null
-                      }]);
-                    }}
-                  />
-                </View>
-
                 <View style={styles.vitaminRow}>
                   <Text style={styles.vitaminLabel}>Calcium (mg)</Text>
                   <TextInput
@@ -1115,6 +1105,15 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  pickerContainer: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  pickerStyle: {
+    height: 55,
+    width: '100%',
+    color: 'black',
   },
 });
 

@@ -77,7 +77,6 @@ class RecipeNutrition(db.Model):
 class RecipeVitamin(db.Model):
     id_vitamin = db.Column(db.Integer, primary_key=True)
     id_nutrition = db.Column(db.Integer, db.ForeignKey('recipe_nutrition.id_nutrition'), nullable=False)
-    protein = db.Column(db.Float, nullable=True)
     calcium = db.Column(db.Float, nullable=True)
     iron = db.Column(db.Float, nullable=True)
     vitamin_a = db.Column(db.Float, nullable=True)
@@ -124,3 +123,17 @@ class CSVExportVersion(db.Model):
     file_size = db.Column(db.Float, nullable=False)  # Size in KB
     status = db.Column(db.String(50), default='completed')  # completed, failed
     error_message = db.Column(db.Text, nullable=True)
+
+class UserDailyNutritionGoal(db.Model):
+    id_goal = db.Column(db.Integer, primary_key=True)
+    id_user = db.Column(db.Integer, db.ForeignKey('user.id_user'), nullable=False)
+    calories_goal = db.Column(db.Float, nullable=True)
+    fat_goal = db.Column(db.Float, nullable=True)
+    protein_goal = db.Column(db.Float, nullable=True)
+    carbohydrate_goal = db.Column(db.Float, nullable=True)
+    sugar_goal = db.Column(db.Float, nullable=True)
+    sodium_goal = db.Column(db.Float, nullable=True)
+    cholesterol_goal = db.Column(db.Float, nullable=True)
+    fiber_goal = db.Column(db.Float, nullable=True)
+
+    user = db.relationship('User', backref=db.backref('nutrition_goals', lazy=True))

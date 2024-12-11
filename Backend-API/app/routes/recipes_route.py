@@ -265,7 +265,6 @@ def get_recipes_total():
   },
   "vitamins": [
     {
-      "protein": 5,
       "calcium": 0,
       "iron": 2,
       "vitamin_a": 5,
@@ -393,7 +392,6 @@ def add_recipe_view():
   },
   "vitamins": [
     {
-      "protein": 5,
       "calcium": 0,
       "iron": 2,
       "vitamin_a": 5,

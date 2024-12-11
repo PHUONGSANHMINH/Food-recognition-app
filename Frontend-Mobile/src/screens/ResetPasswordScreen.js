@@ -38,8 +38,6 @@ function ResetPasswordScreen({ navigation }) {
 
   const verifyCode = async () => {
     try {
-      console.log('Verification Code:', verificationCode);
-      console.log('Verification Code:', email.value);
       const response = await axios.post(`${process.env.EXPO_PUBLIC_DOMAIN}api/auth/forget-password/verify-code`, {
         email: email.value,
         verifycode: verificationCode

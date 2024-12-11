@@ -102,7 +102,6 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!validateForm()) return;
-    console.log(process.env.EXPO_PUBLIC_DOMAIN);
     setLoading(true);
     setError('');
 

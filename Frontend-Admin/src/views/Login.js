@@ -35,7 +35,6 @@ const Login = () => {
   const handleLogin = async () => {
     try {
       const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN;
-      console.log(apiDomain);
       const response = await axios.post(`${apiDomain}/admin/superadmin_login`, { username, password });
       const { access_token, refresh_token } = response.data;
 

@@ -59,7 +59,6 @@ export default function RecipeRecommendations({ route, navigation }) {
   };
 
   const handleRecipePress = (recipe) => {
-    console.log(recipe)
     navigation.navigate('RecipeDetail', { recipe });
   };
 

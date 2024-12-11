@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 const ContributionScreen = () => {
@@ -39,9 +39,11 @@ const ContributionScreen = () => {
     }
   };
 
-  useEffect(() => {
-    fetchContributions();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchContributions();
+    }, []) // Mảng phụ thuộc rỗng để chỉ thực hiện khi màn hình được focus
+  );
 
   const handleRefresh = () => {
     setRefreshing(true);

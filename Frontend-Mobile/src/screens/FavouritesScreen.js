@@ -13,6 +13,7 @@ import {
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 
 const FavouriteRecipes = () => {
   const navigation = useNavigation();
@@ -35,9 +36,11 @@ const FavouriteRecipes = () => {
     }
   };
 
-  useEffect(() => {
-    fetchFavourites();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchFavourites();
+    }, []) // Mảng phụ thuộc rỗng để chỉ thực hiện khi màn hình được focus
+  );
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -62,15 +65,6 @@ const FavouriteRecipes = () => {
         <Text style={styles.recipeName}>{item.name_recipe}</Text>
         <Text style={styles.recipeType}>{item.type}</Text>
       </View>
-      <TouchableOpacity 
-        style={styles.removeButton}
-        onPress={() => {/* Implement remove from favourites logic */}}
-      >
-        <Image 
-          source={require('../assets/favourite.png')} 
-          style={styles.removeIcon} 
-        />
-      </TouchableOpacity>
     </TouchableOpacity>
   );
 

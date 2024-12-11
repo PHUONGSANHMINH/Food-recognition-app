@@ -35,7 +35,6 @@ import {
         alcohol: null
       },
       vitamins: [{
-        protein: null,
         calcium: null,
         iron: null,
         vitamin_a: null,
@@ -217,7 +216,6 @@ import {
         }
   
         const responseData = await response.json();
-        console.log('Success:', responseData);
   
         // Reset form
         setRecipe(initialRecipeState);
