@@ -26,8 +26,8 @@ config_bp = Blueprint('config', __name__)
                     }
                 },
                 'example': {
-                    'username': 'superadmin',
-                    'password': 'superadminpassword'
+                    'username': 'admin',
+                    'password': 'admin'
                 }
             }
         }

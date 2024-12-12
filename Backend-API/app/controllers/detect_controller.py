@@ -1,7 +1,7 @@
 # app/controllers/detect_controller.py
 import json, re, os, requests, random, json, logging
 from flask import request, jsonify
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 from ultralytics import YOLO
 from dotenv import load_dotenv
@@ -11,7 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
-from app.models.model import Config, CSVExportVersion, RecipeInfo, RecipesContribution, RecipeNutrition, RecipeIngredients, db
+from app.models.model import Config, CSVExportVersion, RecipeInfo, RecipesContribution, RecipeNutrition, RecipeIngredients, UserDailyNutritionGoal, db
 
 global tfidf, tfidf_matrix, cosine_sim_text, indices, df
 global CSV_PATH, FULL_CSV_PATH
@@ -316,9 +316,14 @@ def get_recipe_instructions(recipe_id):
         'recipe_id': recipe_id,
         'error': 'Unable to fetch instructions after trying all API keys'
     }
-
-def get_daily_meal_plan(target_calories=2000):
+@jwt_required()
+def get_daily_meal_plan(default_calories=2000):
     try:
+         # Lấy lượng calo mục tiêu của người dùng, trường hợp người dùng chưa có calories target tại db thì sẽ lấy calories default
+        current_user_id = get_jwt_identity()
+        if current_user_id == 'admin': current_user_id = 1
+        user_goal = db.session.query(UserDailyNutritionGoal).filter(UserDailyNutritionGoal.id_user == current_user_id).first()
+        target_calories = user_goal.calories_goal if user_goal and user_goal.calories_goal is not None else default_calories
         # Lấy các công thức đã được duyệt từ cơ sở dữ liệu
         recipes = db.session.query(RecipeInfo).join(RecipesContribution).filter(RecipesContribution.accept_contribution == True).all()
         

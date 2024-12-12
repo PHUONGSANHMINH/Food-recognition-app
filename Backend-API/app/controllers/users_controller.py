@@ -109,20 +109,6 @@ def delete_user(user_id):
     lang = get_locale()
     return jsonify({"msg": get_message('user_deleted', lang)}), 200
 
-@jwt_required()
-def update_user(user_id):
-    data = request.get_json()
-    user = User.query.get_or_404(user_id)
-
-    if 'username' in data:
-        user.username = data['username']
-    if 'password' in data:
-        user.set_password(data['password'])
-
-    db.session.commit()
-    lang = get_locale()
-    return jsonify({"msg": get_message('user_updated', lang)}), 200
-
 @jwt_required(refresh=True)
 def refresh_token():
     current_user_id = get_jwt_identity()
@@ -255,6 +241,66 @@ def is_verify_code_valid(user, verify_code):
     db.session.commit()
     return True, "valid_code"
 
+@jwt_required()
+def update_user():
+    # Lấy thông tin người dùng hiện tại từ JWT
+    current_user_id = get_jwt_identity()
+
+    # Lấy dữ liệu yêu cầu từ JSON
+    data = request.get_json()
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+
+    # Tìm người dùng trong cơ sở dữ liệu
+    user = User.query.get_or_404(current_user_id)
+
+    errors = {
+        "username": [],
+        "email": [],
+        "password": []
+    }
+
+    # Kiểm tra và cập nhật username nếu có thay đổi
+    if username and username != user.username:
+        if User.query.filter_by(username=username).first():
+            errors["username"].append("Username already exists.")
+        elif not is_valid_username(username):
+            errors["username"].append("Invalid username format.")
+        else:
+            user.username = username
+
+    # Kiểm tra và cập nhật email nếu có thay đổi
+    if email and email != user.email:
+        if User.query.filter_by(email=email).first():
+            errors["email"].append("Email already exists.")
+        else:
+            user.email = email
+
+    # Kiểm tra và cập nhật password nếu có thay đổi
+    if password:
+        if not is_strong_password(password):
+            errors["password"].append("Password is too weak.")
+        else:
+            user.set_password(password)
+
+    # Nếu có lỗi, trả về lỗi chi tiết
+    if errors["username"] or errors["email"] or errors["password"]:
+        return jsonify({"errors": errors}), 400
+
+    # Commit các thay đổi
+    db.session.commit()
+
+    # Trả về thông báo thành công
+    return jsonify({"msg": "User updated successfully."}), 200
+
+@jwt_required()
+def get_user_info():
+    current_user_id = get_jwt_identity()
+    user = User.query.get_or_404(current_user_id)
+    return jsonify({
+        'email': user.email,
+    })
 
 
 

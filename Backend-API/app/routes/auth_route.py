@@ -19,8 +19,8 @@ auth_bp = Blueprint('auth', __name__)
             'schema': {
                 'type': 'object',
                 'properties': {
-                    'username': {'type': 'string', 'example': 'test'},
-                    'password': {'type': 'string', 'example': 'testpassword'}
+                    'username': {'type': 'string', 'example': 'testuser'},
+                    'password': {'type': 'string', 'example': 'Test123@'}
                 },
                 'required': ['username', 'password']
             }

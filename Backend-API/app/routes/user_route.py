@@ -1,17 +1,204 @@
-# app/routes/user.py
 from flask import Blueprint
-from app.controllers.users_controller import view_all_users, delete_user, update_user
+from app.controllers.users_controller import view_all_users, delete_user, update_user, get_user_info
+from flask_jwt_extended import jwt_required
+from flasgger import swag_from
 
 user_bp = Blueprint('user', __name__)
 
 @user_bp.route('/users', methods=['GET'])
+@swag_from({
+    'tags': ['User'],
+    'security': [{'Bearer': []}],
+    'description': 'Retrieve a list of all users',
+    'responses': {
+        '200': {
+            'description': 'List of users',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'users': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                'id': {'type': 'integer'},
+                                'username': {'type': 'string'}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        '401': {
+            'description': 'Unauthorized',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'msg': {'type': 'string'}
+                }
+            }
+        }
+    }
+})
+@jwt_required()  # Only authenticated users can view the list
 def view_all_users_view():
     return view_all_users()
 
+
 @user_bp.route('/user/<int:user_id>', methods=['DELETE'])
+@swag_from({
+    'tags': ['User'],
+    'security': [{'Bearer': []}],
+    'description': 'Delete a user by their user ID',
+    'parameters': [
+        {
+            'name': 'user_id',
+            'in': 'path',
+            'type': 'integer',
+            'required': True,
+            'description': 'ID of the user to be deleted'
+        }
+    ],
+    'responses': {
+        '200': {
+            'description': 'User successfully deleted',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'msg': {'type': 'string'}
+                }
+            }
+        },
+        '403': {
+            'description': 'Permission denied',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'msg': {'type': 'string'}
+                }
+            }
+        },
+        '404': {
+            'description': 'User not found',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'msg': {'type': 'string'}
+                }
+            }
+        }
+    }
+})
+@jwt_required()  # Only authenticated users can delete
 def delete_user_view(user_id):
     return delete_user(user_id)
 
-@user_bp.route('/user/<int:user_id>', methods=['PUT'])
-def update_user_view(user_id):
-    return update_user(user_id)
+
+@user_bp.route('/update', methods=['PUT'])
+@swag_from({
+    'tags': ['User'],
+    'security': [{'Bearer': []}],
+    'description': 'Update user details (username, email, password)',
+    'parameters': [
+        {
+            'name': 'body',
+            'in': 'body',
+            'required': True,
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'username': {
+                        'type': 'string',
+                        'description': 'New username (optional)',
+                    },
+                    'email': {
+                        'type': 'string',
+                        'description': 'New email (optional)',
+                    },
+                    'password': {
+                        'type': 'string',
+                        'description': 'New password (optional)',
+                    }
+                }
+            }
+        }
+    ],
+    'responses': {
+        '200': {
+            'description': 'User successfully updated',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'msg': {'type': 'string'}
+                }
+            }
+        },
+        '400': {
+            'description': 'Validation errors',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'errors': {
+                        'type': 'object',
+                        'properties': {
+                            'username': {
+                                'type': 'array',
+                                'items': {'type': 'string'}
+                            },
+                            'email': {
+                                'type': 'array',
+                                'items': {'type': 'string'}
+                            },
+                            'password': {
+                                'type': 'array',
+                                'items': {'type': 'string'}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        '403': {
+            'description': 'Permission denied',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'msg': {'type': 'string'}
+                }
+            }
+        }
+    }
+})
+@jwt_required()  # Ensure that the user is authenticated
+def update_user_view():
+    return update_user()
+
+@user_bp.route('/info', methods=['GET'])
+@swag_from({
+    'tags': ['User'],
+    'security': [{'Bearer': []}],
+    'description': 'Retrieve the current logged-in user\'s information',
+    'responses': {
+        '200': {
+            'description': 'User information',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'email': {'type': 'string'},
+                }
+            }
+        },
+        '401': {
+            'description': 'Unauthorized',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'msg': {'type': 'string'}
+                }
+            }
+        }
+    }
+})
+@jwt_required()
+def get_user_info_view():
+    return get_user_info()

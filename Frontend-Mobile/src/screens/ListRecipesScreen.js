@@ -113,7 +113,7 @@ const Header = ({ onSearch, onLogout }) => {
                 <View style={styles.searchContainer}>
                     <TextInput
                         style={styles.searchInput}
-                        placeholder="Tìm kiếm công thức..."
+                        placeholder="Search for recipes..."
                         value={searchText}
                         onChangeText={handleSearchChange}
                         placeholderTextColor="#999"

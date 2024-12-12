@@ -26,11 +26,9 @@ import SafeAreaWrapper from '../components/SafeAreaWrapper'
 const { width } = Dimensions.get('window');
 
 const api = {
-  async fetchDailyMealPlan(targetCalories = 2000) {
+  async fetchDailyMealPlan() {
     try {
-      const response = await axios.get(`${process.env.EXPO_PUBLIC_DOMAIN}api/detect/daily-meal-plan`, {
-        params: { target_calories: targetCalories },
-      });
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_DOMAIN}api/detect/daily-meal-plan`);
       return response.data.daily_meal_plan;
     } catch (error) {
       console.error('Error fetching daily meal plan:', error);
@@ -142,6 +140,10 @@ const RecipeList = () => {
 
   const handleListRecipesPress = () => {
     navigation.navigate('ListRecipes');
+  };
+
+  const handleUserInfoPress = () => {
+    navigation.navigate('UserInfo');
   };
 
   const handleRecipePress = async (recipeId) => {
@@ -351,7 +353,9 @@ const RecipeList = () => {
             style={styles.squareButtonIcon}
           />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.squareButton}>
+        <TouchableOpacity style={styles.squareButton}
+          onPress={handleUserInfoPress}
+        >
           <Image
             source={require('../assets/chef.png')}
             style={styles.squareButtonIcon}
@@ -364,38 +368,6 @@ const RecipeList = () => {
 };
 
 const Header = ({ onSearch, onLogout }) => {
-  const [searchText, setSearchText] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const navigation = useNavigation();
-
-  const debouncedSearch = useCallback(
-    debounce((text) => {
-      onSearch(text);
-    }, 500),
-    []
-  );
-
-  const handleSearchChange = (text) => {
-    setSearchText(text);
-    debouncedSearch(text);
-  };
-
-  const handleLogout = async () => {
-    try {
-      // Xóa token khỏi AsyncStorage
-      await AsyncStorage.removeItem('access_token');
-
-      // Chuyển hướng đến màn hình đăng nhập
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'LoginScreen' }],
-      });
-    } catch (error) {
-      console.error('Logout failed: ', error);
-      // Xử lý lỗi nếu cần thiết
-    }
-  };
-
 
   return (
     <SafeAreaView style={styles.headerContainer}>
@@ -417,35 +389,12 @@ const Header = ({ onSearch, onLogout }) => {
 
         <TouchableOpacity
           style={styles.avatarContainer}
-          onPress={() => setShowModal(true)}
         >
           <Image
             source={require('../assets/chef.png')}
             style={styles.avatar}
           />
         </TouchableOpacity>
-
-        <Modal
-          visible={showModal}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setShowModal(false)}
-        >
-          <Pressable
-            style={styles.modalOverlay}
-            onPress={() => setShowModal(false)}
-          >
-            <View style={styles.logoutContainer}>
-
-              <TouchableOpacity
-                style={styles.logoutButton}
-                onPress={handleLogout}
-              >
-                <Text style={styles.logoutText}>Logout</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Modal>
       </View>
     </SafeAreaView>
   );
