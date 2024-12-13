@@ -60,7 +60,7 @@ const AddRecipeContributionScreen = () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [4, 3],
+      aspect: [9, 6],
       quality: 1,
     });
 
@@ -73,7 +73,7 @@ const AddRecipeContributionScreen = () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
-      aspect: [4, 3],
+      aspect: [9, 6],
       quality: 1,
     });
 
@@ -800,14 +800,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   imagePreview: {
-    width: 250,
+    width: '90%',
     height: 250,
     borderRadius: 15,
     borderWidth: 2,
     borderColor: '#ee4d2d',
   },
   imagePlaceholder: {
-    width: 250,
+    width: '90%',
     height: 250,
     borderWidth: 2,
     borderStyle: 'dashed',

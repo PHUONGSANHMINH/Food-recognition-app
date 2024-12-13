@@ -265,12 +265,6 @@ def update_recipe(id_recipe):
 @jwt_required()
 def delete_recipe(id_recipe):
     try:
-        # Lấy ID của user hiện tại từ JWT token
-        current_user_id = get_jwt_identity()
-        
-        # Xác thực admin
-        if current_user_id != 'admin' and current_user_id != 1:
-            return jsonify({'error': 'Unauthorized'}), 403
         
         # Xóa recipe
         recipe = RecipeInfo.query.filter_by(id_recipe=id_recipe).first()

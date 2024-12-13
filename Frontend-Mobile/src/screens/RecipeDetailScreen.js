@@ -49,7 +49,7 @@ export default function RecipeDetail({ route }) {
       setLoading(false);
     }
   }, [recipeId]);
-  
+
 
   const toggleFavourite = async () => {
     try {
@@ -96,13 +96,13 @@ export default function RecipeDetail({ route }) {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Dish details</Text>
         {customRecipe && (
-        <TouchableOpacity style={styles.favouriteButton} onPress={toggleFavourite}>
-          <MaterialIcons
-            name={isFavourite ? 'favorite' : 'favorite-border'}
-            size={28}
-            color={isFavourite ? '#FF6B6B' : '#333'}
-          />
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.favouriteButton} onPress={toggleFavourite}>
+            <MaterialIcons
+              name={isFavourite ? 'favorite' : 'favorite-border'}
+              size={28}
+              color={isFavourite ? '#FF6B6B' : '#333'}
+            />
+          </TouchableOpacity>
         )}
       </View>
       {customRecipe ? (
@@ -179,7 +179,7 @@ export default function RecipeDetail({ route }) {
                 {Object.keys(displayRecipe.nutrition).map((key, index) => (
                   <View key={index} style={styles.nutrientItem}>
                     <Text style={styles.nutrientName}>{key.charAt(0).toUpperCase() + key.slice(1)}</Text>
-                    <Text style={styles.nutrientAmount}>{displayRecipe.nutrition[key]}</Text>
+                    <Text style={styles.nutrientAmount}>{displayRecipe.nutrition[key] || 0}</Text>
                   </View>
                 ))}
               </View>
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 200,
+    height: 300,
   },
   title: {
     fontSize: 24,

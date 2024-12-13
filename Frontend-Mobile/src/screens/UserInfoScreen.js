@@ -29,9 +29,10 @@ const UserInfoScreen = () => {
     const [loading, setLoading] = useState(true);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
-    const [error, setError] = useState(null);
     const [isCaloriesModalVisible, setIsCaloriesModalVisible] = useState(false);
     const [selectedCalories, setSelectedCalories] = useState(userInfo.targetCalories);
+    const [emailError, setEmailError] = useState('');
+    const [passwordError, setPasswordError] = useState('');
 
     useEffect(() => {
         const fetchUserInfo = async () => {
@@ -45,7 +46,6 @@ const UserInfoScreen = () => {
                 });
                 setLoading(false);
             } catch (err) {
-                setError('Unable to load user info');
                 setLoading(false);
             }
         };
@@ -58,7 +58,6 @@ const UserInfoScreen = () => {
                 setCalories(response.data.calories_goal);
                 setLoading(false);
             } catch (err) {
-                setError('Unable to load target calories');
                 setLoading(false);
             }
         };
@@ -84,7 +83,6 @@ const UserInfoScreen = () => {
             setIsModalVisible(false);
         } catch (err) {
             setIsUpdating(false);
-            setError('Unable to update user info');
         }
     };
 
@@ -120,7 +118,6 @@ const UserInfoScreen = () => {
             // Xử lý lỗi: Hiển thị thông báo lỗi phù hợp
             const errorMessage =
                 err.response?.data?.msg || 'Unable to update calories target';
-            setError(errorMessage);
             alert(errorMessage);
         }
     };
@@ -443,7 +440,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     logoutContainer: {
-        marginTop: '70%',
+        marginTop: '100%',
         backgroundColor: 'white',
         borderRadius: 12,
         padding: 20,

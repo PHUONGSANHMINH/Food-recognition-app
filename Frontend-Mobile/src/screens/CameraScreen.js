@@ -7,6 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import LottieView from 'lottie-react-native';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function CameraScreen({ navigation }) {
   const [type, setType] = useState('back');
@@ -51,8 +52,23 @@ export default function CameraScreen({ navigation }) {
     );
   }
 
-  function toggleCameraType() {
-    setType((current) => (current === 'back' ? 'front' : 'back')); // Dùng chuỗi thay cho CameraType.front
+  async function pickImageFromLibrary() {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [9,6],
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        setPhoto(result.assets[0].uri);
+        setIsModalVisible(true);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Unable to pick image. Please try again.');
+    }
   }
 
   async function takePhoto() {
@@ -82,6 +98,7 @@ export default function CameraScreen({ navigation }) {
             'Content-Type': 'multipart/form-data',
             Authorization: `Bearer ${accessToken}`,
           },
+          timeout: 30000,
         }
       );
       setLoading(false);
@@ -104,7 +121,7 @@ export default function CameraScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar style="light" />
       <View style={styles.header}>
-      <TouchableOpacity
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -133,6 +150,12 @@ export default function CameraScreen({ navigation }) {
         {/* <TouchableOpacity style={styles.footerButton}>
           <MaterialIcons name="photo-library" size={24} color="#ed5c01" />
         </TouchableOpacity> */}
+        <TouchableOpacity
+          style={[styles.footerButton, styles.photoLibraryButton]}
+          onPress={pickImageFromLibrary}
+        >
+          <MaterialIcons name="photo-library" size={24} color="#ed5c01" style={styles.imageLibrary}/>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
           <View style={styles.captureButtonInner} />
         </TouchableOpacity>
@@ -218,13 +241,28 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingBottom: 70,
     padding: 20,
+    position: 'relative',
   },
   footerButton: {
-    padding: 10,
+    width: 70,
+    padding: 15,
+    position: 'absolute',
+    backgroundColor: 'rgba(237, 92, 1, 0.1)',
+    borderRadius: 30,
+  },
+  photoLibraryButton: {
+    left: 40,
+    bottom: '100%',
+  },
+  imageLibrary: {
+    marginLeft: 8,
+  },
+  toggleCameraButton: {
+    right: 40,
   },
   captureButton: {
     width: 80,
@@ -235,6 +273,7 @@ const styles = StyleSheet.create({
     borderColor: '#ed5c01',
     justifyContent: 'center',
     alignItems: 'center',
+    alignSelf: 'center',
   },
   captureButtonInner: {
     width: 70,
@@ -257,7 +296,7 @@ const styles = StyleSheet.create({
   },
   modalImage: {
     width: '100%',
-    height: 480,
+    height: 200,
     borderRadius: 15,
     marginBottom: 20,
   },

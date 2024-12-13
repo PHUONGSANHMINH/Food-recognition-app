@@ -8,7 +8,8 @@ import {
   StyleSheet,
   SafeAreaView,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  Alert
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,7 +21,7 @@ const ContributionScreen = () => {
   const [contributions, setContributions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
+  const [selectedContribution, setSelectedContribution] = useState(null);
 
   const fetchContributions = async () => {
     try {
@@ -34,7 +35,6 @@ const ContributionScreen = () => {
       setContributions(response.data.contributions);
       setLoading(false);
     } catch (err) {
-      setError('Unable to load contributions list');
       setLoading(false);
     }
   };
@@ -50,16 +50,56 @@ const ContributionScreen = () => {
     fetchContributions().then(() => setRefreshing(false));
   };
 
+  const confirmDelete = (id_recipe) => {
+    Alert.alert(
+      'Confirm Deletion',
+      'Are you sure you want to delete this contribution?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => setSelectedContribution(null)
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => handleDelete(id_recipe)
+        }
+      ]
+    );
+  };
+
+  const handleDelete = async (id_recipe) => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      await axios.delete(
+        `${process.env.EXPO_PUBLIC_DOMAIN}api/recipe/delete/${id_recipe}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setContributions(contributions.filter((item) => item.id_recipe !== id_recipe));
+      setSelectedContribution(null);
+    } catch (err) {
+      setError('Unable to delete contribution');
+    }
+  };
+
   const renderContributionItem = ({ item }) => (
     <TouchableOpacity
       style={styles.recipeCard}
       onPress={() => navigation.navigate('RecipeDetail', { recipeId: item.id_recipe })}
+      onLongPress={() => {
+        if (!item.accept_contribution) {
+          setSelectedContribution(item.id_recipe);
+        }
+      }}
     >
       <Image
         source={{
           uri: item.image
             ? `${process.env.EXPO_PUBLIC_DOMAIN}api/file/get-file/recipes/${item.image}`
-            : null
+            : null,
         }}
         style={styles.recipeImage}
         defaultSource={require('../assets/food-placeholder.png')}
@@ -69,7 +109,7 @@ const ContributionScreen = () => {
         <Text
           style={[
             styles.recipeType,
-            item.accept_contribution ? styles.approvedStatus : styles.pendingStatus
+            item.accept_contribution ? styles.approvedStatus : styles.pendingStatus,
           ]}
         >
           {item.accept_contribution ? 'Approved' : 'Pending Review'}
@@ -77,6 +117,14 @@ const ContributionScreen = () => {
       </View>
       {item.accept_contribution && (
         <Ionicons name="checkmark-circle" size={24} color="green" style={styles.tickIcon} />
+      )}
+      {!item.accept_contribution && selectedContribution === item.id_recipe && (
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => confirmDelete(item.id_recipe)}
+        >
+          <Ionicons name="trash" size={24} color="red" />
+        </TouchableOpacity>
       )}
     </TouchableOpacity>
   );
@@ -215,6 +263,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     marginTop: 8,
+  },
+  deleteButton: {
+    position: 'absolute',
+    right: 16,
+    top: '50%',
+    transform: [{ translateY: -12 }],
+    backgroundColor: 'white',
+    padding: 8,
+    borderRadius: 16,
+    elevation: 2,
   },
 });
 

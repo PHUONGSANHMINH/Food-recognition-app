@@ -17,7 +17,6 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
-import debounce from 'lodash/debounce';
 import axios from 'axios'; // Thêm import axios
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -36,7 +35,7 @@ const api = {
     }
 };
 
-const Header = ({ onSearch, onLogout }) => {
+const Header = ({ onSearch }) => {
     const [searchText, setSearchText] = useState('');
     const [showModal, setShowModal] = useState(false);
     const navigation = useNavigation();
@@ -97,8 +96,14 @@ const Header = ({ onSearch, onLogout }) => {
         navigation.navigate('Favourites');
     };
 
-    const handleBackPress = () => {
-        navigation.goBack();
+    const handleBackPress = async () => {
+        try {
+            await AsyncStorage.removeItem('lastSearchText');
+            navigation.goBack();
+        } catch (error) {
+            console.error('Clear search text failed: ', error);
+        }
+
     };
 
     return (
