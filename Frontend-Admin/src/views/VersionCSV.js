@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback  } from "react";
 import {
   Card,
   CardHeader,
@@ -27,37 +27,38 @@ const VersionCSV = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const accessToken = await AsyncStorage.getItem("access_token");
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const accessToken = await AsyncStorage.getItem("access_token");
 
-        const [versionsResponse, configResponse] = await Promise.all([
-          axios.get(`${apiDomain}/api/csv/versions`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          }),
-          axios.get(`${apiDomain}/admin/config/get?config_name=data_recommend_csv`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          }),
-        ]);
+      const [versionsResponse, configResponse] = await Promise.all([
+        axios.get(`${apiDomain}/api/csv/versions`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+        axios.get(`${apiDomain}/admin/config/get?config_name=data_recommend_csv`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+      ]);
 
-        const configValue = configResponse.data.config_value;
-        const selected = versionsResponse.data.find(
-          (item) => `recommend-dataset/${item.filename}` === configValue
-        );
+      const configValue = configResponse.data.config_value;
+      const selected = versionsResponse.data.find(
+        (item) => `recommend-dataset/${item.filename}` === configValue
+      );
 
-        if (selected) setSelectedVersion(selected.id);
-        setData(versionsResponse.data || []);
-      } catch (error) {
-        console.error("Error fetching data: ", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+      if (selected) setSelectedVersion(selected.id);
+      setData(versionsResponse.data || []);
+    } catch (error) {
+      console.error("Error fetching data: ", error);
+    } finally {
+      setLoading(false);
+    }
   }, [apiDomain]);
+
+  // Gọi fetchData trong useEffect
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleSelectVersion = (versionId) => setSelectedVersion(versionId);
 
@@ -103,16 +104,33 @@ const VersionCSV = () => {
     }
   };
 
-  const handleDelete = async (versionId) => {
-    if (!window.confirm("Are you sure you want to delete this version?")) return;
-  
+  const handleCreateCSV = async () => {
     try {
       const accessToken = await AsyncStorage.getItem("access_token");
-  
+      await axios.get(
+        `${apiDomain}/api/file/export-csv`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      alert("Created successfully !");
+      fetchData();
+    } catch (error) {
+      console.error("Error updating config: ", error);
+      alert("Failed to create CSV. Please try again.");
+    }
+  };
+
+  const handleDelete = async (versionId) => {
+    if (!window.confirm("Are you sure you want to delete this version?")) return;
+
+    try {
+      const accessToken = await AsyncStorage.getItem("access_token");
+
       const response = await axios.delete(`${apiDomain}/api/csv/version/${versionId}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-  
+
       // Kiểm tra phản hồi từ API
       if (response.status === 200) {
         // Xóa phiên bản khỏi danh sách hiện tại
@@ -125,7 +143,7 @@ const VersionCSV = () => {
       }
     } catch (error) {
       console.error("Error deleting version: ", error);
-  
+
       if (error.response && error.response.status === 400) {
         alert("This version is currently in use and cannot be deleted.");
       } else if (error.response && error.response.status === 404) {
@@ -135,7 +153,7 @@ const VersionCSV = () => {
       }
     }
   };
-  
+
 
   const renderCsvDetailsModal = () => (
     <Modal isOpen={isDetailsModalOpen} toggle={() => setIsDetailsModalOpen(false)} size="xl">
@@ -203,6 +221,13 @@ const VersionCSV = () => {
               <CardHeader className="border-0">
                 <div className="d-flex justify-content-between align-items-center">
                   <h3 className="mb-0">CSV Versions</h3>
+                  <Button
+                    color="success"
+                    onClick={handleCreateCSV}
+                    className="mb-3"
+                  >
+                    Create CSV
+                  </Button>
                 </div>
               </CardHeader>
               <Table className="align-items-center table-flush" responsive>
@@ -261,15 +286,15 @@ const VersionCSV = () => {
                           </Button>
                         </td>
                         <td>
-                        <Button
-                          color="danger"
-                          size="sm"
-                          className="action-button"
-                          onClick={() => handleDelete(item.id)}
-                        >
-                          Delete
-                        </Button>
-                      </td>
+                          <Button
+                            color="danger"
+                            size="sm"
+                            className="action-button"
+                            onClick={() => handleDelete(item.id)}
+                          >
+                            Delete
+                          </Button>
+                        </td>
                       </tr>
                     ))
                   ) : (
@@ -287,7 +312,7 @@ const VersionCSV = () => {
                   disabled={!selectedVersion || data.find((item) => item.id === selectedVersion)?.status === "file not found"}
                   onClick={handleImport}
                 >
-                  Save
+                  Use CSV
                 </Button>
               </CardFooter>
             </Card>

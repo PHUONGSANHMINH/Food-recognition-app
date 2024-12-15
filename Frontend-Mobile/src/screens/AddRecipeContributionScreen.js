@@ -1113,7 +1113,7 @@ const styles = StyleSheet.create({
   pickerStyle: {
     height: 55,
     width: '100%',
-    color: 'black',
+    color: 'orange',
   },
 });
 

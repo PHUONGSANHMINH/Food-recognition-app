@@ -3,17 +3,21 @@ from flask import Blueprint, request
 from flasgger import swag_from
 from app.controllers.recipes_controller import (
     get_recipes,
+    get_recipes_publish,
+    get_recipes_unapproved,
     get_recipe_detail,
     contribute_recipe,
     get_total_records,
+    get_total_unaccepted_recipes,
+    get_total_unapproved_recipes_records,
     add_new_recipe,
     get_favourite_recipes,
     toggle_favourite_recipe,
     get_user_contributions,
-    get_total_unaccepted_recipes,
     get_unaccepted_recipes,
     update_recipe,
-    delete_recipe
+    delete_recipe,
+    approve_recipes
 )
 
 recipe_bp = Blueprint('recipe', __name__)
@@ -70,6 +74,112 @@ recipe_bp = Blueprint('recipe', __name__)
 })
 def get_recipes_view():
     return get_recipes()
+
+@recipe_bp.route('/get-recipes-publish', methods=['GET'])
+@swag_from({
+    'tags': ['Recipes'],
+    'summary': 'Get Recipes List',
+    'description': 'Get a paginated list of recipes with optional search (publish recipes only)',
+    'parameters': [
+        {
+            'name': 'page',
+            'in': 'query',
+            'type': 'integer',
+            'required': False,
+            'default': 1,
+            'description': 'Page number for pagination'
+        },
+        {
+            'name': 'limit',
+            'in': 'query',
+            'type': 'integer',
+            'required': False,
+            'default': 10,
+            'description': 'Number of items per page'
+        },
+        {
+            'name': 'search',
+            'in': 'query',
+            'type': 'string',
+            'required': False,
+            'description': 'Search term for recipe names'
+        }
+    ],
+    'responses': {
+        200: {
+            'description': 'List of recipes retrieved successfully',
+            'schema': {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'id_recipe': {'type': 'integer'},
+                        'name_recipe': {'type': 'string'},
+                        'image': {'type': 'string'},
+                        'type': {'type': 'string'},
+                        'status': {'type': 'string'},
+                        'summary': {'type': 'string'}
+                    }
+                }
+            }
+        }
+    }
+})
+def get_recipes_publish_view():
+    return get_recipes_publish()
+
+@recipe_bp.route('/get-recipes-unapproved', methods=['GET'])
+@swag_from({
+    'tags': ['Recipes'],
+    'summary': 'Get Recipes List',
+    'description': 'Get a paginated list of recipes with optional search (unapproved recipes only)',
+    'parameters': [
+        {
+            'name': 'page',
+            'in': 'query',
+            'type': 'integer',
+            'required': False,
+            'default': 1,
+            'description': 'Page number for pagination'
+        },
+        {
+            'name': 'limit',
+            'in': 'query',
+            'type': 'integer',
+            'required': False,
+            'default': 10,
+            'description': 'Number of items per page'
+        },
+        {
+            'name': 'search',
+            'in': 'query',
+            'type': 'string',
+            'required': False,
+            'description': 'Search term for recipe names'
+        }
+    ],
+    'responses': {
+        200: {
+            'description': 'List of recipes retrieved successfully',
+            'schema': {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'id_recipe': {'type': 'integer'},
+                        'name_recipe': {'type': 'string'},
+                        'image': {'type': 'string'},
+                        'type': {'type': 'string'},
+                        'status': {'type': 'string'},
+                        'summary': {'type': 'string'}
+                    }
+                }
+            }
+        }
+    }
+})
+def get_recipes_unapproved_view():
+    return get_recipes_unapproved()
 
 @recipe_bp.route('/<int:recipe_id>', methods=['GET'])
 @swag_from({
@@ -211,6 +321,35 @@ def contribute_recipe_view():
 })
 def get_recipes_total():
     return get_total_records()
+
+@recipe_bp.route('/total-unapproved', methods=['GET'])
+@swag_from({
+    'tags': ['Recipes'],
+    'summary': 'Get Total Recipes Count',
+    'description': 'Get the total number of recipes with optional search filter [only unapproved recipes]',
+    'parameters': [
+        {
+            'name': 'search',
+            'in': 'query',
+            'type': 'string',
+            'required': False,
+            'description': 'Search term for recipe names'
+        }
+    ],
+    'responses': {
+        200: {
+            'description': 'Total number of recipes retrieved successfully',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'total': {'type': 'integer'}
+                }
+            }
+        }
+    }
+})
+def get_recipes_unapproved_total():
+    return get_total_unapproved_recipes_records()
 
 @recipe_bp.route('/add', methods=['POST'])
 @swag_from({
@@ -695,3 +834,49 @@ def get_total_unaccepted_recipes_view():
 })
 def get_unaccepted_recipes_view():
     return get_unaccepted_recipes()
+
+@recipe_bp.route('/approve-recipes', methods=['POST'])
+@swag_from({
+    'tags': ['Recipes'],
+    'summary': 'Import and approve recipes and their contributions',
+    'description': 'Import selected recipes, approve them, and accept their contributions.',
+    'parameters': [
+        {
+            'name': 'recipes',
+            'in': 'body',
+            'required': True,
+            'description': 'List of recipe IDs to approve and accept their contributions',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'recipes': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'integer',
+                            'description': 'ID of the recipe'
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    'responses': {
+        200: {
+            'description': 'Recipes and contributions updated successfully',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'}
+                }
+            }
+        },
+        400: {
+            'description': 'Invalid input, no recipes selected or invalid data'
+        },
+        500: {
+            'description': 'Internal server error'
+        }
+    }
+})
+def approve_recipes_view():
+    return approve_recipes()

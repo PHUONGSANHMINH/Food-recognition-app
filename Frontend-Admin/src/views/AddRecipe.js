@@ -13,8 +13,10 @@ import {
 import React, { useState } from "react";
 import HeaderAddRecipe from "components/Headers/HeaderAddRecipe.js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigate } from 'react-router-dom';
 
 const AddRecipe = () => {
+  const navigate = useNavigate();
   const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN;
   const initialRecipeState = {
     name_recipe: null,
@@ -59,6 +61,9 @@ const AddRecipe = () => {
   const [error, setError] = useState(null);
   const [recipeImagePreview, setRecipeImagePreview] = useState(null);
 
+  const handleNavigateRecipesList = () => {
+    navigate('/admin/recipes'); // Điều hướng đến màn hình /admin/recipes
+  };
 
   // Handlers remain the same until handleSubmit
   const handleRecipeChange = (e) => {
@@ -215,14 +220,12 @@ const AddRecipe = () => {
         throw new Error(errorData.error || 'Failed to add recipe');
       }
 
-      const responseData = await response.json();
-
       // Reset form
       setRecipe(initialRecipeState);
       setRecipeImage(null);
       setIngredientImages([null]);
       alert('Recipe added successfully!');
-
+      handleNavigateRecipesList();
     } catch (error) {
       console.error('Error adding recipe:', error);
       setError(error.message);
@@ -461,6 +464,7 @@ const AddRecipe = () => {
                           <label className="form-control-label">Calories</label>
                           <Input
                             type="number"
+                            min="0"
                             name="calories"
                             value={recipe.nutrition.calories}
                             onChange={handleNutritionChange}
@@ -472,6 +476,7 @@ const AddRecipe = () => {
                           <label className="form-control-label">Fat (g)</label>
                           <Input
                             type="number"
+                            min="0"
                             name="fat"
                             value={recipe.nutrition.fat}
                             onChange={handleNutritionChange}
@@ -483,6 +488,7 @@ const AddRecipe = () => {
                           <label className="form-control-label">Saturated Fat (g)</label>
                           <Input
                             type="number"
+                            min="0"
                             name="saturated_fat"
                             value={recipe.nutrition.saturated_fat}
                             onChange={handleNutritionChange}
@@ -494,8 +500,47 @@ const AddRecipe = () => {
                           <label className="form-control-label">Carbohydrates (g)</label>
                           <Input
                             type="number"
+                            min="0"
                             name="carbohydrates"
                             value={recipe.nutrition.carbohydrates}
+                            onChange={handleNutritionChange}
+                          />
+                        </FormGroup>
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col lg="3">
+                        <FormGroup>
+                          <label className="form-control-label">Sugar (g)</label>
+                          <Input
+                            type="number"
+                            min="0"
+                            name="sugar"
+                            value={recipe.nutrition.sugar}
+                            onChange={handleNutritionChange}
+                          />
+                        </FormGroup>
+                      </Col>
+                      <Col lg="3">
+                        <FormGroup>
+                          <label className="form-control-label">Cholesterol (mg)</label>
+                          <Input
+                            type="number"
+                            min="0"
+                            name="cholesterol"
+                            value={recipe.nutrition.cholesterol}
+                            onChange={handleNutritionChange}
+                          />
+                        </FormGroup>
+                      </Col>
+                      <Col lg="3">
+                        <FormGroup>
+                          <label className="form-control-label">Sodium (mg)</label>
+                          <Input
+                            type="number"
+                            min="0"
+                            name="sodium"
+                            value={recipe.nutrition.sodium}
                             onChange={handleNutritionChange}
                           />
                         </FormGroup>
@@ -505,6 +550,7 @@ const AddRecipe = () => {
                           <label className="form-control-label">Protein (g)</label>
                           <Input
                             type="number"
+                            min="0"
                             name="protein"
                             value={recipe.nutrition.protein}
                             onChange={handleNutritionChange}
@@ -512,8 +558,207 @@ const AddRecipe = () => {
                         </FormGroup>
                       </Col>
                     </Row>
+                    <Row>
+                      <Col lg="3">
+                        <FormGroup>
+                          <label className="form-control-label">Alcohol (g)</label>
+                          <Input
+                            type="number"
+                            min="0"
+                            name="alcohol"
+                            value={recipe.nutrition.alcohol}
+                            onChange={handleNutritionChange}
+                          />
+                        </FormGroup>
+                      </Col>
+                    </Row>
                   </div>
 
+                  {/* Vitamins Section */}
+                  <hr className="my-4" />
+                  <h6 className="heading-small text-muted mb-4">Vitamin Information</h6>
+                  <div className="pl-lg-4">
+                    {recipe.vitamins.map((vitamin, index) => (
+                      <div key={index} className="mb-3">
+                        <Row>
+                          <Col lg="3">
+                            <FormGroup>
+                              <label className="form-control-label">Calcium (mg)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                name="calcium"
+                                value={vitamin.calcium}
+                                onChange={(e) => handleVitaminChange(index, e)}
+                              />
+                            </FormGroup>
+                          </Col>
+                          <Col lg="3">
+                            <FormGroup>
+                              <label className="form-control-label">Iron (mg)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                name="iron"
+                                value={vitamin.iron}
+                                onChange={(e) => handleVitaminChange(index, e)}
+                              />
+                            </FormGroup>
+                          </Col>
+                          <Col lg="3">
+                            <FormGroup>
+                              <label className="form-control-label">Vitamin A (IU)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                name="vitamin_a"
+                                value={vitamin.vitamin_a}
+                                onChange={(e) => handleVitaminChange(index, e)}
+                              />
+                            </FormGroup>
+                          </Col>
+                          <Col lg="3">
+                            <FormGroup>
+                              <label className="form-control-label">Vitamin C (mg)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                name="vitamin_c"
+                                value={vitamin.vitamin_c}
+                                onChange={(e) => handleVitaminChange(index, e)}
+                              />
+                            </FormGroup>
+                          </Col>
+                        </Row>
+                        <Row>
+                          <Col lg="3">
+                            <FormGroup>
+                              <label className="form-control-label">Vitamin D (IU)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                name="vitamin_d"
+                                value={vitamin.vitamin_d}
+                                onChange={(e) => handleVitaminChange(index, e)}
+                              />
+                            </FormGroup>
+                          </Col>
+                          <Col lg="3">
+                            <FormGroup>
+                              <label className="form-control-label">Vitamin E (mg)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                name="vitamin_e"
+                                value={vitamin.vitamin_e}
+                                onChange={(e) => handleVitaminChange(index, e)}
+                              />
+                            </FormGroup>
+                          </Col>
+                          <Col lg="3">
+                            <FormGroup>
+                              <label className="form-control-label">Vitamin K (µg)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                name="vitamin_k"
+                                value={vitamin.vitamin_k}
+                                onChange={(e) => handleVitaminChange(index, e)}
+                              />
+                            </FormGroup>
+                          </Col>
+                          <Col lg="3">
+                            <FormGroup>
+                              <label className="form-control-label">Vitamin B1 (mg)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                name="vitamin_b1"
+                                value={vitamin.vitamin_b1}
+                                onChange={(e) => handleVitaminChange(index, e)}
+                              />
+                            </FormGroup>
+                          </Col>
+                        </Row>
+                        <Row>
+                          <Col lg="3">
+                            <FormGroup>
+                              <label className="form-control-label">Vitamin B2 (mg)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                name="vitamin_b2"
+                                value={vitamin.vitamin_b2}
+                                onChange={(e) => handleVitaminChange(index, e)}
+                              />
+                            </FormGroup>
+                          </Col>
+                          <Col lg="3">
+                            <FormGroup>
+                              <label className="form-control-label">Vitamin B3 (mg)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                name="vitamin_b3"
+                                value={vitamin.vitamin_b3}
+                                onChange={(e) => handleVitaminChange(index, e)}
+                              />
+                            </FormGroup>
+                          </Col>
+                          <Col lg="3">
+                            <FormGroup>
+                              <label className="form-control-label">Vitamin B5 (mg)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                name="vitamin_b5"
+                                value={vitamin.vitamin_b5}
+                                onChange={(e) => handleVitaminChange(index, e)}
+                              />
+                            </FormGroup>
+                          </Col>
+                          <Col lg="3">
+                            <FormGroup>
+                              <label className="form-control-label">Vitamin B6 (mg)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                name="vitamin_b6"
+                                value={vitamin.vitamin_b6}
+                                onChange={(e) => handleVitaminChange(index, e)}
+                              />
+                            </FormGroup>
+                          </Col>
+                        </Row>
+                        <Row>
+                          <Col lg="3">
+                            <FormGroup>
+                              <label className="form-control-label">Vitamin B12 (µg)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                name="vitamin_b12"
+                                value={vitamin.vitamin_b12}
+                                onChange={(e) => handleVitaminChange(index, e)}
+                              />
+                            </FormGroup>
+                          </Col>
+                          <Col lg="3">
+                            <FormGroup>
+                              <label className="form-control-label">Fiber (g)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                name="fiber"
+                                value={vitamin.fiber}
+                                onChange={(e) => handleVitaminChange(index, e)}
+                              />
+                            </FormGroup>
+                          </Col>
+                        </Row>
+                      </div>
+                    ))}
+                  </div>
                   <div className="pl-lg-4 mt-4">
                     <Button
                       color="primary"

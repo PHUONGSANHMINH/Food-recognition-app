@@ -219,7 +219,7 @@ def update_recipe(id_recipe):
                 alcohol=data['nutrition'].get('alcohol')
             )
             db.session.add(new_nutrition)
-            db.session.flush()  # Lấy id_nutrition sau khi chèn mới
+            db.session.flush()
 
             # Thêm vitamin
             for vitamin in data['vitamins']:
@@ -296,7 +296,24 @@ def get_total_records():
     search = request.args.get('search', '', type=str)
     
     query = RecipeInfo.query
+
+    if search:
+        query = query.filter(RecipeInfo.name_recipe.like(f'%{search}%'))
     
+    # Đếm tổng số công thức
+    total_records = query.count()
+    
+    # Trả về tổng số bản ghi
+    return jsonify({'total': total_records})
+
+# Lấy tổng số bản ghi của tất cả công thức chưa được accept
+def get_total_unapproved_recipes_records():
+    search = request.args.get('search', '', type=str)
+    
+    query = db.session.query(RecipeInfo).join(RecipesContribution).filter(
+        RecipesContribution.accept_contribution == 0  # Điều kiện accept_contribution
+    )
+
     if search:
         query = query.filter(RecipeInfo.name_recipe.like(f'%{search}%'))
     
@@ -313,7 +330,31 @@ def get_recipes():
     search = request.args.get('search', '', type=str)
 
     query = RecipeInfo.query
-    # Lọc thêm điều kiện status = 'Published'        
+    if search:
+        query = query.filter(RecipeInfo.name_recipe.like(f'%{search}%'))
+
+    recipes = query.paginate(page=page, per_page=limit, error_out=False)
+
+    recipes_data = []
+    for recipe in recipes.items:
+        recipes_data.append({
+            'id_recipe': recipe.id_recipe,
+            'name_recipe': recipe.name_recipe,
+            'image': recipe.image,
+            'type': recipe.type,
+            'status': recipe.status,
+            'summary': recipe.summary
+        })
+
+    return jsonify(recipes_data)
+
+# Lấy danh sách các công thức
+def get_recipes_publish():
+    page = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 10, type=int)
+    search = request.args.get('search', '', type=str)
+
+    query = RecipeInfo.query   
     query = query.filter(RecipeInfo.status == 'Published')
     if search:
         query = query.filter(RecipeInfo.name_recipe.like(f'%{search}%'))
@@ -332,6 +373,68 @@ def get_recipes():
         })
 
     return jsonify(recipes_data)
+
+def get_recipes_unapproved():
+    page = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 10, type=int)
+    search = request.args.get('search', '', type=str)
+
+    # Tạo query kết hợp giữa RecipeInfo và RecipesContribution
+    query = db.session.query(RecipeInfo).join(RecipesContribution).filter(
+        RecipesContribution.accept_contribution == 0
+    )
+
+    if search:
+        query = query.filter(RecipeInfo.name_recipe.like(f'%{search}%'))
+
+    # Phân trang kết quả
+    recipes = query.paginate(page=page, per_page=limit, error_out=False)
+
+    # Chuẩn bị dữ liệu trả về
+    recipes_data = []
+    for recipe in recipes.items:
+        recipes_data.append({
+            'id_recipe': recipe.id_recipe,
+            'name_recipe': recipe.name_recipe,
+            'image': recipe.image,
+            'type': recipe.type,
+            'status': recipe.status,
+            'summary': recipe.summary
+        })
+
+    return jsonify(recipes_data)
+
+def approve_recipes():
+    try:
+        data = request.get_json()
+        recipes_ids = data.get('recipes', [])
+        
+        if not recipes_ids:
+            return jsonify({"message": "No recipes selected!"}), 400
+        
+        # Tìm các công thức trong cơ sở dữ liệu bằng ID
+        recipes = RecipeInfo.query.filter(RecipeInfo.id_recipe.in_(recipes_ids)).all()
+        contributions = RecipesContribution.query.filter(RecipesContribution.id_recipe.in_(recipes_ids)).all()
+
+        if len(recipes) != len(recipes_ids):
+            return jsonify({"message": "Some recipes were not found!"}), 404
+        
+        # Set trạng thái đã Publish công thức và set giá trị accept cho bảng đóng góp là 1
+        for recipe in recipes:
+            recipe.status = "Published"
+        for contribution in contributions:
+            contribution.accept_contribution = 1
+        
+        db.session.commit()
+
+        return jsonify({"message": "Recipes imported successfully!"}), 200
+
+    except IntegrityError as e:
+        db.session.rollback()
+        return jsonify({"message": "Database integrity error."}), 500
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": str(e)}), 500
 
 # Lấy chi tiết công thức
 def get_recipe_detail(id_recipe):

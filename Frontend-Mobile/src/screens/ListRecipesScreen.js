@@ -24,7 +24,7 @@ const api = {
     // Sử dụng biến môi trường cho URL
     async fetchRecipes(page = 1, limit = 10, search = '') {
         try {
-            const response = await axios.get(`${process.env.EXPO_PUBLIC_DOMAIN}api/recipe`, {
+            const response = await axios.get(`${process.env.EXPO_PUBLIC_DOMAIN}api/recipe/get-recipes-publish`, {
                 params: { page, limit, search }, // Sử dụng params để truyền tham số
             });
             return response.data; // Trả về dữ liệu từ response

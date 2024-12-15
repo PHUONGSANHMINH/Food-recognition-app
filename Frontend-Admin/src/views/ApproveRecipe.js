@@ -12,12 +12,11 @@ import {
   Input,
   Button
 } from "reactstrap";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import Header from "components/Headers/HeaderRecipeList.js";
+import Header from "components/Headers/HeaderUnapproved.js";
 
-const Recipes = () => {
+const AcceptRecipes = () => {
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -29,10 +28,51 @@ const Recipes = () => {
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
   const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN;
   const navigate = useNavigate();
+  const [selectedRecipes, setSelectedRecipes] = useState([]);
 
-  const fetchTotalRecords = async (keyword = '') => {
+  const handleSelectRecipe = (id) => {
+    if (selectedRecipes.includes(id)) {
+      setSelectedRecipes(selectedRecipes.filter((recipeId) => recipeId !== id));
+    } else {
+      setSelectedRecipes([...selectedRecipes, id]);
+    }
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedRecipes(data.map((item) => item.id_recipe));
+    } else {
+      setSelectedRecipes([]);
+    }
+  };
+
+  const handleSubmitSelectedRecipes = async () => {
+    if (selectedRecipes.length === 0) {
+      alert("No recipes selected!");
+      return;
+    }
     try {
-      const response = await fetch(`${apiDomain}/api/recipe/total?search=${keyword}`);
+      const response = await fetch(`${apiDomain}/api/recipe/approve-recipes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ recipes: selectedRecipes }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error while importing recipes");
+      }
+      alert("Recipes imported successfully!");
+      fetchData(currentPage, itemsPerPage, searchKeyword);
+    } catch (error) {
+      console.error("Error importing recipes: ", error);
+    }
+  };
+
+  const fetchTotalRecords = useCallback(async (keyword = '') => {
+    try {
+      const response = await fetch(`${apiDomain}/api/recipe/total-unapproved?search=${keyword}`);
       if (!response.ok) {
         throw new Error("Lỗi khi lấy tổng số bản ghi");
       }
@@ -45,14 +85,14 @@ const Recipes = () => {
       console.error("Error fetching total records: ", error);
       setError(error.message);
     }
-  };
+  }, [apiDomain, itemsPerPage, totalPages]);
 
-  const fetchData = async (page = 1, limit = itemsPerPage, keyword = '') => {
+  const fetchData = useCallback(async (page = 1, limit = itemsPerPage, keyword = '') => {
     setLoading(true);
     setError(null);
     try {
       const response = await fetch(
-        `${apiDomain}/api/recipe/?page=${page}&limit=${limit}&search=${keyword}`
+        `${apiDomain}/api/recipe/get-recipes-unapproved?page=${page}&limit=${limit}&search=${keyword}`
       );
       if (!response.ok) {
         throw new Error("Lỗi khi lấy dữ liệu");
@@ -67,11 +107,11 @@ const Recipes = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [apiDomain, fetchTotalRecords, itemsPerPage]);
 
   useEffect(() => {
     fetchData(currentPage, itemsPerPage, searchKeyword);
-  }, [currentPage, itemsPerPage, searchKeyword]);
+  }, [currentPage, itemsPerPage, searchKeyword, fetchData]);
 
   useEffect(() => {
     if (searchKeyword) {
@@ -79,7 +119,7 @@ const Recipes = () => {
     } else {
       fetchTotalRecords();
     }
-  }, [searchKeyword]);
+  }, [searchKeyword, fetchTotalRecords]);
 
   const paginate = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -103,40 +143,9 @@ const Recipes = () => {
     setCurrentPage(1);
   };
 
-  const handleAddRecipe = (e) => {
-    // Implement navigation to add recipe page or modal
-    e.preventDefault();
-    navigate('/admin/recipes/add-recipe');
-  };
-
   const handleUpdateRecipe = (id) => {
     // Navigate to the update page with the recipe ID
     navigate(`/admin/recipes/update-recipe/${id}`);
-  };
-
-  const handleDeleteRecipe = async (id) => {
-    const isConfirmed = window.confirm("Are you sure you want to delete this recipe?");
-    if (!isConfirmed) return;
-  
-    try {
-      const accessToken = await AsyncStorage.getItem("access_token");
-      const response = await fetch(`${apiDomain}/api/recipe/delete/${id}`, {
-        method: "DELETE",
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
-      });
-  
-      if (!response.ok) {
-        window.alert("Can't delete this recipe. Please try again");
-      } else {
-        window.alert("Recipe deleted successfully");
-        fetchData(currentPage, itemsPerPage, searchKeyword);
-      }
-    } catch (error) {
-      console.error("Error deleting recipe: ", error);
-      setError("Failed to delete recipe");
-    }
   };
 
   return (
@@ -148,13 +157,9 @@ const Recipes = () => {
             <Card className="shadow ">
               <CardHeader className="border-0">
                 <div className="d-flex justify-content-between align-items-center">
-                  <h3 className="mb-0">Recipes</h3>
-                  <Button
-                    color="success"
-                    onClick={handleAddRecipe}
-                    className="mb-3"
-                  >
-                    Add Recipe
+                  <h3 className="mb-0">Unapproved Recipes</h3>
+                  <Button color="success" onClick={handleSubmitSelectedRecipes}>
+                    Approve Recipes
                   </Button>
                 </div>
                 <Input
@@ -169,12 +174,18 @@ const Recipes = () => {
                 <Table className="align-items-center table-flush" responsive>
                   <thead className="thead-light">
                     <tr>
+                      <th scope="col">
+                        <Input
+                          type="checkbox"
+                          onChange={handleSelectAll}
+                          checked={selectedRecipes.length === data.length}
+                        />
+                      </th>
                       <th scope="col">Name</th>
                       <th scope="col">Image</th>
                       <th scope="col">Status</th>
                       <th scope="col">Summary</th>
-                      <th scope="col">Update</th>
-                      <th scope="col">Delete</th>
+                      <th scope="col">Edit</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -202,6 +213,11 @@ const Recipes = () => {
                     ) : data && data.length > 0 ? (
                       data.map((item) => (
                         <tr key={item.id_recipe}>
+                          <td><Input
+                            type="checkbox"
+                            checked={selectedRecipes.includes(item.id_recipe)}
+                            onChange={() => handleSelectRecipe(item.id_recipe)}
+                          /></td>
                           <td>{item.name_recipe}</td>
                           <td>
                             <Media>
@@ -231,20 +247,11 @@ const Recipes = () => {
                               Update
                             </Button>
                           </td>
-                          <td>
-  <Button
-    color="danger"
-    size="sm"
-    onClick={() => handleDeleteRecipe(item.id_recipe)}
-  >
-    Delete
-  </Button>
-</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="4" className="text-center">             
+                        <td colSpan="10" className="text-center">
                           There is no data to display
                         </td>
                       </tr>
@@ -360,9 +367,18 @@ const Recipes = () => {
           height: 50px;
           border-radius: 5px;
         }
+        th input[type="checkbox"], 
+        td input[type="checkbox"] {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin: 0 auto;
+          position: relative;
+          transform: translateY(-10%);
+        }
       `}</style>
     </>
   );
 };
 
-export default Recipes;
+export default AcceptRecipes;
