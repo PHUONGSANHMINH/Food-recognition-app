@@ -106,6 +106,108 @@ def recommend_recipes_by_labels(labels, threshold=0.3):  # threshold: ngưỡng 
     
     return recommendations
 
+def detect_objects():
+    if 'image' not in request.files:
+        return jsonify({'msg': 'No image part in the request'}), 400
+
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'msg': 'No selected file'}), 400
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        upload_folder = os.path.join(os.getcwd(), 'uploads')
+        os.makedirs(upload_folder, exist_ok=True)
+        filepath = os.path.join(upload_folder, filename)
+        file.save(filepath)
+
+        try:
+            # Chạy YOLOv8 để phát hiện vật thể
+            results = model.predict(source=filepath, save=False)
+            detected_labels = set()
+
+            # Lấy kết quả từ model
+            for result in results:
+                for cls in result.boxes.cls:
+                    label = model.names[int(cls)]
+                    clean_label = re.sub(r'^\d+\s+', '', label)
+                    detected_labels.add(clean_label)
+
+            detected_labels = list(detected_labels)
+            os.remove(filepath)
+
+            if not detected_labels:
+                return jsonify({'msg': 'No objects detected'}), 200
+
+            return jsonify({'detected_objects': detected_labels}), 200
+
+        except Exception as e:
+            logger.error(f"Error during object detection: {str(e)}")
+            return jsonify({'msg': 'An error occurred during detection', 'error': str(e)}), 500
+
+    else:
+        return jsonify({'msg': 'Unsupported file type'}), 400
+
+def recommend_recipes_spoonacular():
+    detected_labels = request.json.get('detected_objects', [])
+    if not detected_labels:
+        return jsonify({'msg': 'No detected objects provided'}), 400
+
+    ingredients = ','.join(detected_labels)
+    params = {
+        'includeIngredients': ingredients,
+        'number': 10,  # Số món được gợi ý từ spoonacular
+        'ranking': 1,
+        'addRecipeInformation': True
+    }
+
+    for api_key in SPOONACULAR_API_KEY:
+        if api_key in limited_api_keys:
+            continue
+        params['apiKey'] = api_key.strip()
+
+        try:
+            response = requests.get(SPOONACULAR_SEARCH_URL, params=params)
+
+            if response.status_code == 200:
+                data = response.json()
+                recipes = data.get('results', [])
+
+                if not recipes:
+                    return jsonify({'msg': 'No recipes found for detected ingredients'}), 200
+
+                recommendations = []
+                for recipe in recipes:
+                    recipe_info = get_recipe_info(recipe.get('id'))
+                    instructions_result = get_recipe_instructions(recipe.get('id'))
+
+                    combined_info = {
+                        'id': recipe_info.get('id'),
+                        'title': recipe.get('title'),
+                        'image': recipe.get('image'),
+                        'cookingMinutes': recipe.get('cookingMinutes'),
+                        'summary': recipe.get('summary'),
+                        'sourceUrl': recipe.get('sourceUrl'),
+                        'calories': recipe_info.get('calories'),
+                        'nutrients': recipe_info.get('nutrients'),
+                        'ingredients': recipe_info.get('ingredients'),
+                        'instructions': instructions_result.get('instructions', []),
+                    }
+                    recommendations.append(combined_info)
+
+                return jsonify({'recommendations': recommendations}), 200
+
+            elif response.status_code == 402:
+                limited_api_keys.add(api_key)
+                logging.warning(f"API key {api_key} has reached the request limit. Trying the next API key.")
+            else:
+                logging.error(f"Unexpected error with API key {api_key}: {response.text}")
+
+        except requests.RequestException as e:
+            logging.error(f"Request error with API key {api_key}: {str(e)}")
+
+    return jsonify({'msg': 'All API keys have reached their limits or encountered an error'}), 500
+
 
 @jwt_required()
 def detect_recommend_spoonacular():

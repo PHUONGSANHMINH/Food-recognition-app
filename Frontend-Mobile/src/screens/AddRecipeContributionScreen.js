@@ -8,7 +8,8 @@ import {
   Image,
   StyleSheet,
   SafeAreaView,
-  Alert
+  Alert,
+  Modal
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
@@ -19,6 +20,7 @@ import { Picker } from '@react-native-picker/picker';
 
 const AddRecipeContributionScreen = () => {
   const navigation = useNavigation();
+  const [isRecipeTypeModalVisible, setIsRecipeTypeModalVisible] = useState(false);
   const [showNutritionForm, setShowNutritionForm] = useState(false);
   const [showVitaminForm, setShowVitaminForm] = useState(false);
   const [recipeName, setRecipeName] = useState('');
@@ -312,18 +314,47 @@ const AddRecipeContributionScreen = () => {
             value={recipeName}
             onChangeText={setRecipeName}
           />
-          <View style={[styles.input, styles.pickerContainer]}>
+          {/* Tạo TouchableOpacity thay thế Picker trực tiếp */}
+      <TouchableOpacity 
+        style={[styles.input, styles.pickerContainer]}
+        onPress={() => setIsRecipeTypeModalVisible(true)}
+      >
+        <Text style={styles.selectedValueText}>
+          {recipeType ? recipeType.charAt(0).toUpperCase() + recipeType.slice(1) : 'Select Recipe Type'}
+        </Text>
+      </TouchableOpacity>
+
+      {/* Modal chứa Picker */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isRecipeTypeModalVisible}
+        onRequestClose={() => setIsRecipeTypeModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Recipe Type</Text>
             <Picker
               selectedValue={recipeType}
-              onValueChange={(itemValue) => setRecipeType(itemValue)}
+              onValueChange={(itemValue) => {
+                setRecipeType(itemValue);
+                setIsRecipeTypeModalVisible(false);
+              }}
               style={styles.pickerStyle}
             >
-              <Picker.Item label="Select Recipe Type" value="" />
               <Picker.Item label="Breakfast" value="breakfast" />
               <Picker.Item label="Lunch" value="lunch" />
               <Picker.Item label="Dinner" value="dinner" />
             </Picker>
+            <TouchableOpacity 
+              style={styles.cancelButton}
+              onPress={() => setIsRecipeTypeModalVisible(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
+        </View>
+      </Modal>
           <TextInput
             style={styles.multilineInput}
             placeholder="Recipe Summary"
@@ -1114,6 +1145,51 @@ const styles = StyleSheet.create({
     height: 55,
     width: '100%',
     color: 'orange',
+  },
+  pickerContainer: {
+    justifyContent: 'center',
+  },
+  selectedValueText: {
+    color: '#333',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  pickerStyle: {
+    width: '100%',
+  },
+  cancelButton: {
+    marginTop: 15,
+    padding: 10,
+    backgroundColor: '#f1f1f1',
+    borderRadius: 8,
+  },
+  cancelButtonText: {
+    textAlign: 'center',
+    color: '#333',
+  },
+  multilineInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 15,
+    minHeight: 100,
+    textAlignVertical: 'top',
   },
 });
 

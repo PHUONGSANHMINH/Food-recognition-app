@@ -124,7 +124,7 @@ const UserInfoScreen = () => {
 
     const renderCaloriesPicker = () => {
         const caloriesOptions = [];
-        for (let i = 1000; i <= 5000; i += 50) {
+        for (let i = 1000; i <= 3000; i += 50) {
             caloriesOptions.push(i);
         }
 

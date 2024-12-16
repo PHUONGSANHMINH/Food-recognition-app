@@ -55,9 +55,9 @@ export default function CameraScreen({ navigation }) {
   async function pickImageFromLibrary() {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [9,6],
+        mediaTypes: 'images',
+        allowsEditing: false,
+        aspect: [4,3],
         quality: 1,
       });
 

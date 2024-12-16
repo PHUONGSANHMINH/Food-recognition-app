@@ -5,11 +5,116 @@ from app.controllers.detect_controller import (
     detect_recommend_spoonacular,
     get_recipe_instructions,
     recommend_recipes_by_labels,
-    get_daily_meal_plan
+    get_daily_meal_plan,
+    detect_objects,
+    recommend_recipes_spoonacular
 )
 from flasgger import swag_from
 
 detect_bp = Blueprint('detect', __name__)
+
+@detect_bp.route('/detect-objects', methods=['POST'])
+@swag_from({
+    'tags': ['Detection'],
+    'summary': 'Detect Objects from an Image',
+    'description': 'Use YOLO model to detect objects in an uploaded image.',
+    'consumes': ['multipart/form-data'],
+    'parameters': [
+        {
+            'name': 'image',
+            'in': 'formData',
+            'type': 'file',
+            'required': True,
+            'description': 'Image file for object detection'
+        }
+    ],
+    'responses': {
+        200: {
+            'description': 'Detection results',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'detected_objects': {
+                        'type': 'array',
+                        'items': {'type': 'string'}
+                    }
+                }
+            }
+        },
+        400: {
+            'description': 'Bad request or unsupported file type'
+        },
+        401: {
+            'description': 'Unauthorized - Missing or invalid token'
+        },
+        500: {
+            'description': 'Internal server error during processing'
+        }
+    }
+})
+def detect_objects_view():
+    return detect_objects()
+
+
+@detect_bp.route('/recommend-recipes-spoonacular', methods=['POST'])
+@swag_from({
+    'tags': ['Recommendation'],
+    'summary': 'Recommend Recipes based on Detected Objects',
+    'description': 'Recommend recipes using Spoonacular API based on detected objects.',
+    'consumes': ['application/json'],
+    'parameters': [
+        {
+            'name': 'detected_objects',
+            'in': 'body',
+            'required': True,
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'detected_objects': {
+                        'type': 'array',
+                        'items': {'type': 'string'}
+                    }
+                }
+            }
+        }
+    ],
+    'responses': {
+        200: {
+            'description': 'Recommendation results',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'recommendations': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                'id': {'type': 'integer'},
+                                'title': {'type': 'string'},
+                                'image': {'type': 'string'},
+                                'calories': {'type': 'string'},
+                                'summary': {'type': 'string'},
+                                'sourceUrl': {'type': 'string'}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        400: {
+            'description': 'Bad request - Invalid detected objects'
+        },
+        401: {
+            'description': 'Unauthorized - Missing or invalid token'
+        },
+        500: {
+            'description': 'Internal server error during processing'
+        }
+    }
+})
+def recommend_recipes_view():
+    return recommend_recipes_spoonacular()
+
 
 @detect_bp.route('/detect-recommend-spoonacular', methods=['POST'])
 def detect_and_recommend_view():

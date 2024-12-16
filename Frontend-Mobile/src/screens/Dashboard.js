@@ -14,16 +14,10 @@ import {
   RefreshControl,
   Dimensions,
 } from 'react-native';
-import { Calendar } from 'react-native-calendars';
-import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
-import debounce from 'lodash/debounce';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import SafeAreaWrapper from '../components/SafeAreaWrapper'
-
-const { width } = Dimensions.get('window');
 
 const api = {
   async fetchDailyMealPlan() {
@@ -754,7 +748,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   dayItem: {
-    width: 40,
+    width: 60,
     height: 40,
     backgroundColor: 'transparent',
     borderRadius: 8,
