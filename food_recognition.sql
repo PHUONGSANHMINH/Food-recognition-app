@@ -11,7 +11,7 @@
  Target Server Version : 80036
  File Encoding         : 65001
 
- Date: 16/12/2024 17:47:17
+ Date: 17/12/2024 16:41:37
 */
 
 SET NAMES utf8mb4;
@@ -30,7 +30,7 @@ CREATE TABLE `advertising_banners`  (
   `activate` tinyint(1) NOT NULL,
   `image_background` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of advertising_banners
@@ -49,7 +49,7 @@ CREATE TABLE `config`  (
 -- ----------------------------
 -- Records of config
 -- ----------------------------
-INSERT INTO `config` VALUES ('data_recommend_csv', 'recommend-dataset/recipes_export_20241216_150643.csv');
+INSERT INTO `config` VALUES ('data_recommend_csv', 'recommend-dataset/recipes_export_20241217_162747.csv');
 INSERT INTO `config` VALUES ('superadmin_password', 'admin');
 INSERT INTO `config` VALUES ('superadmin_username', 'admin');
 
@@ -69,12 +69,13 @@ CREATE TABLE `csv_export_version`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `exported_by`(`exported_by` ASC) USING BTREE,
   CONSTRAINT `csv_export_version_ibfk_1` FOREIGN KEY (`exported_by`) REFERENCES `user` (`id_user`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of csv_export_version
 -- ----------------------------
 INSERT INTO `csv_export_version` VALUES (1, 'recipes_export_20241216_150643.csv', '2024-12-16 08:06:43', 1, 40, 14.5557, 'completed', NULL);
+INSERT INTO `csv_export_version` VALUES (2, 'recipes_export_20241217_162747.csv', '2024-12-17 09:27:48', 1, 60, 22.0938, 'completed', NULL);
 
 -- ----------------------------
 -- Table structure for rating
@@ -91,7 +92,7 @@ CREATE TABLE `rating`  (
   INDEX `id_user`(`id_user` ASC) USING BTREE,
   CONSTRAINT `rating_ibfk_1` FOREIGN KEY (`id_recipe`) REFERENCES `recipe_info` (`id_recipe`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `rating_ibfk_2` FOREIGN KEY (`id_user`) REFERENCES `user` (`id_user`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 51 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of rating
@@ -136,6 +137,26 @@ INSERT INTO `rating` VALUES (47, 37, 1, 5, 'Unique Peruvian dish');
 INSERT INTO `rating` VALUES (48, 38, 1, 4, 'Interesting matcha twist');
 INSERT INTO `rating` VALUES (49, 39, 1, 5, 'Creative sushi fusion');
 INSERT INTO `rating` VALUES (50, 40, 1, 4, 'Comforting ramen bowl');
+INSERT INTO `rating` VALUES (51, 41, 1, 5, 'Authentic Indian flavors!');
+INSERT INTO `rating` VALUES (52, 42, 1, 4, 'Crispy and delicious');
+INSERT INTO `rating` VALUES (53, 43, 1, 5, 'Perfect lunch wrap');
+INSERT INTO `rating` VALUES (54, 44, 1, 4, 'Spicy and colorful');
+INSERT INTO `rating` VALUES (55, 45, 1, 5, 'Great post-workout drink');
+INSERT INTO `rating` VALUES (56, 46, 1, 4, 'Spicy buffalo goodness');
+INSERT INTO `rating` VALUES (57, 47, 1, 5, 'Tasty teriyaki');
+INSERT INTO `rating` VALUES (58, 48, 1, 4, 'Protein-packed breakfast');
+INSERT INTO `rating` VALUES (59, 49, 1, 5, 'Creamy pesto delight');
+INSERT INTO `rating` VALUES (60, 50, 1, 4, 'Comforting curry');
+INSERT INTO `rating` VALUES (61, 51, 1, 5, 'Spicy Korean chicken perfection!');
+INSERT INTO `rating` VALUES (62, 52, 1, 4, 'Hearty breakfast option');
+INSERT INTO `rating` VALUES (63, 53, 1, 5, 'Fresh and light salad');
+INSERT INTO `rating` VALUES (64, 54, 1, 4, 'Crispy and indulgent');
+INSERT INTO `rating` VALUES (65, 55, 1, 5, 'Protein-packed breakfast');
+INSERT INTO `rating` VALUES (66, 56, 1, 4, 'Tender BBQ chicken');
+INSERT INTO `rating` VALUES (67, 57, 1, 5, 'Classic Chinese-style dish');
+INSERT INTO `rating` VALUES (68, 58, 1, 4, 'Interesting breakfast twist');
+INSERT INTO `rating` VALUES (69, 59, 1, 5, 'Authentic Greek flavors');
+INSERT INTO `rating` VALUES (70, 60, 1, 4, 'Rich and aromatic');
 
 -- ----------------------------
 -- Table structure for recipe_info
@@ -149,7 +170,7 @@ CREATE TABLE `recipe_info`  (
   `status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL,
   `summary` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL,
   PRIMARY KEY (`id_recipe`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 41 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_info
@@ -194,6 +215,26 @@ INSERT INTO `recipe_info` VALUES (37, 'Peruvian Lomo Saltado', 'lomo_saltado.jpg
 INSERT INTO `recipe_info` VALUES (38, 'Matcha Overnight Oats', 'matcha_oats.jpg', 'breakfast', 'Published', 'Green tea-infused overnight oats');
 INSERT INTO `recipe_info` VALUES (39, 'Sushi Burrito', 'sushi_burrito.jpg', 'lunch', 'Published', 'Fusion sushi roll wrapped like a burrito');
 INSERT INTO `recipe_info` VALUES (40, 'Japanese Ramen', 'ramen.jpg', 'dinner', 'Published', 'Authentic Japanese ramen with rich broth and toppings');
+INSERT INTO `recipe_info` VALUES (41, 'Chicken Tikka Masala', 'chicken_tikka.jpg', 'dinner', 'Published', 'Classic Indian dish with tender chicken in creamy tomato sauce');
+INSERT INTO `recipe_info` VALUES (42, 'Chicken and Waffle Breakfast', 'chicken_waffle.jpg', 'breakfast', 'Published', 'Southern-style crispy chicken served with fluffy waffles');
+INSERT INTO `recipe_info` VALUES (43, 'Chicken Caesar Wrap', 'caesar_wrap.jpg', 'lunch', 'Published', 'Grilled chicken Caesar salad wrapped in a tortilla');
+INSERT INTO `recipe_info` VALUES (44, 'Chicken Fajitas', 'chicken_fajitas.jpg', 'dinner', 'Published', 'Sizzling Mexican-style chicken with peppers and onions');
+INSERT INTO `recipe_info` VALUES (45, 'Chicken Protein Smoothie', 'chicken_protein.jpg', 'breakfast', 'Published', 'High-protein smoothie with chicken and fruits');
+INSERT INTO `recipe_info` VALUES (46, 'Buffalo Chicken Sandwich', 'buffalo_chicken.jpg', 'lunch', 'Published', 'Spicy buffalo chicken on a crispy roll');
+INSERT INTO `recipe_info` VALUES (47, 'Chicken Teriyaki Bowl', 'chicken_teriyaki.jpg', 'dinner', 'Published', 'Japanese-inspired teriyaki chicken over rice');
+INSERT INTO `recipe_info` VALUES (48, 'Chicken and Spinach Frittata', 'chicken_frittata.jpg', 'breakfast', 'Published', 'Protein-packed egg dish with chicken and spinach');
+INSERT INTO `recipe_info` VALUES (49, 'Chicken Pesto Pasta', 'chicken_pesto.jpg', 'lunch', 'Published', 'Creamy pesto pasta with grilled chicken');
+INSERT INTO `recipe_info` VALUES (50, 'Coconut Curry Chicken', 'coconut_curry_chicken.jpg', 'dinner', 'Published', 'Creamy coconut curry with tender chicken pieces');
+INSERT INTO `recipe_info` VALUES (51, 'Korean Gochujang Chicken', 'korean_chicken.jpg', 'dinner', 'Published', 'Spicy Korean-style chicken with gochujang sauce');
+INSERT INTO `recipe_info` VALUES (52, 'Chicken Breakfast Quesadilla', 'chicken_quesadilla.jpg', 'breakfast', 'Published', 'Hearty breakfast quesadilla with scrambled chicken');
+INSERT INTO `recipe_info` VALUES (53, 'Mediterranean Chicken Salad', 'med_chicken_salad.jpg', 'lunch', 'Published', 'Grilled chicken with Mediterranean ingredients');
+INSERT INTO `recipe_info` VALUES (54, 'Chicken Chimichanga', 'chicken_chimichanga.jpg', 'dinner', 'Published', 'Deep-fried chicken and cheese burrito');
+INSERT INTO `recipe_info` VALUES (55, 'Chicken Protein Pancakes', 'chicken_pancakes.jpg', 'breakfast', 'Published', 'High-protein pancakes with shredded chicken');
+INSERT INTO `recipe_info` VALUES (56, 'BBQ Chicken Sandwich', 'bbq_chicken_sandwich.jpg', 'lunch', 'Published', 'Slow-cooked BBQ pulled chicken sandwich');
+INSERT INTO `recipe_info` VALUES (57, 'Cashew Chicken', 'cashew_chicken.jpg', 'dinner', 'Published', 'Chinese-style stir-fried chicken with cashews');
+INSERT INTO `recipe_info` VALUES (58, 'Chicken Shakshuka', 'chicken_shakshuka.jpg', 'breakfast', 'Published', 'Middle Eastern-inspired chicken and egg dish');
+INSERT INTO `recipe_info` VALUES (59, 'Greek Chicken Gyros', 'greek_chicken_gyros.jpg', 'lunch', 'Published', 'Traditional Greek chicken gyros with tzatziki');
+INSERT INTO `recipe_info` VALUES (60, 'Moroccan Spiced Chicken', 'moroccan_chicken.jpg', 'dinner', 'Published', 'Slow-cooked chicken with aromatic Moroccan spices');
 
 -- ----------------------------
 -- Table structure for recipe_ingredients
@@ -209,7 +250,7 @@ CREATE TABLE `recipe_ingredients`  (
   PRIMARY KEY (`id_ingredient`) USING BTREE,
   INDEX `id_recipe`(`id_recipe` ASC) USING BTREE,
   CONSTRAINT `recipe_ingredients_ibfk_1` FOREIGN KEY (`id_recipe`) REFERENCES `recipe_info` (`id_recipe`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 81 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_ingredients
@@ -294,6 +335,46 @@ INSERT INTO `recipe_ingredients` VALUES (77, 39, 'Sushi Rice', 150, 'g', 'sushi_
 INSERT INTO `recipe_ingredients` VALUES (78, 39, 'Fresh Tuna', 200, 'g', 'tuna.jpg');
 INSERT INTO `recipe_ingredients` VALUES (79, 40, 'Ramen Noodles', 200, 'g', 'ramen_noodles.jpg');
 INSERT INTO `recipe_ingredients` VALUES (80, 40, 'Pork Belly', 150, 'g', 'pork_belly.jpg');
+INSERT INTO `recipe_ingredients` VALUES (81, 41, 'Chicken Breast', 300, 'g', 'chicken_breast.jpg');
+INSERT INTO `recipe_ingredients` VALUES (82, 41, 'Tomato Sauce', 200, 'ml', 'tomato_sauce.jpg');
+INSERT INTO `recipe_ingredients` VALUES (83, 42, 'Chicken Thighs', 250, 'g', 'chicken_thighs.jpg');
+INSERT INTO `recipe_ingredients` VALUES (84, 42, 'Waffle Mix', 150, 'g', 'waffle_mix.jpg');
+INSERT INTO `recipe_ingredients` VALUES (85, 43, 'Grilled Chicken', 200, 'g', 'grilled_chicken.jpg');
+INSERT INTO `recipe_ingredients` VALUES (86, 43, 'Tortilla', 1, 'piece', 'tortilla.jpg');
+INSERT INTO `recipe_ingredients` VALUES (87, 44, 'Chicken Strips', 250, 'g', 'chicken_strips.jpg');
+INSERT INTO `recipe_ingredients` VALUES (88, 44, 'Bell Peppers', 2, 'piece', 'bell_peppers.jpg');
+INSERT INTO `recipe_ingredients` VALUES (89, 45, 'Chicken Breast', 150, 'g', 'chicken_breast.jpg');
+INSERT INTO `recipe_ingredients` VALUES (90, 45, 'Protein Powder', 30, 'g', 'protein_powder.jpg');
+INSERT INTO `recipe_ingredients` VALUES (91, 46, 'Chicken Breast', 200, 'g', 'chicken_breast.jpg');
+INSERT INTO `recipe_ingredients` VALUES (92, 46, 'Buffalo Sauce', 50, 'ml', 'buffalo_sauce.jpg');
+INSERT INTO `recipe_ingredients` VALUES (93, 47, 'Chicken Thighs', 300, 'g', 'chicken_thighs.jpg');
+INSERT INTO `recipe_ingredients` VALUES (94, 47, 'Teriyaki Sauce', 100, 'ml', 'teriyaki_sauce.jpg');
+INSERT INTO `recipe_ingredients` VALUES (95, 48, 'Chicken', 150, 'g', 'chicken.jpg');
+INSERT INTO `recipe_ingredients` VALUES (96, 48, 'Eggs', 4, 'piece', 'eggs.jpg');
+INSERT INTO `recipe_ingredients` VALUES (97, 49, 'Chicken Breast', 250, 'g', 'chicken_breast.jpg');
+INSERT INTO `recipe_ingredients` VALUES (98, 49, 'Pesto Sauce', 75, 'ml', 'pesto_sauce.jpg');
+INSERT INTO `recipe_ingredients` VALUES (99, 50, 'Chicken Thighs', 300, 'g', 'chicken_thighs.jpg');
+INSERT INTO `recipe_ingredients` VALUES (100, 50, 'Coconut Milk', 200, 'ml', 'coconut_milk.jpg');
+INSERT INTO `recipe_ingredients` VALUES (101, 51, 'Chicken Thighs', 300, 'g', 'chicken_thighs.jpg');
+INSERT INTO `recipe_ingredients` VALUES (102, 51, 'Gochujang Sauce', 50, 'ml', 'gochujang_sauce.jpg');
+INSERT INTO `recipe_ingredients` VALUES (103, 52, 'Chicken Breast', 200, 'g', 'chicken_breast.jpg');
+INSERT INTO `recipe_ingredients` VALUES (104, 52, 'Tortilla', 2, 'piece', 'tortilla.jpg');
+INSERT INTO `recipe_ingredients` VALUES (105, 53, 'Grilled Chicken', 250, 'g', 'grilled_chicken.jpg');
+INSERT INTO `recipe_ingredients` VALUES (106, 53, 'Mixed Salad Greens', 100, 'g', 'salad_greens.jpg');
+INSERT INTO `recipe_ingredients` VALUES (107, 54, 'Chicken', 300, 'g', 'chicken.jpg');
+INSERT INTO `recipe_ingredients` VALUES (108, 54, 'Tortilla', 2, 'piece', 'tortilla.jpg');
+INSERT INTO `recipe_ingredients` VALUES (109, 55, 'Chicken Breast', 150, 'g', 'chicken_breast.jpg');
+INSERT INTO `recipe_ingredients` VALUES (110, 55, 'Protein Powder', 30, 'g', 'protein_powder.jpg');
+INSERT INTO `recipe_ingredients` VALUES (111, 56, 'Chicken Breast', 250, 'g', 'chicken_breast.jpg');
+INSERT INTO `recipe_ingredients` VALUES (112, 56, 'BBQ Sauce', 100, 'ml', 'bbq_sauce.jpg');
+INSERT INTO `recipe_ingredients` VALUES (113, 57, 'Chicken Breast', 300, 'g', 'chicken_breast.jpg');
+INSERT INTO `recipe_ingredients` VALUES (114, 57, 'Cashews', 100, 'g', 'cashews.jpg');
+INSERT INTO `recipe_ingredients` VALUES (115, 58, 'Chicken', 200, 'g', 'chicken.jpg');
+INSERT INTO `recipe_ingredients` VALUES (116, 58, 'Eggs', 4, 'piece', 'eggs.jpg');
+INSERT INTO `recipe_ingredients` VALUES (117, 59, 'Chicken Breast', 250, 'g', 'chicken_breast.jpg');
+INSERT INTO `recipe_ingredients` VALUES (118, 59, 'Pita Bread', 2, 'piece', 'pita_bread.jpg');
+INSERT INTO `recipe_ingredients` VALUES (119, 60, 'Chicken Thighs', 400, 'g', 'chicken_thighs.jpg');
+INSERT INTO `recipe_ingredients` VALUES (120, 60, 'Moroccan Spice Mix', 30, 'g', 'moroccan_spices.jpg');
 
 -- ----------------------------
 -- Table structure for recipe_nutrition
@@ -314,7 +395,7 @@ CREATE TABLE `recipe_nutrition`  (
   PRIMARY KEY (`id_nutrition`) USING BTREE,
   INDEX `id_recipe`(`id_recipe` ASC) USING BTREE,
   CONSTRAINT `recipe_nutrition_ibfk_1` FOREIGN KEY (`id_recipe`) REFERENCES `recipe_info` (`id_recipe`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 41 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_nutrition
@@ -359,6 +440,26 @@ INSERT INTO `recipe_nutrition` VALUES (37, 37, 420, 25.4, NULL, 30.5, 4.2, 100, 
 INSERT INTO `recipe_nutrition` VALUES (38, 38, 250, 8.5, NULL, 35.6, 5.4, 10, 200, 12.3, NULL);
 INSERT INTO `recipe_nutrition` VALUES (39, 39, 320, 15.3, NULL, 40.2, 3.6, 45, 380, 22.5, NULL);
 INSERT INTO `recipe_nutrition` VALUES (40, 40, 450, 30.5, NULL, 35.7, 4.5, 150, 620, 25.6, NULL);
+INSERT INTO `recipe_nutrition` VALUES (41, 41, 420, 22.5, NULL, 25.3, 6.3, 120, 520, 35.7, NULL);
+INSERT INTO `recipe_nutrition` VALUES (42, 42, 580, 35.4, NULL, 45.2, 10.2, 150, 450, 30.5, NULL);
+INSERT INTO `recipe_nutrition` VALUES (43, 43, 650, 15.3, NULL, 25.6, 3.4, 90, 380, 28.7, NULL);
+INSERT INTO `recipe_nutrition` VALUES (44, 44, 400, 20.5, NULL, 20.3, 4.5, 100, 450, 35.6, NULL);
+INSERT INTO `recipe_nutrition` VALUES (45, 45, 450, 8.5, NULL, 20.4, 5.6, 75, 200, 40.2, NULL);
+INSERT INTO `recipe_nutrition` VALUES (46, 46, 480, 22.3, NULL, 15.6, 3.2, 85, 580, 30.5, NULL);
+INSERT INTO `recipe_nutrition` VALUES (47, 47, 520, 25.4, NULL, 35.7, 7.3, 110, 520, 28.6, NULL);
+INSERT INTO `recipe_nutrition` VALUES (48, 48, 420, 18.7, NULL, 10.5, 2.5, 250, 350, 35.2, NULL);
+INSERT INTO `recipe_nutrition` VALUES (49, 49, 480, 20.6, NULL, 25.3, 4.2, 95, 420, 30.5, NULL);
+INSERT INTO `recipe_nutrition` VALUES (50, 50, 550, 30.5, NULL, 20.4, 5.6, 130, 480, 35.7, NULL);
+INSERT INTO `recipe_nutrition` VALUES (51, 51, 480, 22.5, NULL, 20.3, 6.3, 120, 520, 35.7, NULL);
+INSERT INTO `recipe_nutrition` VALUES (52, 52, 520, 25.4, NULL, 30.5, 4.5, 90, 450, 30.6, NULL);
+INSERT INTO `recipe_nutrition` VALUES (53, 53, 420, 15.3, NULL, 10.2, 3.4, 95, 380, 35.2, NULL);
+INSERT INTO `recipe_nutrition` VALUES (54, 54, 550, 28.6, NULL, 35.7, 5.6, 130, 550, 28.5, NULL);
+INSERT INTO `recipe_nutrition` VALUES (55, 55, 400, 12.5, NULL, 25.3, 3.2, 75, 250, 40.2, NULL);
+INSERT INTO `recipe_nutrition` VALUES (56, 56, 480, 20.5, NULL, 25.6, 7.3, 110, 580, 35.4, NULL);
+INSERT INTO `recipe_nutrition` VALUES (57, 57, 500, 22.3, NULL, 20.4, 4.2, 100, 450, 30.5, NULL);
+INSERT INTO `recipe_nutrition` VALUES (58, 58, 450, 18.7, NULL, 15.3, 3.5, 250, 420, 35.6, NULL);
+INSERT INTO `recipe_nutrition` VALUES (59, 59, 440, 15.6, NULL, 25.7, 3.8, 85, 400, 30.5, NULL);
+INSERT INTO `recipe_nutrition` VALUES (60, 60, 520, 30.5, NULL, 20.3, 5.6, 140, 480, 35.7, NULL);
 
 -- ----------------------------
 -- Table structure for recipe_steps
@@ -372,7 +473,7 @@ CREATE TABLE `recipe_steps`  (
   PRIMARY KEY (`id_step`) USING BTREE,
   INDEX `id_recipe`(`id_recipe` ASC) USING BTREE,
   CONSTRAINT `recipe_steps_ibfk_1` FOREIGN KEY (`id_recipe`) REFERENCES `recipe_info` (`id_recipe`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 81 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_steps
@@ -457,6 +558,46 @@ INSERT INTO `recipe_steps` VALUES (77, 39, 1, 'Prepare sushi rice');
 INSERT INTO `recipe_steps` VALUES (78, 39, 2, 'Roll into burrito-style wrap');
 INSERT INTO `recipe_steps` VALUES (79, 40, 1, 'Prepare rich ramen broth');
 INSERT INTO `recipe_steps` VALUES (80, 40, 2, 'Cook noodles and add toppings');
+INSERT INTO `recipe_steps` VALUES (81, 41, 1, 'Marinate chicken in tikka masala spices');
+INSERT INTO `recipe_steps` VALUES (82, 41, 2, 'Cook in creamy tomato sauce');
+INSERT INTO `recipe_steps` VALUES (83, 42, 1, 'Fry chicken until crispy');
+INSERT INTO `recipe_steps` VALUES (84, 42, 2, 'Prepare waffles and serve together');
+INSERT INTO `recipe_steps` VALUES (85, 43, 1, 'Grill chicken with Caesar seasoning');
+INSERT INTO `recipe_steps` VALUES (86, 43, 2, 'Wrap in tortilla with Caesar dressing');
+INSERT INTO `recipe_steps` VALUES (87, 44, 1, 'Slice chicken and vegetables');
+INSERT INTO `recipe_steps` VALUES (88, 44, 2, 'Sauté and serve sizzling');
+INSERT INTO `recipe_steps` VALUES (89, 45, 1, 'Grill chicken breast');
+INSERT INTO `recipe_steps` VALUES (90, 45, 2, 'Blend with protein powder and fruits');
+INSERT INTO `recipe_steps` VALUES (91, 46, 1, 'Coat chicken in buffalo sauce');
+INSERT INTO `recipe_steps` VALUES (92, 46, 2, 'Grill and serve on roll');
+INSERT INTO `recipe_steps` VALUES (93, 47, 1, 'Marinate chicken in teriyaki sauce');
+INSERT INTO `recipe_steps` VALUES (94, 47, 2, 'Grill and serve over rice');
+INSERT INTO `recipe_steps` VALUES (95, 48, 1, 'Cook chicken and chop');
+INSERT INTO `recipe_steps` VALUES (96, 48, 2, 'Mix with eggs and bake frittata');
+INSERT INTO `recipe_steps` VALUES (97, 49, 1, 'Grill chicken breast');
+INSERT INTO `recipe_steps` VALUES (98, 49, 2, 'Toss with pesto pasta');
+INSERT INTO `recipe_steps` VALUES (99, 50, 1, 'Prepare coconut curry sauce');
+INSERT INTO `recipe_steps` VALUES (100, 50, 2, 'Simmer chicken in sauce');
+INSERT INTO `recipe_steps` VALUES (101, 51, 1, 'Marinate chicken in gochujang sauce');
+INSERT INTO `recipe_steps` VALUES (102, 51, 2, 'Grill or bake until crispy');
+INSERT INTO `recipe_steps` VALUES (103, 52, 1, 'Scramble chicken with eggs');
+INSERT INTO `recipe_steps` VALUES (104, 52, 2, 'Fill and grill quesadilla');
+INSERT INTO `recipe_steps` VALUES (105, 53, 1, 'Grill chicken and slice');
+INSERT INTO `recipe_steps` VALUES (106, 53, 2, 'Prepare Mediterranean salad');
+INSERT INTO `recipe_steps` VALUES (107, 54, 1, 'Prepare chicken filling');
+INSERT INTO `recipe_steps` VALUES (108, 54, 2, 'Deep fry chimichanga');
+INSERT INTO `recipe_steps` VALUES (109, 55, 1, 'Shred chicken');
+INSERT INTO `recipe_steps` VALUES (110, 55, 2, 'Mix into pancake batter');
+INSERT INTO `recipe_steps` VALUES (111, 56, 1, 'Slow cook chicken in BBQ sauce');
+INSERT INTO `recipe_steps` VALUES (112, 56, 2, 'Shred and serve on sandwich');
+INSERT INTO `recipe_steps` VALUES (113, 57, 1, 'Stir fry chicken');
+INSERT INTO `recipe_steps` VALUES (114, 57, 2, 'Add cashews and sauce');
+INSERT INTO `recipe_steps` VALUES (115, 58, 1, 'Prepare spicy tomato base');
+INSERT INTO `recipe_steps` VALUES (116, 58, 2, 'Add chicken and poach eggs');
+INSERT INTO `recipe_steps` VALUES (117, 59, 1, 'Grill and slice chicken');
+INSERT INTO `recipe_steps` VALUES (118, 59, 2, 'Assemble in pita with tzatziki');
+INSERT INTO `recipe_steps` VALUES (119, 60, 1, 'Marinate chicken in Moroccan spices');
+INSERT INTO `recipe_steps` VALUES (120, 60, 2, 'Slow cook until tender');
 
 -- ----------------------------
 -- Table structure for recipe_vitamin
@@ -482,7 +623,7 @@ CREATE TABLE `recipe_vitamin`  (
   PRIMARY KEY (`id_vitamin`) USING BTREE,
   INDEX `id_nutrition`(`id_nutrition` ASC) USING BTREE,
   CONSTRAINT `recipe_vitamin_ibfk_1` FOREIGN KEY (`id_nutrition`) REFERENCES `recipe_nutrition` (`id_nutrition`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 41 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of recipe_vitamin
@@ -527,6 +668,26 @@ INSERT INTO `recipe_vitamin` VALUES (37, 37, 85, 3.3, 32, 20, 4, 3, NULL, NULL, 
 INSERT INTO `recipe_vitamin` VALUES (38, 38, 120, 4.2, 22, 15, 8, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 INSERT INTO `recipe_vitamin` VALUES (39, 39, 75, 3.6, 38, 50, 5, 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 INSERT INTO `recipe_vitamin` VALUES (40, 40, 115, 3.9, 25, 35, 7, 6, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (41, 41, 120, 3.5, 25, 30, 5, 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (42, 42, 95, 2.8, 20, 45, 6, 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (43, 43, 130, 3.2, 35, 25, 4, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (44, 44, 80, 4, 15, 10, 7, 6, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (45, 45, 140, 2.5, 40, 35, 5, 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (46, 46, 100, 3.7, 28, 40, 6, 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (47, 47, 85, 3.3, 32, 20, 4, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (48, 48, 110, 4.2, 22, 15, 8, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (49, 49, 75, 3.6, 38, 50, 5, 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (50, 50, 115, 3.9, 25, 35, 7, 6, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (51, 51, 100, 3.5, 25, 30, 5, 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (52, 52, 120, 2.8, 20, 45, 6, 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (53, 53, 85, 3.2, 35, 25, 4, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (54, 54, 110, 4, 15, 10, 7, 6, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (55, 55, 130, 2.5, 40, 35, 5, 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (56, 56, 95, 3.7, 28, 40, 6, 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (57, 57, 80, 3.3, 32, 20, 4, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (58, 58, 115, 4.2, 22, 15, 8, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (59, 59, 90, 3.6, 38, 50, 5, 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `recipe_vitamin` VALUES (60, 60, 105, 3.9, 25, 35, 7, 6, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- ----------------------------
 -- Table structure for recipes_contribution
@@ -585,6 +746,26 @@ INSERT INTO `recipes_contribution` VALUES (37, 1, 1);
 INSERT INTO `recipes_contribution` VALUES (38, 1, 1);
 INSERT INTO `recipes_contribution` VALUES (39, 1, 1);
 INSERT INTO `recipes_contribution` VALUES (40, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (41, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (42, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (43, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (44, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (45, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (46, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (47, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (48, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (49, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (50, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (51, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (52, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (53, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (54, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (55, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (56, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (57, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (58, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (59, 1, 1);
+INSERT INTO `recipes_contribution` VALUES (60, 1, 1);
 
 -- ----------------------------
 -- Table structure for recipes_favourite
@@ -644,7 +825,7 @@ CREATE TABLE `user_daily_nutrition_goal`  (
   PRIMARY KEY (`id_goal`) USING BTREE,
   INDEX `id_user`(`id_user` ASC) USING BTREE,
   CONSTRAINT `user_daily_nutrition_goal_ibfk_1` FOREIGN KEY (`id_user`) REFERENCES `user` (`id_user`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of user_daily_nutrition_goal
