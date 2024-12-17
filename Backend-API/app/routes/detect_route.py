@@ -44,9 +44,6 @@ detect_bp = Blueprint('detect', __name__)
         400: {
             'description': 'Bad request or unsupported file type'
         },
-        401: {
-            'description': 'Unauthorized - Missing or invalid token'
-        },
         500: {
             'description': 'Internal server error during processing'
         }

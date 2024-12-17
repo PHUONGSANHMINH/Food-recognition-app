@@ -47,3 +47,5 @@
 2024-11-27 16:29:51,116 ERROR: Error fetching recipe details for recipe ID 47: 'RecipeInfo' object has no attribute 'cooking_time' [in D:\Junq\2024\DOAN\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:486]
 2024-12-12 11:28:08,790 ERROR: Error in generating daily meal plan: unsupported operand type(s) for -: 'float' and 'NoneType' [in D:\Junq\2024\DOAN\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:444]
 2024-12-12 11:28:12,425 ERROR: Error in generating daily meal plan: unsupported operand type(s) for -: 'float' and 'NoneType' [in D:\Junq\2024\DOAN\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:444]
+2024-12-17 15:39:32,438 INFO: No objects detected [in D:\Junq\2024\DOAN\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:171]
+2024-12-17 15:39:52,910 INFO: No objects detected [in D:\Junq\2024\DOAN\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:171]

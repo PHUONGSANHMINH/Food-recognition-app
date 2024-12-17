@@ -2,6 +2,7 @@
 import json, re, os, requests, random, json, logging
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+import uuid
 from werkzeug.utils import secure_filename
 from ultralytics import YOLO
 from dotenv import load_dotenv
@@ -107,46 +108,83 @@ def recommend_recipes_by_labels(labels, threshold=0.3):  # threshold: ngưỡng 
     return recommendations
 
 def detect_objects():
+    # Kiểm tra file và xử lý ngoại lệ
     if 'image' not in request.files:
+        logger.warning('No image part in the request')
         return jsonify({'msg': 'No image part in the request'}), 400
-
+    
     file = request.files['image']
+    
+    # Kiểm tra tên file
     if file.filename == '':
+        logger.warning('No selected file')
         return jsonify({'msg': 'No selected file'}), 400
 
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        upload_folder = os.path.join(os.getcwd(), 'uploads')
+    # Mở rộng danh sách file được phép
+    def allowed_file(filename):
+        ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+        return '.' in filename and \
+               filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+    # Kiểm tra định dạng file
+    if not allowed_file(file.filename):
+        logger.warning(f'Unsupported file type: {file.filename}')
+        return jsonify({'msg': 'Unsupported file type'}), 400
+
+    try:
+        # Tạo thư mục upload an toàn
+        upload_folder = os.path.join(os.getcwd(), 'uploads/detect-images')
         os.makedirs(upload_folder, exist_ok=True)
+
+        # Tạo tên file duy nhất để tránh ghi đè
+        filename = secure_filename(f"{uuid.uuid4()}_{file.filename}")
         filepath = os.path.join(upload_folder, filename)
+        
+        # Lưu file
         file.save(filepath)
 
-        try:
-            # Chạy YOLOv8 để phát hiện vật thể
-            results = model.predict(source=filepath, save=False)
-            detected_labels = set()
-
-            # Lấy kết quả từ model
-            for result in results:
-                for cls in result.boxes.cls:
-                    label = model.names[int(cls)]
-                    clean_label = re.sub(r'^\d+\s+', '', label)
-                    detected_labels.add(clean_label)
-
-            detected_labels = list(detected_labels)
+        # Kiểm tra kích thước file
+        file_size = os.path.getsize(filepath)
+        max_file_size = 10 * 1024 * 1024  # 10MB
+        if file_size > max_file_size:
             os.remove(filepath)
+            logger.warning(f'File too large: {file_size} bytes')
+            return jsonify({'msg': 'File is too large'}), 400
 
-            if not detected_labels:
-                return jsonify({'msg': 'No objects detected'}), 200
+        # Phát hiện đối tượng
+        results = model.predict(source=filepath, save=False)
+        detected_labels = set()
 
-            return jsonify({'detected_objects': detected_labels}), 200
+        # Lấy kết quả từ model
+        for result in results:
+            for cls in result.boxes.cls:
+                label = model.names[int(cls)]
+                clean_label = re.sub(r'^\d+\s+', '', label)
+                detected_labels.add(clean_label)
 
-        except Exception as e:
-            logger.error(f"Error during object detection: {str(e)}")
-            return jsonify({'msg': 'An error occurred during detection', 'error': str(e)}), 500
+        # Chuyển sang list và loại bỏ file
+        detected_labels = list(detected_labels)
+        os.remove(filepath)
 
-    else:
-        return jsonify({'msg': 'Unsupported file type'}), 400
+        # Trả về kết quả
+        if not detected_labels:
+            logger.info('No objects detected')
+            return jsonify({'msg': 'No objects detected'}), 200
+
+        return jsonify({'detected_objects': detected_labels}), 200
+
+    except Exception as e:
+        # Xử lý ngoại lệ và đảm bảo file tạm bị xóa
+        logger.error(f"Error during object detection: {str(e)}")
+        
+        # Xóa file tạm nếu tồn tại
+        if 'filepath' in locals() and os.path.exists(filepath):
+            os.remove(filepath)
+        
+        return jsonify({
+            'msg': 'An error occurred during detection', 
+            'error': str(e)
+        }), 500
 
 def recommend_recipes_spoonacular():
     detected_labels = request.json.get('detected_objects', [])

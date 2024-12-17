@@ -112,7 +112,7 @@ const ContributionScreen = () => {
             item.accept_contribution ? styles.approvedStatus : styles.pendingStatus,
           ]}
         >
-          {item.accept_contribution ? 'Approved' : 'Pending Review'}
+          {item.accept_contribution ? 'Approved' : 'Waiting Review'}
         </Text>
       </View>
       {item.accept_contribution && (

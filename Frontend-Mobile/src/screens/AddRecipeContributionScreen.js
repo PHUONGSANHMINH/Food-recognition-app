@@ -155,7 +155,7 @@ const AddRecipeContributionScreen = () => {
         name_recipe: recipeName,
         type: recipeType,
         summary: recipeSummary,
-        status: 'Pending Review', // Default status
+        status: 'Pending', // Default status
         ingredients: ingredients.filter(ing => ing.name_ingredient && ing.quantity),
         steps: steps.filter(step => step.content.trim() !== ''),
         nutrition: nutrition, // Send even if values are null
