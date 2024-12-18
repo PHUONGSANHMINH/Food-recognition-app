@@ -7,6 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 import os
 import pandas as pd
+from sqlalchemy import desc
 
 
 @jwt_required()
@@ -32,7 +33,8 @@ def get_csv_version_content(version_id):
 
 @jwt_required()
 def get_csv_versions():
-    versions = CSVExportVersion.query.all()
+    # Truy vấn danh sách và áp dụng sắp xếp
+    versions = CSVExportVersion.query.order_by(desc(CSVExportVersion.id)).all()
     result = []
 
     for version in versions:

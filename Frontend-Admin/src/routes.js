@@ -5,6 +5,7 @@ import Recipes from "views/Recipes.js";
 import VersionsCSV from "views/VersionCSV.js";
 import AcceptRecipe from "views/ApproveRecipe.js";
 import UpdateRecipe from "views/UpdateRecipe.js";
+import Users from "views/Users.js"
 
 var routes = [
   {
@@ -52,6 +53,14 @@ var routes = [
     name: "Versions CSV",
     icon: "ni ni-money-coins text-gray",
     component: <VersionsCSV />,
+    layout: "/admin",
+    displayInSidebar: true,
+  },
+  {
+    path: "/users",
+    name: "Users",
+    icon: "ni ni-single-02 text-warning",
+    component: <Users />,
     layout: "/admin",
     displayInSidebar: true,
   },

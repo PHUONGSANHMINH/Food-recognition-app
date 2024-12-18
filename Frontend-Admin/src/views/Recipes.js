@@ -117,7 +117,7 @@ const Recipes = () => {
   const handleDeleteRecipe = async (id) => {
     const isConfirmed = window.confirm("Are you sure you want to delete this recipe?");
     if (!isConfirmed) return;
-  
+
     try {
       const accessToken = await AsyncStorage.getItem("access_token");
       const response = await fetch(`${apiDomain}/api/recipe/delete/${id}`, {
@@ -126,7 +126,7 @@ const Recipes = () => {
           'Authorization': `Bearer ${accessToken}`
         }
       });
-  
+
       if (!response.ok) {
         window.alert("Can't delete this recipe. Please try again");
       } else {
@@ -232,19 +232,19 @@ const Recipes = () => {
                             </Button>
                           </td>
                           <td>
-  <Button
-    color="danger"
-    size="sm"
-    onClick={() => handleDeleteRecipe(item.id_recipe)}
-  >
-    Delete
-  </Button>
-</td>
+                            <Button
+                              color="danger"
+                              size="sm"
+                              onClick={() => handleDeleteRecipe(item.id_recipe)}
+                            >
+                              Delete
+                            </Button>
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="4" className="text-center">             
+                        <td colSpan="4" className="text-center">
                           There is no data to display
                         </td>
                       </tr>

@@ -1,5 +1,5 @@
 from flask import Blueprint
-from app.controllers.users_controller import view_all_users, delete_user, update_user, get_user_info
+from app.controllers.users_controller import get_all_users, delete_user, update_user, get_user_info
 from flask_jwt_extended import jwt_required
 from flasgger import swag_from
 
@@ -9,22 +9,48 @@ user_bp = Blueprint('user', __name__)
 @swag_from({
     'tags': ['User'],
     'security': [{'Bearer': []}],
-    'description': 'Retrieve a list of all users',
+    'description': 'Retrieve a paginated list of users with optional search functionality.',
+    'parameters': [
+        {
+            'name': 'page',
+            'in': 'query',
+            'description': 'Page number for pagination',
+            'required': False,
+            'type': 'integer',
+            'default': 1
+        },
+        {
+            'name': 'limit',
+            'in': 'query',
+            'description': 'Number of users per page',
+            'required': False,
+            'type': 'integer',
+            'default': 10
+        },
+        {
+            'name': 'search',
+            'in': 'query',
+            'description': 'Search keyword for filtering users by username',
+            'required': False,
+            'type': 'string',
+        }
+    ],
     'responses': {
         '200': {
             'description': 'List of users',
             'schema': {
-                'type': 'object',
-                'properties': {
-                    'users': {
-                        'type': 'array',
-                        'items': {
-                            'type': 'object',
-                            'properties': {
-                                'id': {'type': 'integer'},
-                                'username': {'type': 'string'}
-                            }
-                        }
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'id_user': {'type': 'integer'},
+                        'username': {'type': 'string'},
+                        'email': {'type': 'string'},
+                        'status': {'type': 'string'},
+                        'recipes_contribution': {'type': 'integer'},
+                        'recipes_contribution_approved': {'type': 'integer'},
+                        'recipes_contribution_waiting': {'type': 'integer'},
+                        'recipes_contribution_rejected': {'type': 'integer'}
                     }
                 }
             }
@@ -41,8 +67,8 @@ user_bp = Blueprint('user', __name__)
     }
 })
 @jwt_required()  # Only authenticated users can view the list
-def view_all_users_view():
-    return view_all_users()
+def get_all_users_view():
+    return get_all_users()
 
 
 @user_bp.route('/user/<int:user_id>', methods=['DELETE'])

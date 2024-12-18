@@ -49,3 +49,8 @@
 2024-12-12 11:28:12,425 ERROR: Error in generating daily meal plan: unsupported operand type(s) for -: 'float' and 'NoneType' [in D:\Junq\2024\DOAN\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:444]
 2024-12-17 15:39:32,438 INFO: No objects detected [in D:\Junq\2024\DOAN\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:171]
 2024-12-17 15:39:52,910 INFO: No objects detected [in D:\Junq\2024\DOAN\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:171]
+2024-12-18 22:54:21,278 INFO: No objects detected [in C:\IL-Junq\Projects\VKU-2024\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:171]
+2024-12-18 23:10:23,065 INFO: No objects detected [in C:\IL-Junq\Projects\VKU-2024\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:172]
+2024-12-18 23:10:25,008 INFO: No objects detected [in C:\IL-Junq\Projects\VKU-2024\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:172]
+2024-12-18 23:10:26,016 INFO: No objects detected [in C:\IL-Junq\Projects\VKU-2024\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:172]
+2024-12-18 23:14:29,178 INFO: No objects detected [in C:\IL-Junq\Projects\VKU-2024\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:172]

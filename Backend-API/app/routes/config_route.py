@@ -1,6 +1,7 @@
 from flask import Blueprint
-from app.controllers.config_controller import superadmin_login, update_config, get_config
+from app.controllers.config_controller import superadmin_login, update_config, get_config, get_statistics, get_monthly_contributions
 from flasgger import swag_from
+from flask_jwt_extended import jwt_required
 
 config_bp = Blueprint('config', __name__)
 
@@ -177,3 +178,63 @@ def update_config_view():
 })
 def get_config_view():
     return get_config()
+
+@config_bp.route('/statistics', methods=['GET'])
+@swag_from({
+    'tags': ['Config'],
+    'summary': 'Get system statistics',
+    'security': [{'Bearer': []}],
+    'description': 'Retrieve the total number of recipes, users, contributions, and unapproved contributions',
+    'responses': {
+        200: {
+            'description': 'Statistics retrieved successfully',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'total_recipes': {'type': 'integer'},
+                    'total_users': {'type': 'integer'},
+                    'total_contributions': {'type': 'integer'},
+                    'total_unapproved_contributions': {'type': 'integer'}
+                }
+            }
+        }
+    }
+})
+@jwt_required()
+def get_statistics_view():
+    return get_statistics()
+
+@config_bp.route('/contribution-analysis', methods=['GET'])
+@swag_from({
+    'tags': ['Config'],
+    'summary': 'Get Monthly Contributions Analysis',
+    'description': 'Retrieve the number of contributions grouped by month',
+    'security': [{'Bearer': []}],
+    'responses': {
+        200: {
+            'description': 'Contributions by month retrieved successfully',
+            'schema': {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'month': {'type': 'string'},
+                        'contributions': {'type': 'integer'}
+                    }
+                }
+            }
+        },
+        401: {
+            'description': 'Unauthorized',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'msg': {'type': 'string'}
+                }
+            }
+        }
+    }
+})
+@jwt_required()
+def get_monthly_contributions_view():
+    return get_monthly_contributions()

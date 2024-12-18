@@ -25,8 +25,9 @@ load_dotenv()
 
 # Tải mô hình YOLOv8
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-MODEL_PATH = os.getenv('YOLOV8_MODEL_PATH', 'yolov8-model/best.pt')
+MODEL_PATH = os.getenv('YOLOV8_MODEL_PATH', 'yolov8-model/model_121824.pt')
 FULL_MODEL_PATH = os.path.join(BASE_DIR, MODEL_PATH)
+print(FULL_MODEL_PATH)
 model = YOLO(FULL_MODEL_PATH)
 # Cấu hình API của Spoonacular
 SPOONACULAR_API_KEY = os.getenv('SPOONACULAR_API_KEY', '').split(',')

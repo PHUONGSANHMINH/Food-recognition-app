@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 from app.models.model import RecipeInfo, Rating, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin  
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import desc
 
 # Cấu hình upload
 UPLOAD_FOLDER = 'uploads'
@@ -380,7 +381,7 @@ def get_recipes_unapproved():
     search = request.args.get('search', '', type=str)
 
     # Tạo query kết hợp giữa RecipeInfo và RecipesContribution
-    query = db.session.query(RecipeInfo).join(RecipesContribution).filter(
+    query = db.session.query(RecipeInfo).order_by(desc(RecipeInfo.id_recipe)).join(RecipesContribution).filter(
         RecipesContribution.accept_contribution == 0
     )
 

@@ -11,7 +11,7 @@ import {
   Col,
 } from "reactstrap";
 import React, { useState, useEffect } from "react";
-import HeaderAddRecipe from "components/Headers/HeaderAddRecipe.js";
+import HeaderUpdateRecipe from "components/Headers/HeaderUpdateRecipe.js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -293,7 +293,7 @@ const UpdateRecipe = () => {
   // JSX remains largely the same, but add loading state to submit button
   return (
     <>
-      <HeaderAddRecipe />
+      <HeaderUpdateRecipe />
       <Container className="mt--7" fluid>
         <Row>
           <Col className="order-xl-1" xl="12">

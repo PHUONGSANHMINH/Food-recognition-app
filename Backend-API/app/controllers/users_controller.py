@@ -1,7 +1,7 @@
 import re, random
 from flask import request, jsonify
 from app import db, mail
-from app.models.model import User
+from app.models.model import User, RecipesContribution
 from flask_jwt_extended import (
     create_access_token, 
     create_refresh_token, 
@@ -90,10 +90,51 @@ def register():
 
 
 @jwt_required()
-def view_all_users():
-    users = User.query.all()
-    user_list = [{"id": user.id_user, "username": user.username} for user in users]
-    return jsonify(users=user_list), 200
+def get_all_users():
+    try:
+        # Lấy tham số phân trang và tìm kiếm
+        page = request.args.get('page', 1, type=int)
+        limit = request.args.get('limit', 10, type=int)
+        search = request.args.get('search', '', type=str)
+
+        # Xây dựng query
+        from sqlalchemy import or_
+        users_query = db.session.query(User).filter(or_(User.status != 'hidden', User.status == None))
+        if search:
+            users_query = users_query.filter(User.username.like(f'%{search}%'))
+
+        # Phân trang
+        users_paginated = users_query.paginate(page=page, per_page=limit, error_out=False)
+
+        # Duyệt qua các user trong trang hiện tại
+        users_data = []
+        for user in users_paginated.items:
+            contribution_count = db.session.query(RecipesContribution).filter_by(id_user=user.id_user).count()
+            approved_recipes_count = db.session.query(RecipesContribution).filter_by(id_user=user.id_user, accept_contribution=1).count()
+            waiting_recipes_count = db.session.query(RecipesContribution).filter_by(id_user=user.id_user, accept_contribution=0).count()
+            rejected_recipes_count = db.session.query(RecipesContribution).filter_by(id_user=user.id_user, accept_contribution=2).count()
+
+            users_data.append({
+                "id_user": user.id_user,
+                "username": user.username,
+                "email": user.email,
+                "status": user.status,
+                "recipes_contribution": contribution_count,
+                "recipes_contribution_approved": approved_recipes_count,
+                "recipes_contribution_waiting": waiting_recipes_count,
+                "recipes_contribution_rejected": rejected_recipes_count
+            })
+
+        # Trả về dữ liệu
+        return jsonify({
+            "page": users_paginated.page,
+            "per_page": users_paginated.per_page,
+            "total": users_paginated.total,
+            "users": users_data
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": "An unexpected error occurred", "message": str(e)}), 500
 
 @jwt_required()
 def delete_user(user_id):

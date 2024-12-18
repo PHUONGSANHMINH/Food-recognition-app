@@ -1,25 +1,52 @@
-/*!
-
-=========================================================
-* Argon Dashboard React - v1.2.4
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/argon-dashboard-react
-* Copyright 2024 Creative Tim (https://www.creative-tim.com)
-* Licensed under MIT (https://github.com/creativetimofficial/argon-dashboard-react/blob/master/LICENSE.md)
-
-* Coded by Creative Tim
-
-=========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-*/
-
-// reactstrap components
+import { useState, useEffect } from "react";
 import { Card, CardBody, CardTitle, Container, Row, Col } from "reactstrap";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
 
 const Header = () => {
+  const [stats, setStats] = useState({
+    totalRecipes: 0,
+    totalUsers: 0,
+    totalContributions: 0,
+    totalPendingContributions: 0,
+  });
+
+  const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN;
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const accessToken = await AsyncStorage.getItem('access_token');
+        if (!accessToken) {
+          console.error("No access token found");
+          return;
+        }
+
+        const response = await fetch(`${apiDomain}/admin/statistics`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+
+        const data = await response.json();
+        console.log(data);
+        setStats({
+          totalRecipes: data.total_recipes,
+          totalUsers: data.total_users,
+          totalContributions: data.total_contributions,
+          totalPendingContributions: data.total_unapproved_contributions,
+        });
+      } catch (error) {
+        console.error("There was an error fetching the data!", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <>
       <div className="header bg-gradient-warning pb-8 pt-5 pt-md-8">
@@ -32,14 +59,11 @@ const Header = () => {
                   <CardBody>
                     <Row>
                       <div className="col">
-                        <CardTitle
-                          tag="h5"
-                          className="text-uppercase text-muted mb-0"
-                        >
-                          Traffic
+                        <CardTitle tag="h5" className="text-uppercase text-muted mb-0">
+                          Recipes
                         </CardTitle>
                         <span className="h2 font-weight-bold mb-0">
-                          350,897
+                          {stats.totalRecipes}
                         </span>
                       </div>
                       <Col className="col-auto">
@@ -48,12 +72,6 @@ const Header = () => {
                         </div>
                       </Col>
                     </Row>
-                    <p className="mt-3 mb-0 text-muted text-sm">
-                      <span className="text-success mr-2">
-                        <i className="fa fa-arrow-up" /> 3.48%
-                      </span>{" "}
-                      <span className="text-nowrap">Since last month</span>
-                    </p>
                   </CardBody>
                 </Card>
               </Col>
@@ -62,13 +80,12 @@ const Header = () => {
                   <CardBody>
                     <Row>
                       <div className="col">
-                        <CardTitle
-                          tag="h5"
-                          className="text-uppercase text-muted mb-0"
-                        >
-                          New users
+                        <CardTitle tag="h5" className="text-uppercase text-muted mb-0">
+                          Users
                         </CardTitle>
-                        <span className="h2 font-weight-bold mb-0">2,356</span>
+                        <span className="h2 font-weight-bold mb-0">
+                          {stats.totalUsers}
+                        </span>
                       </div>
                       <Col className="col-auto">
                         <div className="icon icon-shape bg-warning text-white rounded-circle shadow">
@@ -76,12 +93,6 @@ const Header = () => {
                         </div>
                       </Col>
                     </Row>
-                    <p className="mt-3 mb-0 text-muted text-sm">
-                      <span className="text-danger mr-2">
-                        <i className="fas fa-arrow-down" /> 3.48%
-                      </span>{" "}
-                      <span className="text-nowrap">Since last week</span>
-                    </p>
                   </CardBody>
                 </Card>
               </Col>
@@ -90,13 +101,12 @@ const Header = () => {
                   <CardBody>
                     <Row>
                       <div className="col">
-                        <CardTitle
-                          tag="h5"
-                          className="text-uppercase text-muted mb-0"
-                        >
-                          Sales
+                        <CardTitle tag="h5" className="text-uppercase text-muted mb-0">
+                          Contributions
                         </CardTitle>
-                        <span className="h2 font-weight-bold mb-0">924</span>
+                        <span className="h2 font-weight-bold mb-0">
+                          {stats.totalContributions}
+                        </span>
                       </div>
                       <Col className="col-auto">
                         <div className="icon icon-shape bg-yellow text-white rounded-circle shadow">
@@ -104,12 +114,6 @@ const Header = () => {
                         </div>
                       </Col>
                     </Row>
-                    <p className="mt-3 mb-0 text-muted text-sm">
-                      <span className="text-warning mr-2">
-                        <i className="fas fa-arrow-down" /> 1.10%
-                      </span>{" "}
-                      <span className="text-nowrap">Since yesterday</span>
-                    </p>
                   </CardBody>
                 </Card>
               </Col>
@@ -118,13 +122,12 @@ const Header = () => {
                   <CardBody>
                     <Row>
                       <div className="col">
-                        <CardTitle
-                          tag="h5"
-                          className="text-uppercase text-muted mb-0"
-                        >
-                          Performance
+                        <CardTitle tag="h5" className="text-uppercase text-muted mb-0">
+                        Unapproved contribution
                         </CardTitle>
-                        <span className="h2 font-weight-bold mb-0">49,65%</span>
+                        <span className="h2 font-weight-bold mb-0">
+                          {stats.totalPendingContributions}
+                        </span>
                       </div>
                       <Col className="col-auto">
                         <div className="icon icon-shape bg-info text-white rounded-circle shadow">
@@ -132,12 +135,6 @@ const Header = () => {
                         </div>
                       </Col>
                     </Row>
-                    <p className="mt-3 mb-0 text-muted text-sm">
-                      <span className="text-success mr-2">
-                        <i className="fas fa-arrow-up" /> 12%
-                      </span>{" "}
-                      <span className="text-nowrap">Since last month</span>
-                    </p>
                   </CardBody>
                 </Card>
               </Col>

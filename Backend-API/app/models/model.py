@@ -106,6 +106,7 @@ class RecipesContribution(db.Model):
     id_recipe = db.Column(db.Integer, db.ForeignKey('recipe_info.id_recipe'), primary_key=True)
     id_user = db.Column(db.Integer, db.ForeignKey('user.id_user'), primary_key=True)
     accept_contribution = db.Column(db.Boolean, nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Rating(db.Model):
     id_rate = db.Column(db.Integer, primary_key=True)

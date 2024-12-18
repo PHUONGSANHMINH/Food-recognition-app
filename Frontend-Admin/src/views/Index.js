@@ -1,28 +1,7 @@
-/*!
-
-=========================================================
-* Argon Dashboard React - v1.2.4
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/argon-dashboard-react
-* Copyright 2024 Creative Tim (https://www.creative-tim.com)
-* Licensed under MIT (https://github.com/creativetimofficial/argon-dashboard-react/blob/master/LICENSE.md)
-
-* Coded by Creative Tim
-
-=========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-*/
-import { useState } from "react";
-// node.js library that concatenates classes (strings)
+import { useState, useEffect } from "react";
 import classnames from "classnames";
-// javascipt plugin for creating charts
 import Chart from "chart.js";
-// react plugin used to create charts
 import { Line, Bar } from "react-chartjs-2";
-// reactstrap components
 import {
   Button,
   Card,
@@ -37,6 +16,7 @@ import {
   Row,
   Col,
 } from "reactstrap";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
 
 // core components
 import {
@@ -48,9 +28,86 @@ import {
 
 import Header from "components/Headers/Header.js";
 
-const Index = (props) => {
+const Index = () => {
   const [activeNav, setActiveNav] = useState(1);
   const [chartExample1Data, setChartExample1Data] = useState("data1");
+  const [unapprovedRecipes, setUnapprovedRecipes] = useState([]);
+  const [chartData, setChartData] = useState({}); // Dữ liệu biểu đồ
+  const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN; // Đảm bảo biến môi trường này đúng
+
+  useEffect(() => {
+    const fetchUnapprovedRecipes = async () => {
+      try {
+        // Lấy access token từ AsyncStorage
+        const accessToken = await AsyncStorage.getItem('access_token');
+        if (!accessToken) {
+          console.error("No access token found");
+          return;
+        }
+
+        // Gọi API để lấy danh sách công thức chưa duyệt
+        const response = await fetch(`${apiDomain}/api/recipe/get-recipes-unapproved?page=1&limit=5`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+
+        const data = await response.json();
+        setUnapprovedRecipes(data);
+      } catch (error) {
+        console.error("There was an error fetching the unapproved recipes:", error);
+      }
+    };
+
+    const fetchChartData = async () => {
+      try {
+        // Lấy access token từ AsyncStorage
+        const accessToken = await AsyncStorage.getItem('access_token');
+        if (!accessToken) {
+          console.error("No access token found");
+          return;
+        }
+
+        // Gọi API để lấy dữ liệu thống kê (ví dụ: số lượng đóng góp theo tháng)
+        const response = await fetch(`${apiDomain}/admin/contribution-analysis`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+
+        const data = await response.json();
+
+        // Cập nhật dữ liệu cho biểu đồ
+        const months = data.map(item => item.month);
+        const contributions = data.map(item => item.contributions);
+
+        setChartData({
+          labels: months,
+          datasets: [
+            {
+              label: 'Contributions',
+              backgroundColor: 'rgba(53, 162, 235, 0.5)',
+              borderColor: 'rgba(53, 162, 235, 1)',
+              data: contributions,
+            },
+          ],
+        });
+      } catch (error) {
+        console.error("There was an error fetching the chart data:", error);
+      }
+    };
+
+    fetchUnapprovedRecipes();
+    fetchChartData();
+  }, []); // Chạy mỗi khi component mount
 
   if (window.Chart) {
     parseOptions(Chart, chartOptions());
@@ -61,63 +118,58 @@ const Index = (props) => {
     setActiveNav(index);
     setChartExample1Data("data" + index);
   };
+
   return (
     <>
       <Header />
       {/* Page content */}
       <Container className="mt--7" fluid>
         <Row>
-          <Col className="mb-5 mb-xl-0" xl="8">
-            <Card className="bg-gradient-default shadow">
-              <CardHeader className="bg-transparent">
+          <Col className="mb-5 mb-xl-4" xl="8">
+            <Card className="shadow">
+              <CardHeader className="border-0">
                 <Row className="align-items-center">
                   <div className="col">
-                    <h6 className="text-uppercase text-light ls-1 mb-1">
-                      Overview
-                    </h6>
-                    <h2 className="text-white mb-0">Sales value</h2>
+                    <h3 className="mb-0">Unapproved Contributions</h3>
                   </div>
-                  <div className="col">
-                    <Nav className="justify-content-end" pills>
-                      <NavItem>
-                        <NavLink
-                          className={classnames("py-2 px-3", {
-                            active: activeNav === 1,
-                          })}
-                          href="#pablo"
-                          onClick={(e) => toggleNavs(e, 1)}
-                        >
-                          <span className="d-none d-md-block">Month</span>
-                          <span className="d-md-none">M</span>
-                        </NavLink>
-                      </NavItem>
-                      <NavItem>
-                        <NavLink
-                          className={classnames("py-2 px-3", {
-                            active: activeNav === 2,
-                          })}
-                          data-toggle="tab"
-                          href="#pablo"
-                          onClick={(e) => toggleNavs(e, 2)}
-                        >
-                          <span className="d-none d-md-block">Week</span>
-                          <span className="d-md-none">W</span>
-                        </NavLink>
-                      </NavItem>
-                    </Nav>
+                  <div className="col text-right">
                   </div>
                 </Row>
               </CardHeader>
-              <CardBody>
-                {/* Chart */}
-                <div className="chart">
-                  <Line
-                    data={chartExample1[chartExample1Data]}
-                    options={chartExample1.options}
-                    getDatasetAtEvent={(e) => console.log(e)}
-                  />
-                </div>
-              </CardBody>
+              <Table className="align-items-center table-flush" responsive style={{ minHeight: '430px', overflowY: 'auto' }}>
+                <thead className="thead-light">
+                  <tr>
+                    <th scope="col">Recipe Name</th>
+                    <th scope="col">Image</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Summary</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unapprovedRecipes.length > 0 ? (
+                    unapprovedRecipes.map((recipe) => (
+                      <tr key={recipe.id_recipe}>
+                        <th scope="row">{recipe.name_recipe}</th>
+                        <td>
+                          <img
+                            src={`${apiDomain}/api/file/get-file/recipes/${recipe.image}`}
+                            alt={recipe.name_recipe}
+                            style={{ width: "50px", height: "50px", objectFit: "cover" }}
+                          />
+                        </td>
+                        <td>{recipe.type}</td>
+                        <td>{recipe.status}</td>
+                        <td>{recipe.summary}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5">No unapproved recipes available</td>
+                    </tr>
+                  )}
+                </tbody>
+              </Table>
             </Card>
           </Col>
           <Col xl="4">
@@ -128,205 +180,38 @@ const Index = (props) => {
                     <h6 className="text-uppercase text-muted ls-1 mb-1">
                       Performance
                     </h6>
-                    <h2 className="mb-0">Total orders</h2>
+                    <h2 className="mb-0">Recipes Contributions</h2>
                   </div>
                 </Row>
               </CardHeader>
               <CardBody>
                 {/* Chart */}
-                <div className="chart">
-                  <Bar
-                    data={chartExample2.data}
-                    options={chartExample2.options}
-                  />
+                <div className="chart" style={{ minHeight: '382px'}}>
+                  {chartData.labels ? (
+                    <Bar
+                      data={chartData}
+                      options={{
+                        scales: {
+                          x: {
+                            title: {
+                              display: true,
+                              text: 'Month',
+                            },
+                          },
+                          y: {
+                            title: {
+                              display: true,
+                              text: 'Contributions',
+                            },
+                          },
+                        },
+                      }}
+                    />
+                  ) : (
+                    <p>Loading chart data...</p>
+                  )}
                 </div>
               </CardBody>
-            </Card>
-          </Col>
-        </Row>
-        <Row className="mt-5">
-          <Col className="mb-5 mb-xl-0" xl="8">
-            <Card className="shadow">
-              <CardHeader className="border-0">
-                <Row className="align-items-center">
-                  <div className="col">
-                    <h3 className="mb-0">Page visits</h3>
-                  </div>
-                  <div className="col text-right">
-                    <Button
-                      color="primary"
-                      href="#pablo"
-                      onClick={(e) => e.preventDefault()}
-                      size="sm"
-                    >
-                      See all
-                    </Button>
-                  </div>
-                </Row>
-              </CardHeader>
-              <Table className="align-items-center table-flush" responsive>
-                <thead className="thead-light">
-                  <tr>
-                    <th scope="col">Page name</th>
-                    <th scope="col">Visitors</th>
-                    <th scope="col">Unique users</th>
-                    <th scope="col">Bounce rate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th scope="row">/argon/</th>
-                    <td>4,569</td>
-                    <td>340</td>
-                    <td>
-                      <i className="fas fa-arrow-up text-success mr-3" /> 46,53%
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">/argon/index.html</th>
-                    <td>3,985</td>
-                    <td>319</td>
-                    <td>
-                      <i className="fas fa-arrow-down text-warning mr-3" />{" "}
-                      46,53%
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">/argon/charts.html</th>
-                    <td>3,513</td>
-                    <td>294</td>
-                    <td>
-                      <i className="fas fa-arrow-down text-warning mr-3" />{" "}
-                      36,49%
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">/argon/tables.html</th>
-                    <td>2,050</td>
-                    <td>147</td>
-                    <td>
-                      <i className="fas fa-arrow-up text-success mr-3" /> 50,87%
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">/argon/profile.html</th>
-                    <td>1,795</td>
-                    <td>190</td>
-                    <td>
-                      <i className="fas fa-arrow-down text-danger mr-3" />{" "}
-                      46,53%
-                    </td>
-                  </tr>
-                </tbody>
-              </Table>
-            </Card>
-          </Col>
-          <Col xl="4">
-            <Card className="shadow">
-              <CardHeader className="border-0">
-                <Row className="align-items-center">
-                  <div className="col">
-                    <h3 className="mb-0">Social traffic</h3>
-                  </div>
-                  <div className="col text-right">
-                    <Button
-                      color="primary"
-                      href="#pablo"
-                      onClick={(e) => e.preventDefault()}
-                      size="sm"
-                    >
-                      See all
-                    </Button>
-                  </div>
-                </Row>
-              </CardHeader>
-              <Table className="align-items-center table-flush" responsive>
-                <thead className="thead-light">
-                  <tr>
-                    <th scope="col">Referral</th>
-                    <th scope="col">Visitors</th>
-                    <th scope="col" />
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th scope="row">Facebook</th>
-                    <td>1,480</td>
-                    <td>
-                      <div className="d-flex align-items-center">
-                        <span className="mr-2">60%</span>
-                        <div>
-                          <Progress
-                            max="100"
-                            value="60"
-                            barClassName="bg-gradient-danger"
-                          />
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Facebook</th>
-                    <td>5,480</td>
-                    <td>
-                      <div className="d-flex align-items-center">
-                        <span className="mr-2">70%</span>
-                        <div>
-                          <Progress
-                            max="100"
-                            value="70"
-                            barClassName="bg-gradient-success"
-                          />
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Google</th>
-                    <td>4,807</td>
-                    <td>
-                      <div className="d-flex align-items-center">
-                        <span className="mr-2">80%</span>
-                        <div>
-                          <Progress max="100" value="80" />
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Instagram</th>
-                    <td>3,678</td>
-                    <td>
-                      <div className="d-flex align-items-center">
-                        <span className="mr-2">75%</span>
-                        <div>
-                          <Progress
-                            max="100"
-                            value="75"
-                            barClassName="bg-gradient-info"
-                          />
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">twitter</th>
-                    <td>2,645</td>
-                    <td>
-                      <div className="d-flex align-items-center">
-                        <span className="mr-2">30%</span>
-                        <div>
-                          <Progress
-                            max="100"
-                            value="30"
-                            barClassName="bg-gradient-warning"
-                          />
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </Table>
             </Card>
           </Col>
         </Row>
