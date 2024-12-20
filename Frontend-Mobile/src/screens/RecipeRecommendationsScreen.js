@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -9,8 +9,11 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 const PADDING = 16;
@@ -18,16 +21,44 @@ const CARD_MARGIN = 8;
 const CARD_WIDTH = (width - PADDING * 2 - CARD_MARGIN * 2) / 2;
 
 export default function RecipeRecommendations({ route, navigation }) {
-  const { detectedObjects = [], recommendations = [] } = route?.params || {};
+  const { detectedObjects = [] } = route?.params || {};
+  const [recommendations, setRecommendations] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!route?.params) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF6B6B" />
-        <Text style={styles.loadingText}>Loading...</Text>
-      </SafeAreaView>
-    );
-  }
+  useEffect(() => {
+    fetchRecommendations();
+  }, []);
+
+  const fetchRecommendations = async () => {
+    if (!detectedObjects.length) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const accessToken = await AsyncStorage.getItem('accessToken');
+      
+      const response = await axios.get(
+        `${process.env.EXPO_PUBLIC_DOMAIN}api/detect/recommend-by-keyword/${detectedObjects.join(',')}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          timeout: 10000,
+        }
+      );
+      setRecommendations(response.data || []);
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+      Alert.alert(
+        'Error',
+        'Unable to fetch recipe recommendations. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderBadges = () => {
     if (!detectedObjects.length) {
@@ -59,34 +90,44 @@ export default function RecipeRecommendations({ route, navigation }) {
   };
 
   const handleRecipePress = (recipe) => {
-    navigation.navigate('RecipeDetail', { recipe });
+    navigation.navigate('RecipeDetail', { recipeId: recipe.id_recipe });
   };
 
   const renderRecipeItem = ({ item }) => (
     <TouchableOpacity
       style={styles.recipeCard}
-      onPress={() => handleRecipePress(item)} // Pass the item as a parameter here
+      onPress={() => handleRecipePress(item)}
     >
       <Image
-        source={{ uri: item.image }}
+        source={{
+          uri: item.image
+            ? `${process.env.EXPO_PUBLIC_DOMAIN}api/file/get-file/recipes/${item.image}`
+            : null,
+        }}
         style={styles.recipeImage}
         resizeMode="cover"
       />
       <View style={styles.recipeGradient} />
       <View style={styles.recipeInfo}>
         <Text style={styles.recipeTitle} numberOfLines={2}>
-          {item.title}
+          {item.name_recipe}
         </Text>
         <View style={styles.recipeMetaData}>
           <View style={styles.metaItem}>
-            <MaterialIcons name="timer" size={16} color="#FFF" />
-            <Text style={styles.metaText}>{item.cookingMinutes}m</Text>
+            <MaterialIcons name="restaurant" size={16} color="#FFF" />
+            <Text style={styles.metaText}>{item.type}</Text>
           </View>
-          <View style={styles.metaItem}>
-            <MaterialIcons name="whatshot" size={16} color="#FFF" />
-            <Text style={styles.metaText}>{item.calories}</Text>
-          </View>
+          {item.status === 'Published' && (
+            <View style={styles.statusBadge}>
+              <MaterialIcons name="check-circle" size={16} color="#4CAF50" />
+            </View>
+          )}
         </View>
+      </View>
+      <View style={styles.summaryContainer}>
+        <Text style={styles.summaryText} numberOfLines={2}>
+          {item.summary}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -98,9 +139,17 @@ export default function RecipeRecommendations({ route, navigation }) {
     </View>
   );
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF6B6B" />
+        <Text style={styles.loadingText}>Finding recipes for you...</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -112,23 +161,23 @@ export default function RecipeRecommendations({ route, navigation }) {
         <View style={styles.headerRight} />
       </View>
 
-      {/* Detected Objects Section */}
       <View style={styles.detectedObjectsContainer}>
         <Text style={styles.sectionTitle}>Identifying object:</Text>
         {renderBadges()}
       </View>
       
-      {/* Recommendations Section */}
       <View style={styles.recommendationsContainer}>
         <Text style={styles.sectionTitle}>Recommended dishes:</Text>
         <FlatList
           data={recommendations}
           renderItem={renderRecipeItem}
-          keyExtractor={(item, index) => item.id?.toString() || index.toString()}
+          keyExtractor={(item) => item.id_recipe.toString()}
           contentContainerStyle={styles.listContainer}
           ListEmptyComponent={renderEmptyList}
           numColumns={2}
           showsVerticalScrollIndicator={false}
+          onRefresh={fetchRecommendations}
+          refreshing={loading}
         />
       </View>
     </SafeAreaView>
@@ -138,18 +187,18 @@ export default function RecipeRecommendations({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#FAFAFA',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#FAFAFA',
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#666',
+    color: '#333',
   },
   header: {
     flexDirection: 'row',
@@ -157,31 +206,31 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFF',
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
+    borderBottomColor: '#DDDDDD',
   },
   backButton: {
     padding: 8,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '600',
+    color: '#222222',
   },
   headerRight: {
     width: 40,
   },
   detectedObjectsContainer: {
     padding: 16,
-    backgroundColor: '#FFF',
+    backgroundColor: '#FFFFFF',
     marginBottom: 8,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginBottom: 12,
-    color: '#333',
+    color: '#333333',
   },
   badgesContainer: {
     flexDirection: 'row',
@@ -189,30 +238,29 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badge: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
     marginRight: 8,
     marginBottom: 8,
-    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
   badgeText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '500',
   },
   noObjectsText: {
-    color: '#666',
+    color: '#555555',
     fontSize: 14,
     fontStyle: 'italic',
   },
   recommendationsContainer: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 10,
   },
   listContainer: {
     paddingBottom: 16,
@@ -234,7 +282,7 @@ const styles = StyleSheet.create({
   },
   recipeImage: {
     width: '100%',
-    height: 150,
+    height: 120,
   },
   recipeGradient: {
     position: 'absolute',
@@ -260,6 +308,7 @@ const styles = StyleSheet.create({
   recipeMetaData: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   metaItem: {
     flexDirection: 'row',
@@ -269,6 +318,21 @@ const styles = StyleSheet.create({
     color: '#FFF',
     marginLeft: 4,
     fontSize: 12,
+    textTransform: 'capitalize',
+  },
+  statusBadge: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    padding: 4,
+    borderRadius: 12,
+  },
+  summaryContainer: {
+    padding: 8,
+    backgroundColor: '#FFF',
+  },
+  summaryText: {
+    fontSize: 12,
+    color: '#666',
+    lineHeight: 16,
   },
   emptyContainer: {
     padding: 32,

@@ -91,7 +91,8 @@ export default function CameraScreen({ navigation }) {
       });
 
       const response = await axios.post(
-        `${process.env.EXPO_PUBLIC_DOMAIN}api/detect/detect-recommend-spoonacular`,
+        // `${process.env.EXPO_PUBLIC_DOMAIN}api/detect/detect-recommend-spoonacular`,
+        `${process.env.EXPO_PUBLIC_DOMAIN}api/detect/detect-objects`,
         formData,
         {
           headers: {
@@ -102,9 +103,9 @@ export default function CameraScreen({ navigation }) {
         }
       );
       setLoading(false);
+      console.log(response.data.detected_objects)
       navigation.navigate('RecipeRecommendations', {
         detectedObjects: response.data.detected_objects,
-        recommendations: response.data.recommendations,
       });
     } catch (error) {
       console.error(error);
