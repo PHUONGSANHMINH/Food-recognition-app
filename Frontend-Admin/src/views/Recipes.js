@@ -14,7 +14,7 @@ import {
 } from "reactstrap";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "../AsyncStorageHelper";
 import Header from "components/Headers/HeaderRecipeList.js";
 
 const Recipes = () => {

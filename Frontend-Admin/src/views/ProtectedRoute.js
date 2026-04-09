@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "../AsyncStorageHelper";
 import axios from "axios";
 
 const ProtectedRoute = () => {

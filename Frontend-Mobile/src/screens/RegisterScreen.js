@@ -140,8 +140,9 @@ export default function RegisterScreen({ navigation }) {
         const errors = error.response.data.errors;
         setFormData(prev => ({
           ...prev,
-          name: { ...prev.name, error: errors.username.join(', ') },
-          password: { ...prev.password, error: errors.password.join(', ') }
+          name: { ...prev.name, error: (errors.username && errors.username.length > 0) ? errors.username.join(', ') : '' },
+          email: { ...prev.email, error: (errors.email && errors.email.length > 0) ? errors.email.join(', ') : '' },
+          password: { ...prev.password, error: (errors.password && errors.password.length > 0) ? errors.password.join(', ') : '' }
         }));
       } else {
         Alert.alert('Error', 'Something went wrong. Please try again later.');

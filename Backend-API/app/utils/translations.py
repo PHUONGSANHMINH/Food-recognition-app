@@ -4,6 +4,7 @@ MESSAGES = {
     'en': {
         'bad_credentials': "Bad username or password",
         'username_exists': "Username already exists",
+        'email_exists': "Email already exists",
         'user_registered': "User registered successfully",
         'permission_denied': "Permission denied",
         'user_deleted': "User deleted successfully",
@@ -22,6 +23,7 @@ MESSAGES = {
     'vi': {
         'bad_credentials': "Tên người dùng hoặc mật khẩu không chính xác",
         'username_exists': "Tên người dùng đã tồn tại",
+        'email_exists': "Email đã tồn tại",
         'user_registered': "Người dùng đã được đăng ký thành công",
         'permission_denied': "Không có quyền thực hiện hành động này",
         'user_deleted': "Người dùng đã được xóa thành công",
@@ -40,6 +42,7 @@ MESSAGES = {
     'es': {
         'bad_credentials': "Nombre de usuario o contraseña incorrectos",
         'username_exists': "El nombre de usuario ya existe",
+        'email_exists': "El correo electrónico ya existe",
         'user_registered': "Usuario registrado con éxito",
         'permission_denied': "Permiso denegado",
         'user_deleted': "Usuario eliminado con éxito",

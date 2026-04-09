@@ -12,7 +12,7 @@ import {
 } from "reactstrap";
 import React, { useState, useEffect } from "react";
 import HeaderUpdateRecipe from "components/Headers/HeaderUpdateRecipe.js";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "../AsyncStorageHelper";
 import { useNavigate, useParams } from 'react-router-dom';
 
 const UpdateRecipe = () => {

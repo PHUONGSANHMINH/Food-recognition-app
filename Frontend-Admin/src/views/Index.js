@@ -16,7 +16,7 @@ import {
   Row,
   Col,
 } from "reactstrap";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
+import AsyncStorage from "../AsyncStorageHelper";
 
 // core components
 import {

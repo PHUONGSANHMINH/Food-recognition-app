@@ -56,12 +56,17 @@ def register():
 
     errors = {
         "username": [],
-        "password": []
+        "password": [],
+        "email": []
     }
 
     # Kiểm tra nếu username đã tồn tại
     if User.query.filter_by(username=username).first():
         errors["username"].append(get_message('username_exists', lang))
+
+    # Kiểm tra nếu email đã tồn tại
+    if User.query.filter_by(email=email).first():
+        errors["email"].append(get_message('email_exists', lang))
 
     # Kiểm tra tính hợp lệ của username
     if not username:
@@ -76,7 +81,7 @@ def register():
         errors["password"].append(get_message('weak_password', lang))
 
     # Nếu có lỗi, trả về lỗi chi tiết
-    if errors["username"] or errors["password"]:
+    if errors["username"] or errors["password"] or errors["email"]:
         return jsonify({"errors": errors}), 400
 
     # Nếu không có lỗi, tiến hành đăng ký người dùng mới

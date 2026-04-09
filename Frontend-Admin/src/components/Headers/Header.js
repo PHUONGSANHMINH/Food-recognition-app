@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardBody, CardTitle, Container, Row, Col } from "reactstrap";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
+import AsyncStorage from "../../AsyncStorageHelper";
 
 const Header = () => {
   const [stats, setStats] = useState({

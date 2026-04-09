@@ -9,7 +9,7 @@ import {
   Container,
   Media,
 } from "reactstrap";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "../../AsyncStorageHelper";
 import { jwtDecode } from "jwt-decode";
 import { useEffect, useState } from "react";
 

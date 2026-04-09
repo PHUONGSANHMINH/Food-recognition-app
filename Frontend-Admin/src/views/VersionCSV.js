@@ -16,7 +16,7 @@ import {
   ModalFooter,
 } from "reactstrap";
 import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "../AsyncStorageHelper";
 import Header from "components/Headers/HeaderVersionsCSV.js";
 
 const VersionCSV = () => {
