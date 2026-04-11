@@ -1,0 +1,30 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+
+# Logs
+*.log
+app.log
+
+# Uploads (user-generated content)
+uploads/
+
+# Model files (deploy separately)
+yolov8-model/best.pt
+
+# Dev/debug scripts
+fix_sequence.py
+
+# IDE
+.vscode/
+.idea/
