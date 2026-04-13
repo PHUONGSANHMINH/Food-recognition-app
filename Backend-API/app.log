@@ -54,3 +54,12 @@
 2024-12-18 23:10:25,008 INFO: No objects detected [in C:\IL-Junq\Projects\VKU-2024\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:172]
 2024-12-18 23:10:26,016 INFO: No objects detected [in C:\IL-Junq\Projects\VKU-2024\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:172]
 2024-12-18 23:14:29,178 INFO: No objects detected [in C:\IL-Junq\Projects\VKU-2024\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:172]
+2026-04-11 16:09:16,924 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: smallint = boolean
+LINE 3: WHERE recipes_contribution.accept_contribution = true
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = true]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:582]
