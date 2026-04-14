@@ -1,4 +1,11 @@
 import React from 'react'
+import { BackHandler } from 'react-native'
+
+// Polyfill for deprecated BackHandler.removeEventListener used by older libraries
+if (BackHandler && !BackHandler.removeEventListener) {
+  BackHandler.removeEventListener = function() {};
+}
+
 import { Provider } from 'react-native-paper'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'

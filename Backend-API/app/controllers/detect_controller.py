@@ -466,7 +466,7 @@ def get_daily_meal_plan(default_calories=2000):
         user_goal = db.session.query(UserDailyNutritionGoal).filter(UserDailyNutritionGoal.id_user == current_user_id).first()
         target_calories = user_goal.calories_goal if user_goal and user_goal.calories_goal is not None else default_calories
         # Lấy các công thức đã được duyệt từ cơ sở dữ liệu
-        recipes = db.session.query(RecipeInfo).join(RecipesContribution).filter(RecipesContribution.accept_contribution == True).all()
+        recipes = db.session.query(RecipeInfo).join(RecipesContribution).filter(RecipesContribution.accept_contribution == 1).all()
         
         if not recipes:
             raise ValueError("No approved recipes available.")

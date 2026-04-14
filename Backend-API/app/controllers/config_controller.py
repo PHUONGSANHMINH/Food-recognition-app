@@ -95,7 +95,7 @@ def get_statistics():
 
     # Tổng số contribution chưa được duyệt (loại trừ contribution của userid 1)
     total_unapproved_contributions = RecipesContribution.query.filter(
-        (RecipesContribution.accept_contribution == False) & 
+        (RecipesContribution.accept_contribution == 0) & 
         (RecipesContribution.id_user != 1)
     ).count()
 

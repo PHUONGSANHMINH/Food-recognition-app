@@ -54,7 +54,7 @@ def export_recipes_to_csv():
         approved_recipes = (
             db.session.query(RecipeInfo)
             .join(RecipesContribution)
-            .filter(RecipesContribution.accept_contribution == True)
+            .filter(RecipesContribution.accept_contribution == 1)
             .all()
         )
 

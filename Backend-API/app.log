@@ -63,3 +63,21 @@ HINT:  No operator matches the given name and argument types. You might need to 
 FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
 WHERE recipes_contribution.accept_contribution = true]
 (Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:582]
+2026-04-14 17:14:12,593 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: smallint = boolean
+LINE 3: WHERE recipes_contribution.accept_contribution = true
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = true]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-APi\app\controllers\detect_controller.py:583]
+2026-04-14 17:17:58,920 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: smallint = boolean
+LINE 3: WHERE recipes_contribution.accept_contribution = true
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = true]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-APi\app\controllers\detect_controller.py:582]

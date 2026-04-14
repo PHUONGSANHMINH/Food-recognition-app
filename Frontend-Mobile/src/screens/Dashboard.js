@@ -22,7 +22,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const api = {
   async fetchDailyMealPlan() {
     try {
-      const response = await axios.get(`${process.env.EXPO_PUBLIC_DOMAIN}api/detect/daily-meal-plan`);
+      const token = await AsyncStorage.getItem('access_token');
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_DOMAIN}api/detect/daily-meal-plan`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       return response.data.daily_meal_plan;
     } catch (error) {
       console.error('Error fetching daily meal plan:', error);
