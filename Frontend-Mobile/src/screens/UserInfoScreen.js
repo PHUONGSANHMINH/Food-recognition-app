@@ -10,6 +10,8 @@ import {
     ActivityIndicator,
     Image,
     Dimensions,
+    Platform,
+    StatusBar as RNStatusBar,
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -316,6 +318,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
+        paddingTop: Platform.OS === 'android' ? RNStatusBar.currentHeight + 10 : 15,
     },
     backButton: {
         marginRight: 16,

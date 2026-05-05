@@ -9,7 +9,9 @@ import {
   SafeAreaView,
   ActivityIndicator,
   RefreshControl,
-  Alert
+  Alert,
+  Platform,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -197,6 +199,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+    paddingTop: Platform.OS === 'android' ? RNStatusBar.currentHeight + 10 : 16,
   },
   addButton: {
     // Add style for the add button

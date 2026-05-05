@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Dimensions,
   Alert,
+  Platform,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
@@ -209,6 +211,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#DDDDDD',
+    paddingTop: Platform.OS === 'android' ? RNStatusBar.currentHeight + 12 : 12,
   },
   backButton: {
     padding: 8,

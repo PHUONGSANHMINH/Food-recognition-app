@@ -17,7 +17,7 @@ migrate = Migrate()
 
 def create_app():
     app = Flask(__name__)
-    load_dotenv()  # Tải biến môi trường từ .env
+    load_dotenv(override=True)  # Tải biến môi trường từ .env và ghi đè các biến cũ có trong terminal
 
     app.config.from_object('config.Config')
 
