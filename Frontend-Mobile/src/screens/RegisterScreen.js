@@ -132,6 +132,9 @@ export default function RegisterScreen({ navigation }) {
 
       Alert.alert('Success', response.data.msg);
 
+      // Đặt cờ báo hiệu người dùng mới đăng ký
+      await AsyncStorage.setItem('isNewlyRegistered', 'true');
+
       // Thực hiện đăng nhập sau khi đăng ký thành công
       await handleLogin();
 

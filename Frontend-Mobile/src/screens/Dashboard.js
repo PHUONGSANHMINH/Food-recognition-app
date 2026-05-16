@@ -15,9 +15,11 @@ import {
   Dimensions,
   Platform,
   StatusBar as RNStatusBar,
+  ScrollView,
+  Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -45,10 +47,125 @@ const RecipeList = () => {
   const [currentMealPlan, setCurrentMealPlan] = useState(null);
   const [targetCalories, setTargetCalories] = useState(2000);
   const [error, setError] = useState(null);
+  const [hasCalorieGoal, setHasCalorieGoal] = useState(true);
+
+  // States for Calorie Goal Popup
+  const [showCalorieModal, setShowCalorieModal] = useState(false);
+  const [calorieTab, setCalorieTab] = useState('manual'); // 'manual' or 'calculate'
+  const [targetCaloriesInput, setTargetCaloriesInput] = useState('');
+  const [weight, setWeight] = useState('');
+  const [height, setHeight] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('male'); // 'male' or 'female'
+
+  useEffect(() => {
+    const checkNewUser = async () => {
+      try {
+        const isNew = await AsyncStorage.getItem('isNewlyRegistered');
+        if (isNew === 'true') {
+          setShowCalorieModal(true);
+          await AsyncStorage.removeItem('isNewlyRegistered');
+        }
+      } catch (e) {
+        console.error('Failed to check isNewlyRegistered flag', e);
+      }
+    };
+    checkNewUser();
+  }, []);
+
+  const handleCalculateCalories = () => {
+    if (!weight || !height || !age) {
+      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ cân nặng, chiều cao và tuổi.');
+      return;
+    }
+    const w = parseFloat(weight);
+    const h = parseFloat(height);
+    const a = parseInt(age);
+    if (isNaN(w) || isNaN(h) || isNaN(a)) {
+      Alert.alert('Lỗi', 'Thông số không hợp lệ.');
+      return;
+    }
+    
+    // Mifflin-St Jeor Equation
+    let bmr;
+    if (gender === 'male') {
+      bmr = 10 * w + 6.25 * h - 5 * a + 5;
+    } else {
+      bmr = 10 * w + 6.25 * h - 5 * a - 161;
+    }
+    
+    // TDEE = BMR * 1.2 (Ít vận động)
+    const tdee = bmr * 1.2;
+    
+    // Giảm 500 calo để giảm cân
+    const suggestedCalories = Math.round(tdee - 500);
+    const minCalories = gender === 'male' ? 1500 : 1200;
+    const finalCalories = suggestedCalories < minCalories ? minCalories : suggestedCalories;
+    
+    setTargetCaloriesInput(finalCalories.toString());
+    Alert.alert('Đề xuất', `Mục tiêu Calo đề xuất để giảm cân của bạn là ${finalCalories} kcal/ngày.`);
+  };
+
+  const handleSaveCalorieGoal = async () => {
+    if (!targetCaloriesInput) {
+      Alert.alert('Lỗi', 'Vui lòng nhập mục tiêu Calo.');
+      return;
+    }
+    
+    const calories = parseInt(targetCaloriesInput);
+    if (isNaN(calories) || calories <= 0) {
+      Alert.alert('Lỗi', 'Mục tiêu Calo không hợp lệ.');
+      return;
+    }
+
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      await axios.post(
+        `${process.env.EXPO_PUBLIC_DOMAIN}api/nutrition-user/update`,
+        { calories_goal: calories },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setTargetCalories(calories);
+      setShowCalorieModal(false);
+      Alert.alert('Thành công', 'Đã lưu mục tiêu Calo của bạn.');
+      
+      // Xóa cache meal plan và tải lại
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const startOfWeek = new Date(today.getTime());
+      startOfWeek.setDate(today.getDate() + diffToMonday);
+      startOfWeek.setHours(0, 0, 0, 0);
+      const storageKey = `weeklyMealPlan_${startOfWeek.toISOString().split('T')[0]}`;
+      await AsyncStorage.removeItem(storageKey);
+      
+      loadWeeklyMealPlan();
+    } catch (error) {
+      console.error('Error saving calorie goal:', error);
+      Alert.alert('Lỗi', 'Không thể lưu mục tiêu Calo.');
+    }
+  };
 
   const loadWeeklyMealPlan = async () => {
     try {
       setLoading(true);
+      const token = await AsyncStorage.getItem('access_token');
+
+      try {
+        const goalResponse = await axios.get(`${process.env.EXPO_PUBLIC_DOMAIN}api/nutrition-user/calories`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setTargetCalories(goalResponse.data.calories_goal);
+        setHasCalorieGoal(true);
+      } catch (err) {
+        if (err.response && err.response.status === 404) {
+          setHasCalorieGoal(false);
+          setLoading(false);
+          setRefreshing(false);
+          return;
+        }
+      }
 
       // Tính ngày hôm nay
       const today = new Date();
@@ -70,16 +187,29 @@ const RecipeList = () => {
       const storedWeeklyData = await AsyncStorage.getItem(storageKey);
 
       // Lấy thông tin tuần hiện tại
-      const storedStartOfWeek = storedWeeklyData ? JSON.parse(storedWeeklyData).startOfWeek : null;
+      let parsedData = storedWeeklyData ? JSON.parse(storedWeeklyData) : {};
+      const storedStartOfWeek = parsedData.startOfWeek || null;
       const currentStartOfWeek = startOfWeek.toISOString().split('T')[0];
 
-      // Xóa dữ liệu tuần cũ nếu cần
+      // Kiểm tra tính hợp lệ của cache
+      let isCacheValid = true;
       if (!storedWeeklyData || storedStartOfWeek !== currentStartOfWeek) {
-        await AsyncStorage.removeItem(storageKey); // Xóa dữ liệu tuần cũ nếu có
+        isCacheValid = false;
+      }
+      
+      // Nếu mục tiêu calo trên backend khác với cache, thì cache bị lỗi thời
+      if (parsedData.targetCalories && parsedData.targetCalories !== goalResponse.data.calories_goal) {
+        isCacheValid = false;
+      }
+
+      // Xóa dữ liệu tuần cũ nếu cần
+      if (!isCacheValid) {
+        await AsyncStorage.removeItem(storageKey); // Xóa dữ liệu cũ
+        parsedData = {};
       }
 
       // Chuẩn bị dữ liệu tuần mới
-      let weeklyData = storedWeeklyData ? JSON.parse(storedWeeklyData) : {};
+      let weeklyData = parsedData;
 
       if (Object.keys(weeklyData).length < 7) {
         for (let i = 0; i <= 7; i++) { // Bắt đầu từ 1 để bỏ qua ngày hôm nay
@@ -94,7 +224,8 @@ const RecipeList = () => {
         }
 
         // Lưu lại dữ liệu tuần
-        // console.log("Dữ liệu tuần:", weeklyData);
+        weeklyData.startOfWeek = currentStartOfWeek;
+        weeklyData.targetCalories = goalResponse.data.calories_goal;
         await AsyncStorage.setItem(storageKey, JSON.stringify(weeklyData));
       }
 
@@ -115,9 +246,11 @@ const RecipeList = () => {
   };
 
 
-  useEffect(() => {
-    loadWeeklyMealPlan();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadWeeklyMealPlan();
+    }, [])
+  );
 
   const handleDayPress = (day) => {
     const selectedMealPlan = weeklyMeals[day.dateString];
@@ -265,62 +398,71 @@ const RecipeList = () => {
       <StatusBar style="dark" />
       <Header />
 
-      <View style={styles.flatListContainer}>
-        <FlatList
-          data={Array.from({ length: 7 }, (_, i) => {
-            const today = new Date();
-            const dayOfWeek = today.getDay();
-            const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      {hasCalorieGoal ? (
+        <>
+          <View style={styles.flatListContainer}>
+            <FlatList
+              data={Array.from({ length: 7 }, (_, i) => {
+                const today = new Date();
+                const dayOfWeek = today.getDay();
+                const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
 
-            const currentDate = new Date(today);
-            
-            currentDate.setDate(today.getDate() + diffToMonday + i);
-            return {
-              date: currentDate.toISOString().split('T')[0],
-              label: currentDate.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
-            };
-          })}
-          horizontal
-          keyExtractor={(item) => item.date}
-          contentContainerStyle={styles.flatListContentContainer}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.dayItem,
-                selectedDate === item.date && styles.selectedDay,
-              ]}
-              onPress={() => handleDayPress({ dateString: item.date })}
-            >
-              <Text
-                style={[
-                  styles.dayText,
-                  selectedDate === item.date && styles.selectedDayText,
-                ]}
-              >
-                {item.label}
+                const currentDate = new Date(today);
+                
+                currentDate.setDate(today.getDate() + diffToMonday + i);
+                return {
+                  date: currentDate.toISOString().split('T')[0],
+                  label: currentDate.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
+                };
+              })}
+              horizontal
+              keyExtractor={(item) => item.date}
+              contentContainerStyle={styles.flatListContentContainer}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.dayItem,
+                    selectedDate === item.date && styles.selectedDay,
+                  ]}
+                  onPress={() => handleDayPress({ dateString: item.date })}
+                >
+                  <Text
+                    style={[
+                      styles.dayText,
+                      selectedDate === item.date && styles.selectedDayText,
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
+
+          <View style={styles.mealPlanSummary}>
+            <Text style={styles.mealPlanSummaryText}>
+              {new Date(selectedDate).toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric'
+              })} Meal Plan
+            </Text>
+            {currentMealPlan && (
+              <Text style={styles.mealPlanCaloriesText}>
+                Total Calories: {Math.round(currentMealPlan.total_calories)} kcal
               </Text>
-            </TouchableOpacity>
-          )}
-          showsHorizontalScrollIndicator={false}
-        />
-      </View>
+            )}
+          </View>
 
-      <View style={styles.mealPlanSummary}>
-        <Text style={styles.mealPlanSummaryText}>
-          {new Date(selectedDate).toLocaleDateString('en-US', {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric'
-          })} Meal Plan
-        </Text>
-        {currentMealPlan && (
-          <Text style={styles.mealPlanCaloriesText}>
-            Total Calories: {Math.round(currentMealPlan.total_calories)} kcal
-          </Text>
-        )}
-      </View>
+          {renderMealPlanItems()}
+        </>
+      ) : (
+        <View style={[styles.errorContainer, { flex: 1 }]}>
+          <Text style={[styles.errorText, { fontSize: 18 }]}>Vui lòng chọn số calo bạn ở phần cài đặt</Text>
+        </View>
+      )}
 
-      {renderMealPlanItems()}
       <View style={styles.bottomButtonContainer}>
         <TouchableOpacity style={styles.squareButton}
           onPress={handleContributionPress}
@@ -361,6 +503,89 @@ const RecipeList = () => {
           />
         </TouchableOpacity>
       </View>
+
+      <Modal
+        visible={showCalorieModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCalorieModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.calorieModalContainer}>
+            <Text style={styles.calorieModalTitle}>Thiết lập mục tiêu Calo</Text>
+            
+            <View style={styles.tabContainer}>
+              <TouchableOpacity 
+                style={[styles.tabButton, calorieTab === 'manual' && styles.activeTabButton]}
+                onPress={() => setCalorieTab('manual')}
+              >
+                <Text style={[styles.tabText, calorieTab === 'manual' && styles.activeTabText]}>Nhập tay</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.tabButton, calorieTab === 'calculate' && styles.activeTabButton]}
+                onPress={() => setCalorieTab('calculate')}
+              >
+                <Text style={[styles.tabText, calorieTab === 'calculate' && styles.activeTabText]}>Đề xuất</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {calorieTab === 'manual' ? (
+                <View style={styles.tabContent}>
+                  <Text style={styles.inputLabel}>Mục tiêu Calo hằng ngày (kcal)</Text>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="VD: 2000"
+                    keyboardType="numeric"
+                    value={targetCaloriesInput}
+                    onChangeText={setTargetCaloriesInput}
+                  />
+                </View>
+              ) : (
+                <View style={styles.tabContent}>
+                  <Text style={styles.infoText}>Tính toán lượng Calo đề xuất để giảm cân an toàn.</Text>
+                  
+                  <Text style={styles.inputLabel}>Cân nặng (kg) *</Text>
+                  <TextInput style={styles.inputField} placeholder="VD: 65" keyboardType="numeric" value={weight} onChangeText={setWeight} />
+                  
+                  <Text style={styles.inputLabel}>Chiều cao (cm) *</Text>
+                  <TextInput style={styles.inputField} placeholder="VD: 170" keyboardType="numeric" value={height} onChangeText={setHeight} />
+                  
+                  <Text style={styles.inputLabel}>Tuổi *</Text>
+                  <TextInput style={styles.inputField} placeholder="VD: 25" keyboardType="numeric" value={age} onChangeText={setAge} />
+                  
+                  <Text style={styles.inputLabel}>Giới tính *</Text>
+                  <View style={styles.genderContainer}>
+                    <TouchableOpacity style={[styles.genderButton, gender === 'male' && styles.activeGenderButton]} onPress={() => setGender('male')}>
+                      <Text style={[styles.genderText, gender === 'male' && styles.activeGenderText]}>Nam</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.genderButton, gender === 'female' && styles.activeGenderButton]} onPress={() => setGender('female')}>
+                      <Text style={[styles.genderText, gender === 'female' && styles.activeGenderText]}>Nữ</Text>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <TouchableOpacity style={styles.calculateButton} onPress={handleCalculateCalories}>
+                    <Text style={styles.calculateButtonText}>Tính toán Đề xuất</Text>
+                  </TouchableOpacity>
+                  
+                  {targetCaloriesInput ? (
+                    <Text style={styles.suggestedText}>Mục tiêu đề xuất: {targetCaloriesInput} kcal</Text>
+                  ) : null}
+                </View>
+              )}
+            </ScrollView>
+
+            <View style={styles.modalActionButtons}>
+              <TouchableOpacity style={styles.skipButton} onPress={() => setShowCalorieModal(false)}>
+                <Text style={styles.skipButtonText}>Bỏ qua</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveButton} onPress={handleSaveCalorieGoal}>
+                <Text style={styles.saveButtonText}>Lưu Mục Tiêu</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
     </View>
   );
@@ -795,6 +1020,151 @@ const styles = StyleSheet.create({
   nutritionColumn: {
     alignItems: 'center',
     flex: 1,
+  },
+  nutritionLabelText: {
+    fontSize: 10,
+  },
+  calorieModalContainer: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '90%',
+  },
+  calorieModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    padding: 4,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 6,
+  },
+  activeTabButton: {
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  tabText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#ee4d2d',
+  },
+  tabContent: {
+    paddingBottom: 20,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  inputField: {
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  genderContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  genderButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    marginHorizontal: 4,
+    borderRadius: 8,
+  },
+  activeGenderButton: {
+    borderColor: '#ee4d2d',
+    backgroundColor: '#fff0ec',
+  },
+  genderText: {
+    color: '#666',
+    fontWeight: '600',
+  },
+  activeGenderText: {
+    color: '#ee4d2d',
+  },
+  calculateButton: {
+    backgroundColor: '#333',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  calculateButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  suggestedText: {
+    fontSize: 16,
+    color: '#ee4d2d',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  modalActionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  skipButton: {
+    flex: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginRight: 8,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  skipButtonText: {
+    color: '#666',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  saveButton: {
+    flex: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginLeft: 8,
+    backgroundColor: '#ee4d2d',
+    borderRadius: 8,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 16,
   },
   nutritionLabelText: {
     fontSize: 10,
