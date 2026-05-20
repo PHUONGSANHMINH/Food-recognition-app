@@ -13,6 +13,12 @@ class User(db.Model):
     reset_code_expiration = db.Column(db.DateTime, nullable=True)
     reset_attempts = db.Column(db.Integer, default=0, nullable=False)
     status = db.Column(db.String(50), nullable=True)
+    # ── Thông số cơ thể (được điền qua Setup flow sau khi đăng ký) ──────────
+    gender = db.Column(db.String(10),  nullable=True)   # 'male' | 'female'
+    height = db.Column(db.Float,       nullable=True)   # đơn vị: cm
+    weight = db.Column(db.Float,       nullable=True)   # đơn vị: kg
+    age    = db.Column(db.Integer,     nullable=True)   # đơn vị: tuổi
+    # ────────────────────────────────────────────────────────────────────────
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -138,3 +144,21 @@ class UserDailyNutritionGoal(db.Model):
     fiber_goal = db.Column(db.Float, nullable=True)
 
     user = db.relationship('User', backref=db.backref('nutrition_goals', lazy=True))
+
+
+class UserDailyLog(db.Model):
+    """Nhật ký dinh dưỡng thực tế người dùng đã nạp theo ngày."""
+    id_log          = db.Column(db.Integer, primary_key=True)
+    id_user         = db.Column(db.Integer, db.ForeignKey('user.id_user'), nullable=False)
+    log_date        = db.Column(db.Date, nullable=False)        # ngày ghi nhận (date only)
+    calories_intake = db.Column(db.Float, default=0, nullable=False)
+    protein_intake  = db.Column(db.Float, default=0, nullable=False)
+    fat_intake      = db.Column(db.Float, default=0, nullable=False)
+    carb_intake     = db.Column(db.Float, default=0, nullable=False)
+    updated_at      = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('daily_logs', lazy=True))
+
+    __table_args__ = (
+        db.UniqueConstraint('id_user', 'log_date', name='uq_user_date'),
+    )

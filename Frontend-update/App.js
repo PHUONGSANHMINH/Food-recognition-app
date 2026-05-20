@@ -6,6 +6,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+import SetupProfileScreen from './src/screens/SetupProfileScreen';
+import SetupGoalScreen from './src/screens/SetupGoalScreen';
+import EditProfileScreen from './src/screens/EditProfileScreen';
 import MainTabs from './src/navigation/MainTabs';
 
 const Stack = createNativeStackNavigator();
@@ -17,6 +20,9 @@ export default function App() {
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="SetupProfile" component={SetupProfileScreen} />
+        <Stack.Screen name="SetupGoal" component={SetupGoalScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         <Stack.Screen name="MainTabs" component={MainTabs} />
       </Stack.Navigator>
       <StatusBar style="auto" />

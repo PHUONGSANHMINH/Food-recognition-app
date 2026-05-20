@@ -1,17 +1,119 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, TouchableOpacity, Platform, StatusBar } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Platform,
+  StatusBar,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import * as Progress from 'react-native-progress';
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const clamp = (v) => Math.min(100, Math.max(0, Math.round(v)));
+
+const calcPct = (intake, goal) => {
+  if (!goal || goal === 0) return 0;
+  return clamp((intake / goal) * 100);
+};
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
+  const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [username, setUsername] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const [goals, setGoals] = useState({
+    calories: 2000,
+    protein: 150,
+    carbs: 250,
+    fat: 55,
+  });
+
+  const [intakes, setIntakes] = useState({
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+  });
+
+  // ── Fetch data every time screen comes into focus ──────────────────────────
+  useFocusEffect(
+    useCallback(() => {
+      async function fetchData() {
+        setLoading(true);
+        try {
+          const token = await AsyncStorage.getItem('access_token');
+          if (!token) return;
+          const headers = { Authorization: `Bearer ${token}` };
+
+          const [userRes, goalsRes, logRes] = await Promise.all([
+            fetch(`${API_URL}/api/user/info`,            { headers }),
+            fetch(`${API_URL}/api/nutrition-user/calories`, { headers }),
+            fetch(`${API_URL}/api/nutrition-log/today`,  { headers }),
+          ]);
+
+          if (userRes.ok) {
+            const u = await userRes.json();
+            setUsername(u.username || '');
+          }
+
+          if (goalsRes.ok) {
+            const g = await goalsRes.json();
+            setGoals({
+              calories: g.calories_goal    || 2000,
+              protein:  g.protein_goal     || 150,
+              carbs:    g.carbohydrate_goal || 250,
+              fat:      g.fat_goal         || 55,
+            });
+          }
+
+          if (logRes.ok) {
+            const l = await logRes.json();
+            setIntakes({
+              calories: l.calories_intake || 0,
+              protein:  l.protein_intake  || 0,
+              carbs:    l.carb_intake     || 0,
+              fat:      l.fat_intake      || 0,
+            });
+          }
+        } catch (err) {
+          console.error('HomeScreen fetch error:', err);
+        } finally {
+          setLoading(false);
+        }
+      }
+      fetchData();
+    }, [API_URL])
+  );
+
+  // ── Derived percentages ────────────────────────────────────────────────────
+  const caloriesPct = calcPct(intakes.calories, goals.calories);
+  const proteinPct  = calcPct(intakes.protein,  goals.protein);
+  const carbsPct    = calcPct(intakes.carbs,     goals.carbs);
+  const fatPct      = calcPct(intakes.fat,       goals.fat);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
+
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.profileContainer}>
             <Image source={require('../../assets/Food.png')} style={styles.profileImage} />
-            <Text style={styles.welcomeText}>Welcome, ABC</Text>
+            <Text style={styles.welcomeText}>
+              Welcome{username ? `, ${username}` : ''}
+            </Text>
           </View>
           <TouchableOpacity style={styles.notificationBtn}>
             <Ionicons name="notifications-outline" size={24} color="#333" />
@@ -20,30 +122,87 @@ export default function HomeScreen() {
 
         {/* Nutrition Card */}
         <View style={styles.nutritionCard}>
-          <View style={styles.circleProgressContainer}>
-            <View style={styles.circleProgress}>
-              <Text style={styles.caloriesText}>1500 kcal</Text>
-              <Text style={styles.targetText}>/2000 kcal</Text>
+          {loading ? (
+            <View style={styles.loadingBox}>
+              <ActivityIndicator size="large" color="rgba(255,255,255,0.8)" />
             </View>
-          </View>
+          ) : (
+            <>
+              {/* Circle Progress */}
+              <View style={styles.circleProgressContainer}>
+                <Progress.Circle
+                  size={150}
+                  progress={caloriesPct / 100}
+                  thickness={10}
+                  color="#A5D6A7"
+                  unfilledColor="rgba(255,255,255,0.25)"
+                  borderWidth={0}
+                  showsText={false}
+                  animated
+                >
+                  <View style={styles.circleInner}>
+                    <Text style={styles.caloriesText}>{Math.round(intakes.calories)} kcal</Text>
+                    <Text style={styles.targetText}>/{Math.round(goals.calories)} kcal</Text>
+                    <Text style={styles.caloriesPctText}>{caloriesPct}%</Text>
+                  </View>
+                </Progress.Circle>
+              </View>
 
-          <View style={styles.macrosContainer}>
-            <View style={styles.macroItem}>
-              <Text style={styles.macroLabel}>Protein</Text>
-              <View style={styles.macroBarBg}><View style={[styles.macroBarFill, { backgroundColor: '#FFC107', width: '80%' }]} /></View>
-              <Text style={styles.macroValue}>45g</Text>
-            </View>
-            <View style={styles.macroItem}>
-              <Text style={styles.macroLabel}>Carbs</Text>
-              <View style={styles.macroBarBg}><View style={[styles.macroBarFill, { backgroundColor: '#FFB6C1', width: '60%' }]} /></View>
-              <Text style={styles.macroValue}>10g</Text>
-            </View>
-            <View style={styles.macroItem}>
-              <Text style={styles.macroLabel}>Fat</Text>
-              <View style={styles.macroBarBg}><View style={[styles.macroBarFill, { backgroundColor: '#A5D6A7', width: '40%' }]} /></View>
-              <Text style={styles.macroValue}>20g</Text>
-            </View>
-          </View>
+              {/* Macro bars */}
+              <View style={styles.macrosContainer}>
+                {/* Protein */}
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroLabel}>Protein</Text>
+                  <View style={styles.macroBarBg}>
+                    <View
+                      style={[
+                        styles.macroBarFill,
+                        { backgroundColor: '#FFC107', width: `${proteinPct}%` },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.macroValue}>
+                    {Math.round(intakes.protein)}g
+                  </Text>
+                  <Text style={styles.macroPct}>{proteinPct}%</Text>
+                </View>
+
+                {/* Carbs */}
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroLabel}>Carbs</Text>
+                  <View style={styles.macroBarBg}>
+                    <View
+                      style={[
+                        styles.macroBarFill,
+                        { backgroundColor: '#FFB6C1', width: `${carbsPct}%` },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.macroValue}>
+                    {Math.round(intakes.carbs)}g
+                  </Text>
+                  <Text style={styles.macroPct}>{carbsPct}%</Text>
+                </View>
+
+                {/* Fat */}
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroLabel}>Fat</Text>
+                  <View style={styles.macroBarBg}>
+                    <View
+                      style={[
+                        styles.macroBarFill,
+                        { backgroundColor: '#A5D6A7', width: `${fatPct}%` },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.macroValue}>
+                    {Math.round(intakes.fat)}g
+                  </Text>
+                  <Text style={styles.macroPct}>{fatPct}%</Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Recent Meals */}
@@ -97,7 +256,7 @@ export default function HomeScreen() {
               <View style={styles.recipeDetails}>
                 <Ionicons name="time-outline" size={14} color="#9ca3af" />
                 <Text style={styles.recipeTime}>20 min</Text>
-                <Ionicons name="flame-outline" size={14} color="#9ca3af" style={{marginLeft: 10}} />
+                <Ionicons name="flame-outline" size={14} color="#9ca3af" style={{ marginLeft: 10 }} />
                 <Text style={styles.recipeCaloriesText}>340 kcal</Text>
               </View>
             </View>
@@ -110,47 +269,178 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F5F7FA', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F5F7FA',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
   scrollContent: { paddingBottom: 50 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 15, paddingBottom: 10 },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    paddingBottom: 10,
+  },
   profileContainer: { flexDirection: 'row', alignItems: 'center' },
   profileImage: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#ddd' },
   welcomeText: { marginLeft: 12, fontSize: 16, fontWeight: 'bold', color: '#333' },
   notificationBtn: { padding: 5 },
-  nutritionCard: { backgroundColor: '#3F805A', marginHorizontal: 20, borderRadius: 25, padding: 25, marginTop: 10, shadowColor: '#3F805A', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 8 },
-  circleProgressContainer: { alignItems: 'center', justifyContent: 'center', height: 160, marginBottom: 20 },
-  circleProgress: { width: 140, height: 140, borderRadius: 70, borderWidth: 8, borderColor: 'white', borderTopColor: '#A5D6A7', borderRightColor: '#A5D6A7', alignItems: 'center', justifyContent: 'center' },
-  caloriesText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  targetText: { color: 'rgba(255,255,255,0.7)', fontSize: 12 },
-  macrosContainer: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 10 },
-  macroItem: { alignItems: 'center', flex: 1 },
-  macroLabel: { color: 'white', fontSize: 12, marginBottom: 8 },
-  macroBarBg: { width: '80%', height: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2, marginBottom: 8 },
-  macroBarFill: { height: '100%', borderRadius: 2 },
-  macroValue: { color: 'white', fontSize: 10 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 25, marginBottom: 15 },
+
+  // Nutrition Card
+  nutritionCard: {
+    backgroundColor: '#3F805A',
+    marginHorizontal: 20,
+    borderRadius: 25,
+    padding: 25,
+    marginTop: 10,
+    shadowColor: '#3F805A',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  loadingBox: {
+    height: 220,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Circle
+  circleProgressContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 22,
+  },
+  circleInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  caloriesText: {
+    color: 'white',
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  targetText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  caloriesPctText: {
+    color: '#A5D6A7',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+
+  // Macros
+  macrosContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 5,
+  },
+  macroItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  macroLabel: {
+    color: 'white',
+    fontSize: 12,
+    marginBottom: 6,
+  },
+  macroBarBg: {
+    width: '85%',
+    height: 5,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 3,
+    marginBottom: 6,
+    overflow: 'hidden',
+  },
+  macroBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  macroValue: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  macroPct: {
+    color: 'rgba(255,255,255,0.65)',
+    fontSize: 10,
+    marginTop: 2,
+  },
+
+  // Sections
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 25,
+    marginBottom: 15,
+  },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#666' },
   seeAllText: { fontSize: 14, color: '#3F805A', fontWeight: '600' },
   horizontalScroll: { paddingLeft: 20 },
-  mealCard: { width: 220, backgroundColor: 'white', borderRadius: 20, marginRight: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3, overflow: 'hidden' },
+
+  // Meal Card
+  mealCard: {
+    width: 220,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    marginRight: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+    overflow: 'hidden',
+  },
   mealImage: { width: '100%', height: 120, resizeMode: 'cover' },
   mealInfo: { padding: 15 },
   mealTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 8 },
-  mealDetails: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  mealDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   mealCalories: { fontSize: 14, color: '#9ca3af' },
   mealType: { fontSize: 14, color: '#F59E0B', fontWeight: '600' },
-  recipeCard: { width: 220, backgroundColor: 'white', borderRadius: 20, marginRight: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3, overflow: 'hidden' },
+
+  // Recipe Card
+  recipeCard: {
+    width: 220,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    marginRight: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+    overflow: 'hidden',
+  },
   recipeImageContainer: { position: 'relative' },
   recipeImage: { width: '100%', height: 140, resizeMode: 'cover' },
   heartBtn: { position: 'absolute', top: 10, right: 10, padding: 8 },
   recipeInfo: { padding: 15 },
   tagsContainer: { flexDirection: 'row', marginBottom: 8 },
-  tag: { backgroundColor: '#E5F3EB', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginRight: 8 },
+  tag: {
+    backgroundColor: '#E5F3EB',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginRight: 8,
+  },
   tagText: { color: '#3F805A', fontSize: 10, fontWeight: 'bold' },
   tagOrange: { backgroundColor: '#FEF3C7' },
   tagTextOrange: { color: '#F59E0B' },
   recipeTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 8 },
   recipeDetails: { flexDirection: 'row', alignItems: 'center' },
   recipeTime: { fontSize: 12, color: '#9ca3af', marginLeft: 4 },
-  recipeCaloriesText: { fontSize: 12, color: '#9ca3af', marginLeft: 4 }
+  recipeCaloriesText: { fontSize: 12, color: '#9ca3af', marginLeft: 4 },
 });

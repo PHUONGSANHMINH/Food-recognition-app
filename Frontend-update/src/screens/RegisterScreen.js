@@ -13,6 +13,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function RegisterScreen({ navigation }) {
   const [fullName, setFullName] = useState('');
@@ -49,13 +50,35 @@ export default function RegisterScreen({ navigation }) {
 
       if (response.ok) {
         console.log('REGISTRATION SUCCESSFUL:', data);
-        Alert.alert(
-          'Success', 
-          'Account created successfully!',
-          [{ text: 'OK', onPress: () => navigation.replace('MainTabs') }]
-        );
+
+        // Backend không trả về token khi đăng ký
+        // → Tự động đăng nhập để lấy access_token
+        const loginRes = await fetch(`${API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: fullName, password }),
+        });
+        const loginData = await loginRes.json();
+
+        if (loginRes.ok && loginData.access_token) {
+          await AsyncStorage.setItem('access_token', loginData.access_token);
+          navigation.replace('SetupProfile', { token: loginData.access_token });
+        } else {
+          // Đăng ký ok nhưng auto-login thất bại → vào Login thủ công
+          Alert.alert(
+            'Account Created',
+            'Your account was created. Please log in to continue.',
+            [{ text: 'Log In', onPress: () => navigation.replace('Login') }]
+          );
+        }
       } else {
-        Alert.alert('Registration Failed', data.message || 'An error occurred during registration');
+        const errMsg =
+          data.errors?.username?.[0] ||
+          data.errors?.email?.[0] ||
+          data.errors?.password?.[0] ||
+          data.message ||
+          'An error occurred during registration';
+        Alert.alert('Registration Failed', errMsg);
       }
     } catch (error) {
       console.error('Registration error:', error);

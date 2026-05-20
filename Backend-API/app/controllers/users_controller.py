@@ -304,7 +304,11 @@ def update_user():
     errors = {
         "username": [],
         "email": [],
-        "password": []
+        "password": [],
+        "gender": [],
+        "height": [],
+        "weight": [],
+        "age": []
     }
 
     # Kiểm tra và cập nhật username nếu có thay đổi
@@ -330,8 +334,52 @@ def update_user():
         else:
             user.set_password(password)
 
+    # ── Cập nhật thông số cơ thể (gender, height, weight, age) ──────────────
+    gender = data.get('gender')
+    height = data.get('height')
+    weight = data.get('weight')
+    age    = data.get('age')
+
+    if gender is not None:
+        if gender not in ('male', 'female'):
+            errors["gender"].append("Gender must be 'male' or 'female'.")
+        else:
+            user.gender = gender
+
+    if height is not None:
+        try:
+            h = float(height)
+            if not (50 <= h <= 300):
+                errors["height"].append("Height must be between 50 and 300 cm.")
+            else:
+                user.height = h
+        except (TypeError, ValueError):
+            errors["height"].append("Height must be a number.")
+
+    if weight is not None:
+        try:
+            w = float(weight)
+            if not (10 <= w <= 500):
+                errors["weight"].append("Weight must be between 10 and 500 kg.")
+            else:
+                user.weight = w
+        except (TypeError, ValueError):
+            errors["weight"].append("Weight must be a number.")
+
+    if age is not None:
+        try:
+            a = int(age)
+            if not (10 <= a <= 120):
+                errors["age"].append("Age must be between 10 and 120.")
+            else:
+                user.age = a
+        except (TypeError, ValueError):
+            errors["age"].append("Age must be an integer.")
+    # ────────────────────────────────────────────────────────────────────────
+
     # Nếu có lỗi, trả về lỗi chi tiết
-    if errors["username"] or errors["email"] or errors["password"]:
+    has_error = any(v for v in errors.values())
+    if has_error:
         return jsonify({"errors": errors}), 400
 
     # Commit các thay đổi
@@ -345,7 +393,12 @@ def get_user_info():
     current_user_id = get_jwt_identity()
     user = User.query.get_or_404(current_user_id)
     return jsonify({
-        'email': user.email,
+        'username': user.username,
+        'email':    user.email,
+        'gender':   user.gender,
+        'height':   user.height,
+        'weight':   user.weight,
+        'age':      user.age,
     })
 
 
