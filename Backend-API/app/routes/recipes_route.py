@@ -17,7 +17,8 @@ from app.controllers.recipes_controller import (
     get_unaccepted_recipes,
     update_recipe,
     delete_recipe,
-    approve_recipes
+    approve_recipes,
+    get_top_rated_recipes
 )
 
 recipe_bp = Blueprint('recipe', __name__)
@@ -880,3 +881,46 @@ def get_unaccepted_recipes_view():
 })
 def approve_recipes_view():
     return approve_recipes()
+
+@recipe_bp.route('/top-rated', methods=['GET'])
+@swag_from({
+    'tags': ['Recipes'],
+    'summary': 'Get Top Rated Recipes',
+    'description': 'Get a list of published recipes sorted by average rating from the rating table',
+    'parameters': [
+        {
+            'name': 'limit',
+            'in': 'query',
+            'type': 'integer',
+            'required': False,
+            'default': 5,
+            'description': 'Number of top recipes to return'
+        }
+    ],
+    'responses': {
+        200: {
+            'description': 'Top rated recipes retrieved successfully',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'recommendations': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                'id_recipe': {'type': 'integer'},
+                                'name_recipe': {'type': 'string'},
+                                'image': {'type': 'string'},
+                                'type': {'type': 'string'},
+                                'avg_rating': {'type': 'number'},
+                                'calories': {'type': 'number'}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+})
+def get_top_rated_recipes_view():
+    return get_top_rated_recipes()

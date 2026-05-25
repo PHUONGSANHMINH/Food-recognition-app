@@ -46,6 +46,9 @@ export default function HomeScreen() {
     fat: 0,
   });
 
+  const [recommendedMeals, setRecommendedMeals] = useState([]);
+  const [topRecipes, setTopRecipes] = useState([]);
+
   // ── Fetch data every time screen comes into focus ──────────────────────────
   useFocusEffect(
     useCallback(() => {
@@ -53,13 +56,15 @@ export default function HomeScreen() {
         setLoading(true);
         try {
           const token = await AsyncStorage.getItem('access_token');
-          if (!token) return;
+          if (!token) { setLoading(false); return; }
           const headers = { Authorization: `Bearer ${token}` };
 
-          const [userRes, goalsRes, logRes] = await Promise.all([
-            fetch(`${API_URL}/api/user/info`,            { headers }),
+          const [userRes, goalsRes, logRes, mealPlanRes, topRatedRes] = await Promise.all([
+            fetch(`${API_URL}/api/user/info`, { headers }),
             fetch(`${API_URL}/api/nutrition-user/calories`, { headers }),
-            fetch(`${API_URL}/api/nutrition-log/today`,  { headers }),
+            fetch(`${API_URL}/api/nutrition-log/today`, { headers }),
+            fetch(`${API_URL}/api/detect/daily-meal-plan`, { headers }),
+            fetch(`${API_URL}/api/recipe/top-rated`, { headers }),
           ]);
 
           if (userRes.ok) {
@@ -70,10 +75,10 @@ export default function HomeScreen() {
           if (goalsRes.ok) {
             const g = await goalsRes.json();
             setGoals({
-              calories: g.calories_goal    || 2000,
-              protein:  g.protein_goal     || 150,
-              carbs:    g.carbohydrate_goal || 250,
-              fat:      g.fat_goal         || 55,
+              calories: g.calories_goal || 2000,
+              protein: g.protein_goal || 150,
+              carbs: g.carbohydrate_goal || 250,
+              fat: g.fat_goal || 55,
             });
           }
 
@@ -81,10 +86,28 @@ export default function HomeScreen() {
             const l = await logRes.json();
             setIntakes({
               calories: l.calories_intake || 0,
-              protein:  l.protein_intake  || 0,
-              carbs:    l.carb_intake     || 0,
-              fat:      l.fat_intake      || 0,
+              protein: l.protein_intake || 0,
+              carbs: l.carb_intake || 0,
+              fat: l.fat_intake || 0,
             });
+          }
+
+          if (mealPlanRes.ok) {
+            const m = await mealPlanRes.json();
+            if (m.daily_meal_plan) {
+              setRecommendedMeals([
+                { ...m.daily_meal_plan.breakfast, type_label: 'Breakfast' },
+                { ...m.daily_meal_plan.lunch, type_label: 'Lunch' },
+                { ...m.daily_meal_plan.dinner, type_label: 'Dinner' }
+              ]);
+            }
+          }
+
+          if (topRatedRes.ok) {
+            const t = await topRatedRes.json();
+            if (t.recommendations) {
+              setTopRecipes(t.recommendations);
+            }
           }
         } catch (err) {
           console.error('HomeScreen fetch error:', err);
@@ -98,9 +121,9 @@ export default function HomeScreen() {
 
   // ── Derived percentages ────────────────────────────────────────────────────
   const caloriesPct = calcPct(intakes.calories, goals.calories);
-  const proteinPct  = calcPct(intakes.protein,  goals.protein);
-  const carbsPct    = calcPct(intakes.carbs,     goals.carbs);
-  const fatPct      = calcPct(intakes.fat,       goals.fat);
+  const proteinPct = calcPct(intakes.protein, goals.protein);
+  const carbsPct = calcPct(intakes.carbs, goals.carbs);
+  const fatPct = calcPct(intakes.fat, goals.fat);
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -205,33 +228,28 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Recent Meals */}
+        {/* Recommended Meals */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Meals</Text>
+          <Text style={styles.sectionTitle}>Recommended Meals</Text>
           <TouchableOpacity><Text style={styles.seeAllText}>See all</Text></TouchableOpacity>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          <View style={styles.mealCard}>
-            <Image source={require('../../assets/Food.png')} style={styles.mealImage} />
-            <View style={styles.mealInfo}>
-              <Text style={styles.mealTitle}>Avocado Toast Bowl</Text>
-              <View style={styles.mealDetails}>
-                <Text style={styles.mealCalories}>420 kcal</Text>
-                <Text style={styles.mealType}>Breakfast</Text>
+          {recommendedMeals.map((meal, index) => (
+            <View key={`meal-${index}`} style={styles.mealCard}>
+              <Image
+                source={meal.image ? { uri: `${API_URL}/api/file/get-file/recipes/${meal.image}` } : require('../../assets/Food.png')}
+                style={styles.mealImage}
+              />
+              <View style={styles.mealInfo}>
+                <Text style={styles.mealTitle} numberOfLines={1}>{meal.recipe_name}</Text>
+                <View style={styles.mealDetails}>
+                  <Text style={styles.mealCalories}>{Math.round(meal.calories)} kcal</Text>
+                  <Text style={styles.mealType}>{meal.type_label}</Text>
+                </View>
               </View>
             </View>
-          </View>
-          <View style={styles.mealCard}>
-            <Image source={require('../../assets/Food.png')} style={styles.mealImage} />
-            <View style={styles.mealInfo}>
-              <Text style={styles.mealTitle}>Avocado Toast Bowl</Text>
-              <View style={styles.mealDetails}>
-                <Text style={styles.mealCalories}>420 kcal</Text>
-                <Text style={styles.mealType}>Lunch</Text>
-              </View>
-            </View>
-          </View>
+          ))}
         </ScrollView>
 
         {/* Suggested Recipes */}
@@ -240,27 +258,34 @@ export default function HomeScreen() {
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          <View style={styles.recipeCard}>
-            <View style={styles.recipeImageContainer}>
-              <Image source={require('../../assets/Food.png')} style={styles.recipeImage} />
-              <TouchableOpacity style={styles.heartBtn}>
-                <Ionicons name="heart-outline" size={20} color="white" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.recipeInfo}>
-              <View style={styles.tagsContainer}>
-                <View style={styles.tag}><Text style={styles.tagText}>KETO</Text></View>
-                <View style={[styles.tag, styles.tagOrange]}><Text style={[styles.tagText, styles.tagTextOrange]}>EASY</Text></View>
+          {topRecipes.map((recipe, index) => (
+            <View key={`recipe-${index}`} style={styles.recipeCard}>
+              <View style={styles.recipeImageContainer}>
+                <Image
+                  source={recipe.image ? { uri: `${API_URL}/api/file/get-file/recipes/${recipe.image}` } : require('../../assets/Food.png')}
+                  style={styles.recipeImage}
+                />
+                <TouchableOpacity style={styles.heartBtn}>
+                  <Ionicons name="heart-outline" size={20} color="white" />
+                </TouchableOpacity>
               </View>
-              <Text style={styles.recipeTitle}>Lemon Herb Salmon</Text>
-              <View style={styles.recipeDetails}>
-                <Ionicons name="time-outline" size={14} color="#9ca3af" />
-                <Text style={styles.recipeTime}>20 min</Text>
-                <Ionicons name="flame-outline" size={14} color="#9ca3af" style={{ marginLeft: 10 }} />
-                <Text style={styles.recipeCaloriesText}>340 kcal</Text>
+              <View style={styles.recipeInfo}>
+                <View style={styles.tagsContainer}>
+                  <View style={styles.tag}>
+                    <Text style={styles.tagText}>{recipe.type ? recipe.type.toUpperCase() : 'RECIPE'}</Text>
+                  </View>
+                  <View style={[styles.tag, styles.tagOrange]}>
+                    <Text style={[styles.tagText, styles.tagTextOrange]}>★ {recipe.avg_rating}</Text>
+                  </View>
+                </View>
+                <Text style={styles.recipeTitle} numberOfLines={1}>{recipe.name_recipe}</Text>
+                <View style={styles.recipeDetails}>
+                  <Ionicons name="flame-outline" size={14} color="#9ca3af" />
+                  <Text style={styles.recipeCaloriesText}>{Math.round(recipe.calories)} kcal</Text>
+                </View>
               </View>
             </View>
-          </View>
+          ))}
         </ScrollView>
 
       </ScrollView>

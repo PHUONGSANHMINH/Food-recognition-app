@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import HomeScreen from '../screens/HomeScreen';
 import DiaryScreen from '../screens/DiaryScreen';
+import ScanScreen from '../screens/ScanScreen';
 import RecipesScreen from '../screens/RecipesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
@@ -39,30 +40,30 @@ export default function MainTabs() {
         tabBarStyle: styles.tabBar,
       }}
     >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeScreen} 
-        options={{ tabBarButton: (props) => <TabButton {...props} item={{name: 'Home'}} /> }} 
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ tabBarButton: (props) => <TabButton {...props} item={{ name: 'Home' }} /> }}
       />
-      <Tab.Screen 
-        name="Diary" 
-        component={DiaryScreen} 
-        options={{ tabBarButton: (props) => <TabButton {...props} item={{name: 'Diary'}} /> }} 
+      <Tab.Screen
+        name="Diary"
+        component={DiaryScreen}
+        options={{ tabBarButton: (props) => <TabButton {...props} item={{ name: 'Diary' }} /> }}
       />
-      <Tab.Screen 
-        name="Scan" 
-        component={DiaryScreen} 
-        options={{ tabBarButton: (props) => <TabButton {...props} item={{name: 'Scan'}} /> }} 
+      <Tab.Screen
+        name="Scan"
+        component={ScanScreen}
+        options={{ tabBarButton: (props) => <TabButton {...props} item={{ name: 'Scan' }} /> }}
       />
-      <Tab.Screen 
-        name="Recipes" 
-        component={RecipesScreen} 
-        options={{ tabBarButton: (props) => <TabButton {...props} item={{name: 'Recipes'}} /> }} 
+      <Tab.Screen
+        name="Recipes"
+        component={RecipesScreen}
+        options={{ tabBarButton: (props) => <TabButton {...props} item={{ name: 'Recipes' }} /> }}
       />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen} 
-        options={{ tabBarButton: (props) => <TabButton {...props} item={{name: 'Profile'}} /> }} 
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ tabBarButton: (props) => <TabButton {...props} item={{ name: 'Profile' }} /> }}
       />
     </Tab.Navigator>
   );

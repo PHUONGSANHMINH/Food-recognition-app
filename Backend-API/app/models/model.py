@@ -162,3 +162,21 @@ class UserDailyLog(db.Model):
     __table_args__ = (
         db.UniqueConstraint('id_user', 'log_date', name='uq_user_date'),
     )
+
+
+class DiaryEntry(db.Model):
+    """Bảng lưu từng bữa ăn người dùng nhập tay vào diary."""
+    __tablename__ = 'diary_entry'
+    id_entry    = db.Column(db.Integer, primary_key=True)
+    id_user     = db.Column(db.Integer, db.ForeignKey('user.id_user'), nullable=False)
+    entry_date  = db.Column(db.Date, nullable=False)
+    meal_type   = db.Column(db.String(20), nullable=False)
+    meal_name   = db.Column(db.String(255), nullable=False)
+    calories    = db.Column(db.Float, nullable=False)
+    protein_g   = db.Column(db.Float, default=0, nullable=True)
+    carbs_g     = db.Column(db.Float, default=0, nullable=True)
+    fat_g       = db.Column(db.Float, default=0, nullable=True)
+    image       = db.Column(db.Text, nullable=True)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('diary_entries', lazy=True))

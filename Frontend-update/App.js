@@ -9,6 +9,8 @@ import RegisterScreen from './src/screens/RegisterScreen';
 import SetupProfileScreen from './src/screens/SetupProfileScreen';
 import SetupGoalScreen from './src/screens/SetupGoalScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
+import AddDiaryScreen from './src/screens/AddDiaryScreen';
+import ScanResultRecipesScreen from './src/screens/ScanResultRecipesScreen';
 import MainTabs from './src/navigation/MainTabs';
 
 const Stack = createNativeStackNavigator();
@@ -24,8 +26,11 @@ export default function App() {
         <Stack.Screen name="SetupGoal" component={SetupGoalScreen} />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen name="AddDiary" component={AddDiaryScreen} />
+        <Stack.Screen name="ScanResultRecipes" component={ScanResultRecipesScreen} />
       </Stack.Navigator>
       <StatusBar style="auto" />
     </NavigationContainer>
   );
 }
+

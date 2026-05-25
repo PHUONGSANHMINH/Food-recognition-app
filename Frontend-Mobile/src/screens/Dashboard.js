@@ -85,7 +85,7 @@ const RecipeList = () => {
       Alert.alert('Lỗi', 'Thông số không hợp lệ.');
       return;
     }
-    
+
     // Mifflin-St Jeor Equation
     let bmr;
     if (gender === 'male') {
@@ -93,15 +93,15 @@ const RecipeList = () => {
     } else {
       bmr = 10 * w + 6.25 * h - 5 * a - 161;
     }
-    
+
     // TDEE = BMR * 1.2 (Ít vận động)
     const tdee = bmr * 1.2;
-    
+
     // Giảm 500 calo để giảm cân
     const suggestedCalories = Math.round(tdee - 500);
     const minCalories = gender === 'male' ? 1500 : 1200;
     const finalCalories = suggestedCalories < minCalories ? minCalories : suggestedCalories;
-    
+
     setTargetCaloriesInput(finalCalories.toString());
     Alert.alert('Đề xuất', `Mục tiêu Calo đề xuất để giảm cân của bạn là ${finalCalories} kcal/ngày.`);
   };
@@ -111,7 +111,7 @@ const RecipeList = () => {
       Alert.alert('Lỗi', 'Vui lòng nhập mục tiêu Calo.');
       return;
     }
-    
+
     const calories = parseInt(targetCaloriesInput);
     if (isNaN(calories) || calories <= 0) {
       Alert.alert('Lỗi', 'Mục tiêu Calo không hợp lệ.');
@@ -125,11 +125,11 @@ const RecipeList = () => {
         { calories_goal: calories },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       setTargetCalories(calories);
       setShowCalorieModal(false);
       Alert.alert('Thành công', 'Đã lưu mục tiêu Calo của bạn.');
-      
+
       // Xóa cache meal plan và tải lại
       const today = new Date();
       const dayOfWeek = today.getDay();
@@ -139,7 +139,7 @@ const RecipeList = () => {
       startOfWeek.setHours(0, 0, 0, 0);
       const storageKey = `weeklyMealPlan_${startOfWeek.toISOString().split('T')[0]}`;
       await AsyncStorage.removeItem(storageKey);
-      
+
       loadWeeklyMealPlan();
     } catch (error) {
       console.error('Error saving calorie goal:', error);
@@ -196,7 +196,7 @@ const RecipeList = () => {
       if (!storedWeeklyData || storedStartOfWeek !== currentStartOfWeek) {
         isCacheValid = false;
       }
-      
+
       // Nếu mục tiêu calo trên backend khác với cache, thì cache bị lỗi thời
       if (parsedData.targetCalories && parsedData.targetCalories !== goalResponse.data.calories_goal) {
         isCacheValid = false;
@@ -287,69 +287,69 @@ const RecipeList = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-  
+
       // Navigate to the Recipe Detail screen and pass the recipe data
-      navigation.navigate('RecipeDetail', { 
+      navigation.navigate('RecipeDetail', {
         recipeId: recipeId,
-        recipeDetails: response.data 
+        recipeDetails: response.data
       });
     } catch (error) {
       console.error('Error fetching recipe details:', error);
       alert('Failed to fetch recipe details. Please try again.');
     }
   };
-  
+
   const MealPlanItem = ({ item, mealType }) => (
     <TouchableOpacity onPress={() => handleRecipePress(item.recipe_id)}>
-    <View style={styles.mealPlanContainer}>
-      <View style={styles.recipeContainer}>
-        {item.image && (
-          <Image
-            source={{
-              uri: item.image
-                ? `${process.env.EXPO_PUBLIC_DOMAIN}api/file/get-file/recipes/${item.image}`
-                : null
-            }}
-            style={styles.mealImage}
-            defaultSource={require('../assets/food-placeholder.png')}
-          />
-        )}
-        <View style={styles.recipeContent}>
-          <View style={styles.mealTypeHeader}>
-            <Text style={styles.mealTypeText}>{mealType.charAt(0).toUpperCase() + mealType.slice(1)}</Text>
-          </View>
-          <Text style={styles.recipeTitle} numberOfLines={2}>
-            {item.recipe_name}
-          </Text>
-          <View style={styles.nutritionDetailsEnhanced}>
-            <View style={styles.nutritionColumn}>
-              <Text style={styles.nutritionLabelText}>Calories</Text>
-              <Text style={styles.nutritionValueText}>
-                {Math.round(item.calories)} kcal
-              </Text>
+      <View style={styles.mealPlanContainer}>
+        <View style={styles.recipeContainer}>
+          {item.image && (
+            <Image
+              source={{
+                uri: item.image
+                  ? `${process.env.EXPO_PUBLIC_DOMAIN}api/file/get-file/recipes/${item.image}`
+                  : null
+              }}
+              style={styles.mealImage}
+              defaultSource={require('../assets/food-placeholder.png')}
+            />
+          )}
+          <View style={styles.recipeContent}>
+            <View style={styles.mealTypeHeader}>
+              <Text style={styles.mealTypeText}>{mealType.charAt(0).toUpperCase() + mealType.slice(1)}</Text>
             </View>
-            <View style={styles.nutritionColumn}>
-              <Text style={styles.nutritionLabelText}>Protein</Text>
-              <Text style={styles.nutritionValueText}>
-                {Math.round(item.protein)}g
-              </Text>
-            </View>
-            <View style={styles.nutritionColumn}>
-              <Text style={styles.nutritionLabelText}>Carbs</Text>
-              <Text style={styles.nutritionValueText}>
-                {Math.round(item.carbohydrates)}g
-              </Text>
-            </View>
-            <View style={styles.nutritionColumn}>
-              <Text style={styles.nutritionLabelText}>Fat</Text>
-              <Text style={styles.nutritionValueText}>
-                {Math.round(item.fat)}g
-              </Text>
+            <Text style={styles.recipeTitle} numberOfLines={2}>
+              {item.recipe_name}
+            </Text>
+            <View style={styles.nutritionDetailsEnhanced}>
+              <View style={styles.nutritionColumn}>
+                <Text style={styles.nutritionLabelText}>Calories</Text>
+                <Text style={styles.nutritionValueText}>
+                  {Math.round(item.calories)} kcal
+                </Text>
+              </View>
+              <View style={styles.nutritionColumn}>
+                <Text style={styles.nutritionLabelText}>Protein</Text>
+                <Text style={styles.nutritionValueText}>
+                  {Math.round(item.protein)}g
+                </Text>
+              </View>
+              <View style={styles.nutritionColumn}>
+                <Text style={styles.nutritionLabelText}>Carbs</Text>
+                <Text style={styles.nutritionValueText}>
+                  {Math.round(item.carbohydrates)}g
+                </Text>
+              </View>
+              <View style={styles.nutritionColumn}>
+                <Text style={styles.nutritionLabelText}>Fat</Text>
+                <Text style={styles.nutritionValueText}>
+                  {Math.round(item.fat)}g
+                </Text>
+              </View>
             </View>
           </View>
         </View>
       </View>
-    </View>
     </TouchableOpacity>
   );
 
@@ -408,7 +408,7 @@ const RecipeList = () => {
                 const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
 
                 const currentDate = new Date(today);
-                
+
                 currentDate.setDate(today.getDate() + diffToMonday + i);
                 return {
                   date: currentDate.toISOString().split('T')[0],
@@ -513,15 +513,15 @@ const RecipeList = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.calorieModalContainer}>
             <Text style={styles.calorieModalTitle}>Thiết lập mục tiêu Calo</Text>
-            
+
             <View style={styles.tabContainer}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.tabButton, calorieTab === 'manual' && styles.activeTabButton]}
                 onPress={() => setCalorieTab('manual')}
               >
                 <Text style={[styles.tabText, calorieTab === 'manual' && styles.activeTabText]}>Nhập tay</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.tabButton, calorieTab === 'calculate' && styles.activeTabButton]}
                 onPress={() => setCalorieTab('calculate')}
               >
@@ -544,16 +544,16 @@ const RecipeList = () => {
               ) : (
                 <View style={styles.tabContent}>
                   <Text style={styles.infoText}>Tính toán lượng Calo đề xuất để giảm cân an toàn.</Text>
-                  
+
                   <Text style={styles.inputLabel}>Cân nặng (kg) *</Text>
                   <TextInput style={styles.inputField} placeholder="VD: 65" keyboardType="numeric" value={weight} onChangeText={setWeight} />
-                  
+
                   <Text style={styles.inputLabel}>Chiều cao (cm) *</Text>
                   <TextInput style={styles.inputField} placeholder="VD: 170" keyboardType="numeric" value={height} onChangeText={setHeight} />
-                  
+
                   <Text style={styles.inputLabel}>Tuổi *</Text>
                   <TextInput style={styles.inputField} placeholder="VD: 25" keyboardType="numeric" value={age} onChangeText={setAge} />
-                  
+
                   <Text style={styles.inputLabel}>Giới tính *</Text>
                   <View style={styles.genderContainer}>
                     <TouchableOpacity style={[styles.genderButton, gender === 'male' && styles.activeGenderButton]} onPress={() => setGender('male')}>
@@ -563,11 +563,11 @@ const RecipeList = () => {
                       <Text style={[styles.genderText, gender === 'female' && styles.activeGenderText]}>Nữ</Text>
                     </TouchableOpacity>
                   </View>
-                  
+
                   <TouchableOpacity style={styles.calculateButton} onPress={handleCalculateCalories}>
                     <Text style={styles.calculateButtonText}>Tính toán Đề xuất</Text>
                   </TouchableOpacity>
-                  
+
                   {targetCaloriesInput ? (
                     <Text style={styles.suggestedText}>Mục tiêu đề xuất: {targetCaloriesInput} kcal</Text>
                   ) : null}

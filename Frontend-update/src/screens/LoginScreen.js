@@ -13,6 +13,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState('');
@@ -41,8 +42,12 @@ export default function LoginScreen({ navigation }) {
       const data = await response.json();
 
       if (response.ok) {
-        // Handle successful login, e.g., store token and navigate to main app
-        console.log('Login successful:', data);
+        // Lưu token vào AsyncStorage để dùng cho các API call sau
+        await AsyncStorage.setItem('access_token', data.access_token);
+        if (data.refresh_token) {
+          await AsyncStorage.setItem('refresh_token', data.refresh_token);
+        }
+        console.log('Login successful, token saved');
         navigation.replace('MainTabs');
       } else {
         // Handle error
@@ -57,12 +62,12 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ImageBackground 
-        source={require('../../assets/Login.png')} 
+      <ImageBackground
+        source={require('../../assets/Login.png')}
         style={styles.imageBackground}
         resizeMode="cover"
       >
@@ -101,11 +106,11 @@ export default function LoginScreen({ navigation }) {
               secureTextEntry={!showPassword}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Ionicons 
-                name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                size={20} 
-                color="#62656b" 
-                style={styles.iconRight} 
+              <Ionicons
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={20}
+                color="#62656b"
+                style={styles.iconRight}
               />
             </TouchableOpacity>
           </View>
@@ -115,8 +120,8 @@ export default function LoginScreen({ navigation }) {
           <Text style={styles.forgotPasswordText}>Forgot password?</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.button, isLoading && styles.buttonDisabled]} 
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.buttonDisabled]}
           onPress={handleLogin}
           disabled={isLoading}
         >

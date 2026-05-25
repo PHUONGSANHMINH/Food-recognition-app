@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 from app.models.model import RecipeInfo, Rating, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin  
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 
 # Cấu hình upload
 UPLOAD_FOLDER = 'uploads'
@@ -705,5 +705,39 @@ def get_unaccepted_recipes():
 
         return jsonify(recipes_data)
     
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def get_top_rated_recipes():
+    try:
+        limit = request.args.get('limit', 5, type=int)
+        
+        # Lấy top các công thức dựa trên rating, nếu chưa có rating thì mặc định là 0
+        top_recipes = db.session.query(
+            RecipeInfo,
+            func.coalesce(func.avg(Rating.star), 0).label('avg_rating')
+        ).outerjoin(Rating, Rating.id_recipe == RecipeInfo.id_recipe) \
+         .filter(RecipeInfo.status == 'Published') \
+         .group_by(RecipeInfo.id_recipe) \
+         .order_by(desc('avg_rating'), desc(RecipeInfo.id_recipe)) \
+         .limit(limit).all()
+        
+        recipes_data = []
+        for recipe, avg_rating in top_recipes:
+             # Get nutrition to display calories if needed
+            nutrition = RecipeNutrition.query.filter_by(id_recipe=recipe.id_recipe).first()
+            calories = nutrition.calories if nutrition else 0
+            
+            recipes_data.append({
+                'id_recipe': recipe.id_recipe,
+                'name_recipe': recipe.name_recipe,
+                'image': recipe.image,
+                'type': recipe.type,
+                'summary': recipe.summary,
+                'avg_rating': round(float(avg_rating), 1),
+                'calories': calories
+            })
+            
+        return jsonify({'recommendations': recipes_data}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
