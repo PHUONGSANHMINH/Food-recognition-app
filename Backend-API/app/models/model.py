@@ -105,8 +105,15 @@ class RecipeSteps(db.Model):
     content = db.Column(db.Text, nullable=False)
 
 class RecipesFavourite(db.Model):
-    id_recipe = db.Column(db.Integer, db.ForeignKey('recipe_info.id_recipe'), primary_key=True)
-    id_user = db.Column(db.Integer, db.ForeignKey('user.id_user'), primary_key=True)
+    id             = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id_user        = db.Column(db.Integer, db.ForeignKey('user.id_user'), nullable=False)
+    # Recipe nội bộ (nullable — không bắt buộc)
+    id_recipe      = db.Column(db.Integer, db.ForeignKey('recipe_info.id_recipe'), nullable=True)
+    # Recipe từ Spoonacular
+    spoonacular_id = db.Column(db.Integer, nullable=True)
+    recipe_title   = db.Column(db.String(255), nullable=True)
+    recipe_image   = db.Column(db.Text, nullable=True)
+    saved_at       = db.Column(db.DateTime, default=datetime.utcnow)
 
 class RecipesContribution(db.Model):
     id_recipe = db.Column(db.Integer, db.ForeignKey('recipe_info.id_recipe'), primary_key=True)
@@ -180,3 +187,18 @@ class DiaryEntry(db.Model):
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref=db.backref('diary_entries', lazy=True))
+
+
+class SearchHistory(db.Model):
+    """Lưu lịch sử tìm kiếm của từng người dùng."""
+    __tablename__ = 'search_history'
+    id          = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id_user     = db.Column(db.Integer, db.ForeignKey('user.id_user', ondelete='CASCADE'), nullable=False)
+    keyword     = db.Column(db.String(255), nullable=False)
+    searched_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('search_histories', lazy=True))
+
+    __table_args__ = (
+        db.UniqueConstraint('id_user', 'keyword', name='uq_user_keyword'),
+    )

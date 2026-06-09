@@ -3,6 +3,7 @@ import json, re, os, requests, random, json, logging
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import uuid
+from datetime import date as date_type, datetime
 from werkzeug.utils import secure_filename
 from ultralytics import YOLO
 from dotenv import load_dotenv
@@ -12,7 +13,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
-from app.models.model import Config, CSVExportVersion, RecipeInfo, RecipesContribution, RecipeNutrition, RecipeIngredients, UserDailyNutritionGoal, db
+from inference_sdk import InferenceHTTPClient
+from app.models.model import Config, CSVExportVersion, RecipeInfo, RecipesContribution, RecipeNutrition, RecipeIngredients, UserDailyNutritionGoal, UserDailyLog, DiaryEntry, RecipesFavourite, db
 
 global tfidf, tfidf_matrix, cosine_sim_text, indices, df
 global CSV_PATH, FULL_CSV_PATH
@@ -33,6 +35,15 @@ model = YOLO(FULL_MODEL_PATH)
 SPOONACULAR_API_KEY = os.getenv('SPOONACULAR_API_KEY', '').split(',')
 SPOONACULAR_SEARCH_URL = 'https://api.spoonacular.com/recipes/complexSearch'
 SPOONACULAR_NUTRITION_URL = 'https://api.spoonacular.com/recipes/{id}/nutritionWidget.json'
+
+# Cấu hình Roboflow (Scan Food)
+ROBOFLOW_API_KEY    = os.getenv('ROBOFLOW_API_KEY', 'Wre9TGGWweRBqiO0MvIL')
+ROBOFLOW_MODEL_ID   = os.getenv('ROBOFLOW_FOOD_MODEL_ID', 'food-yklgo/3')
+ROBOFLOW_API_URL    = os.getenv('ROBOFLOW_API_URL', 'https://serverless.roboflow.com')
+roboflow_client = InferenceHTTPClient(
+    api_url=ROBOFLOW_API_URL,
+    api_key=ROBOFLOW_API_KEY,
+)
 
 
 # CSV recommend system
@@ -584,3 +595,263 @@ def get_daily_meal_plan(default_calories=2000):
     except Exception as e:
         logger.error(f"Error in generating daily meal plan: {e}")
         return jsonify({'error': 'Unable to generate daily meal plan'}), 500
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# SCAN FOOD — Roboflow Pipeline
+# ──────────────────────────────────────────────────────────────────────────────
+
+@jwt_required()
+def detect_food_roboflow():
+    """Phát hiện món ăn qua Roboflow rồi gọi Spoonacular để đề xuất công thức."""
+    if 'image' not in request.files:
+        return jsonify({'msg': 'No image part in the request'}), 400
+
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'msg': 'No selected file'}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({'msg': 'Unsupported file type'}), 400
+
+    upload_folder = os.path.join(os.getcwd(), 'uploads', 'detect-images')
+    os.makedirs(upload_folder, exist_ok=True)
+    filename = secure_filename(f"{uuid.uuid4()}_{file.filename}")
+    filepath = os.path.join(upload_folder, filename)
+    file.save(filepath)
+
+    try:
+        # ── 1. Gọi Roboflow để phát hiện món ăn ──────────────────────────────
+        result = roboflow_client.infer(filepath, model_id=ROBOFLOW_MODEL_ID)
+        predictions = result.get('predictions', [])
+        detected_labels = list({p['class'] for p in predictions})
+        logger.info(f"Roboflow detected: {detected_labels}")
+
+        if not detected_labels:
+            return jsonify({'msg': 'No food detected in the image'}), 200
+
+        # ── 2. Gọi Spoonacular complexSearch ─────────────────────────────────
+        query = ', '.join(detected_labels)
+        params = {
+            'query': query,
+            'number': 10,
+            'addRecipeInformation': True,
+        }
+
+        for api_key in SPOONACULAR_API_KEY:
+            if api_key in limited_api_keys:
+                continue
+            params['apiKey'] = api_key.strip()
+
+            try:
+                response = requests.get(SPOONACULAR_SEARCH_URL, params=params)
+
+                if response.status_code == 200:
+                    data = response.json()
+                    recipes = data.get('results', [])
+
+                    if not recipes:
+                        return jsonify({'msg': 'No recipes found for detected food'}), 200
+
+                    recommendations = []
+                    for recipe in recipes:
+                        recipe_info   = get_recipe_info(recipe.get('id'))
+                        instructions  = get_recipe_instructions(recipe.get('id'))
+                        combined = {
+                            'id':             recipe_info.get('id'),
+                            'title':          recipe.get('title'),
+                            'image':          recipe.get('image'),
+                            'cookingMinutes': recipe.get('cookingMinutes'),
+                            'summary':        recipe.get('summary'),
+                            'sourceUrl':      recipe.get('sourceUrl'),
+                            'calories':       recipe_info.get('calories'),
+                            'nutrients':      recipe_info.get('nutrients'),
+                            'ingredients':    recipe_info.get('ingredients'),
+                            'instructions':   instructions.get('instructions', []),
+                        }
+                        recommendations.append(combined)
+
+                    return jsonify({
+                        'detected_objects':  detected_labels,
+                        'recommendations':   recommendations,
+                    }), 200
+
+                elif response.status_code == 402:
+                    limited_api_keys.add(api_key)
+                    logging.warning(f"API key {api_key} reached limit.")
+                else:
+                    logging.error(f"Spoonacular error: {response.text}")
+
+            except requests.RequestException as e:
+                logging.error(f"Request error with key {api_key}: {e}")
+
+        return jsonify({'msg': 'All Spoonacular API keys reached their limits'}), 500
+
+    except Exception as e:
+        logger.error(f"detect_food_roboflow error: {e}")
+        return jsonify({'msg': 'An error occurred', 'error': str(e)}), 500
+    finally:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
+
+@jwt_required()
+def save_scanned_recipe():
+    """Lưu công thức đã quét vào DiaryEntry và cập nhật UserDailyLog."""
+    user_id = get_jwt_identity()
+    data = request.json
+    if not data or not data.get('title'):
+        return jsonify({'msg': 'title is required'}), 400
+
+    try:
+        entry_date_str = data.get('entry_date')
+        entry_date = date_type.fromisoformat(entry_date_str) if entry_date_str else date_type.today()
+
+        # 1. Tạo DiaryEntry
+        entry = DiaryEntry(
+            id_user    = user_id,
+            entry_date = entry_date,
+            meal_type  = data.get('meal_type', 'lunch'),
+            meal_name  = data['title'],
+            calories   = float(data.get('calories') or 0),
+            protein_g  = float(data.get('protein') or 0),
+            carbs_g    = float(data.get('carbs') or 0),
+            fat_g      = float(data.get('fat') or 0),
+            image      = data.get('image'),
+        )
+        db.session.add(entry)
+
+        # 2. Upsert UserDailyLog
+        log = UserDailyLog.query.filter_by(id_user=user_id, log_date=entry_date).first()
+        if log:
+            log.calories_intake += entry.calories
+            log.protein_intake  += entry.protein_g
+            log.carb_intake     += entry.carbs_g
+            log.fat_intake      += entry.fat_g
+        else:
+            log = UserDailyLog(
+                id_user         = user_id,
+                log_date        = entry_date,
+                calories_intake = entry.calories,
+                protein_intake  = entry.protein_g,
+                carb_intake     = entry.carbs_g,
+                fat_intake      = entry.fat_g,
+            )
+            db.session.add(log)
+
+        db.session.commit()
+        return jsonify({'msg': 'Recipe saved to diary'}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"save_scanned_recipe error: {e}")
+        return jsonify({'msg': 'Failed to save recipe', 'error': str(e)}), 500
+
+
+@jwt_required()
+def toggle_spoonacular_favourite():
+    """Toggle favourite cho recipe từ Spoonacular (thêm nếu chưa có, xóa nếu đã có).
+    Ảnh Spoonacular sẽ được download về server local để tránh broken link.
+    """
+    user_id = get_jwt_identity()
+    data = request.json
+    if not data or not data.get('spoonacular_id'):
+        return jsonify({'msg': 'spoonacular_id is required'}), 400
+
+    spoonacular_id = int(data['spoonacular_id'])
+
+    try:
+        existing = RecipesFavourite.query.filter_by(
+            id_user=user_id,
+            spoonacular_id=spoonacular_id
+        ).first()
+
+        if existing:
+            db.session.delete(existing)
+            db.session.commit()
+            return jsonify({'msg': 'Removed from favourites', 'is_favourite': False}), 200
+
+        # Download ảnh về local
+        remote_image = data.get('image')
+        local_image = _download_image_local(remote_image)
+
+        fav = RecipesFavourite(
+            id_user        = user_id,
+            spoonacular_id = spoonacular_id,
+            recipe_title   = data.get('title'),
+            recipe_image   = local_image,
+        )
+        db.session.add(fav)
+        db.session.commit()
+        return jsonify({'msg': 'Added to favourites', 'is_favourite': True}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"toggle_spoonacular_favourite error: {e}")
+        return jsonify({'msg': 'Failed to update favourite', 'error': str(e)}), 500
+
+
+def _download_image_local(image_url, subfolder='favourites'):
+    """Download ảnh từ URL về thư mục uploads/favourites/. 
+    Trả về path local, hoặc url gốc nếu download thất bại.
+    """
+    if not image_url:
+        return None
+    try:
+        resp = requests.get(image_url, timeout=10)
+        if resp.status_code != 200:
+            return image_url  # fallback
+        ext = image_url.split('.')[-1].split('?')[0] or 'jpg'
+        ext = ext[:4]  # tránh ext quá dài
+        filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.{ext}"
+        folder = os.path.join(os.getcwd(), 'uploads', subfolder)
+        os.makedirs(folder, exist_ok=True)
+        with open(os.path.join(folder, filename), 'wb') as f:
+            f.write(resp.content)
+        return f"uploads/{subfolder}/{filename}"
+    except Exception as e:
+        logger.warning(f"_download_image_local failed: {e}, using original URL")
+        return image_url  # fallback về URL gốc
+
+
+@jwt_required()
+def get_all_favourites():
+    """Lấy tất cả favourite của user (gộp công thức nội bộ + Spoonacular)."""
+    try:
+        user_id = get_jwt_identity()
+        favs = RecipesFavourite.query\
+            .filter_by(id_user=user_id)\
+            .order_by(RecipesFavourite.saved_at.desc())\
+            .all()
+
+        result = []
+        for fav in favs:
+            if fav.spoonacular_id:
+                result.append({
+                    'source':         'spoonacular',
+                    'spoonacular_id': fav.spoonacular_id,
+                    'title':          fav.recipe_title,
+                    'image':          fav.recipe_image,
+                    'calories':       None,  # không lưu calories khi favourite Spoonacular
+                    'saved_at':       fav.saved_at.isoformat() if fav.saved_at else None,
+                })
+            elif fav.id_recipe:
+                from app.models.model import RecipeInfo, RecipeNutrition
+                recipe = RecipeInfo.query.get(fav.id_recipe)
+                nutrition = RecipeNutrition.query.filter_by(id_recipe=fav.id_recipe).first()
+                if recipe:
+                    result.append({
+                        'source':    'internal',
+                        'id_recipe': recipe.id_recipe,
+                        'title':     recipe.name_recipe,
+                        'image':     recipe.image,
+                        'type':      recipe.type,
+                        'calories':  nutrition.calories if nutrition else None,
+                        'saved_at':  fav.saved_at.isoformat() if fav.saved_at else None,
+                    })
+
+        return jsonify({'favourites': result, 'total': len(result)}), 200
+
+    except Exception as e:
+        logger.error(f"get_all_favourites error: {e}")
+        return jsonify({'msg': 'Failed to fetch favourites', 'error': str(e)}), 500

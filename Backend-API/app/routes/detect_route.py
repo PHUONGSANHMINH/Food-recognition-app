@@ -7,7 +7,11 @@ from app.controllers.detect_controller import (
     recommend_recipes_by_labels,
     get_daily_meal_plan,
     detect_objects,
-    recommend_recipes_spoonacular
+    recommend_recipes_spoonacular,
+    detect_food_roboflow,
+    save_scanned_recipe,
+    toggle_spoonacular_favourite,
+    get_all_favourites,
 )
 from flasgger import swag_from
 
@@ -332,3 +336,133 @@ def recommend_by_keyword_view(keyword):
 })
 def daily_meal_plan_view():
     return get_daily_meal_plan()
+
+
+@detect_bp.route('/detect-food-roboflow', methods=['POST'])
+def detect_food_roboflow_view():
+    """Detect Food via Roboflow and Recommend Recipes
+    ---
+    tags:
+      - Detection
+    summary: Scan Food with Roboflow + Spoonacular
+    description: >
+      Phát hiện món ăn từ ảnh qua Roboflow Serverless API,
+      sau đó tìm kiếm công thức liên quan qua Spoonacular (trả về
+      nutrients, ingredients, instructions đầy đủ).
+    consumes:
+      - multipart/form-data
+    parameters:
+      - name: Authorization
+        in: header
+        type: string
+        required: true
+        description: "Bearer <JWT token>"
+      - name: image
+        in: formData
+        type: file
+        required: true
+        description: Ảnh món ăn cần nhận diện
+    responses:
+      200:
+        description: Kết quả phát hiện và đề xuất công thức
+      400:
+        description: Thiếu ảnh hoặc định dạng không hợp lệ
+      401:
+        description: Chưa đăng nhập
+      500:
+        description: Lỗi server
+    """
+    return detect_food_roboflow()
+
+
+@detect_bp.route('/save-recipe', methods=['POST'])
+def save_recipe_view():
+    """Save Scanned Recipe to Diary
+    ---
+    tags:
+      - Detection
+    summary: Lưu công thức từ scan vào diary_entry và user_daily_log
+    consumes:
+      - application/json
+    parameters:
+      - name: Authorization
+        in: header
+        type: string
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required: [title]
+          properties:
+            title:     {type: string}
+            calories:  {type: number}
+            protein:   {type: number}
+            carbs:     {type: number}
+            fat:       {type: number}
+            image:     {type: string}
+            meal_type: {type: string, example: lunch}
+            entry_date:{type: string, example: "2026-06-01"}
+    responses:
+      201:
+        description: Đã lưu thành công
+      400:
+        description: Thiếu title
+    """
+    return save_scanned_recipe()
+
+
+@detect_bp.route('/favourite', methods=['POST'])
+def toggle_favourite_view():
+    """Toggle Spoonacular Recipe Favourite
+    ---
+    tags:
+      - Detection
+    summary: Thêm hoặc xóa recipe khỏi danh sách yêu thích
+    consumes:
+      - application/json
+    parameters:
+      - name: Authorization
+        in: header
+        type: string
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required: [spoonacular_id]
+          properties:
+            spoonacular_id: {type: integer}
+            title:          {type: string}
+            image:          {type: string}
+    responses:
+      200:
+        description: Đã xóa khỏi favourites
+      201:
+        description: Đã thêm vào favourites
+    """
+    return toggle_spoonacular_favourite()
+
+
+@detect_bp.route('/favourites', methods=['GET'])
+def get_favourites_view():
+    """Get All User Favourites
+    ---
+    tags:
+      - Detection
+    summary: Lấy tất cả favourite của user (nội bộ + Spoonacular)
+    parameters:
+      - name: Authorization
+        in: header
+        type: string
+        required: true
+    responses:
+      200:
+        description: Danh sách favourites
+      401:
+        description: Chưa đăng nhập
+    """
+    return get_all_favourites()
+

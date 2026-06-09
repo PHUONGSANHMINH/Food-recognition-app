@@ -146,14 +146,14 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   imageBackground: {
-    flex: 1,
+    flex: 1.4,
     justifyContent: 'space-between',
   },
   safeArea: {
     flex: 1,
   },
   logoText: {
-    color: '#FFC107',
+    color: '#FFD700',
     fontSize: 24,
     fontWeight: 'bold',
     marginLeft: 20,

@@ -18,8 +18,14 @@ from app.controllers.recipes_controller import (
     update_recipe,
     delete_recipe,
     approve_recipes,
-    get_top_rated_recipes
+    get_top_rated_recipes,
+    get_search_history,
+    add_search_history,
+    delete_search_history_item,
+    clear_search_history,
+    search_spoonacular_by_keyword,
 )
+
 
 recipe_bp = Blueprint('recipe', __name__)
 
@@ -128,6 +134,50 @@ def get_recipes_view():
 })
 def get_recipes_publish_view():
     return get_recipes_publish()
+
+@recipe_bp.route('/search-spoonacular', methods=['GET'])
+@swag_from({
+    'tags': ['Recipes'],
+    'summary': 'Search Recipes on Spoonacular',
+    'description': 'Search recipes by keyword using the Spoonacular API',
+    'parameters': [
+        {
+            'name': 'query',
+            'in': 'query',
+            'type': 'string',
+            'required': True,
+            'description': 'Keyword to search for recipes'
+        },
+        {
+            'name': 'number',
+            'in': 'query',
+            'type': 'integer',
+            'required': False,
+            'default': 20,
+            'description': 'Number of results to return'
+        }
+    ],
+    'responses': {
+        200: {
+            'description': 'List of recipes from Spoonacular',
+            'schema': {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'spoonacular_id': {'type': 'integer'},
+                        'title': {'type': 'string'},
+                        'image': {'type': 'string'},
+                        'calories': {'type': 'number'},
+                        'source': {'type': 'string'}
+                    }
+                }
+            }
+        }
+    }
+})
+def search_spoonacular_view():
+    return search_spoonacular_by_keyword()
 
 @recipe_bp.route('/get-recipes-unapproved', methods=['GET'])
 @swag_from({
@@ -924,3 +974,22 @@ def approve_recipes_view():
 })
 def get_top_rated_recipes_view():
     return get_top_rated_recipes()
+
+
+# ── Search History Routes ─────────────────────────────────────────────────────
+
+@recipe_bp.route('/search-history', methods=['GET'])
+def get_search_history_view():
+    return get_search_history()
+
+@recipe_bp.route('/search-history', methods=['POST'])
+def add_search_history_view():
+    return add_search_history()
+
+@recipe_bp.route('/search-history/<string:keyword>', methods=['DELETE'])
+def delete_search_history_view(keyword):
+    return delete_search_history_item(keyword)
+
+@recipe_bp.route('/search-history', methods=['DELETE'])
+def clear_search_history_view():
+    return clear_search_history()

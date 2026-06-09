@@ -71,3 +71,4 @@ Werkzeug==3.0.3
 psycopg2-binary==2.9.10
 gunicorn==22.0.0
 google-generativeai>=0.8.0
+inference-sdk>=0.9.0

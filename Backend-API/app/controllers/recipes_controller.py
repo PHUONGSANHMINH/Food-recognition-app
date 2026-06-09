@@ -2,11 +2,20 @@ from flask import jsonify, request
 from app import db
 import os
 import json
+import requests
+import logging
 from werkzeug.utils import secure_filename
 from datetime import datetime
-from app.models.model import RecipeInfo, Rating, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin  
+from app.models.model import RecipeInfo, Rating, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin, SearchHistory  
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import desc, func
+
+logger_rc = logging.getLogger(__name__)
+
+# ── Spoonacular config (tái sử dụng từ detect_controller, lazy import để tránh circular) ──
+def _get_spoonacular_config():
+    from app.controllers.detect_controller import SPOONACULAR_API_KEY, SPOONACULAR_SEARCH_URL, limited_api_keys
+    return SPOONACULAR_API_KEY, SPOONACULAR_SEARCH_URL, limited_api_keys
 
 # Cấu hình upload
 UPLOAD_FOLDER = 'uploads'
@@ -299,7 +308,7 @@ def get_total_records():
     query = RecipeInfo.query
 
     if search:
-        query = query.filter(RecipeInfo.name_recipe.like(f'%{search}%'))
+        query = query.filter(func.lower(RecipeInfo.name_recipe).like(f'%' + search.lower() + '%'))
     
     # Đếm tổng số công thức
     total_records = query.count()
@@ -358,22 +367,83 @@ def get_recipes_publish():
     query = RecipeInfo.query   
     query = query.filter(RecipeInfo.status == 'Published')
     if search:
-        query = query.filter(RecipeInfo.name_recipe.like(f'%{search}%'))
+        query = query.filter(func.lower(RecipeInfo.name_recipe).like('%' + search.lower() + '%'))
 
     recipes = query.paginate(page=page, per_page=limit, error_out=False)
 
     recipes_data = []
     for recipe in recipes.items:
+        nutrition = RecipeNutrition.query.filter_by(id_recipe=recipe.id_recipe).first()
         recipes_data.append({
             'id_recipe': recipe.id_recipe,
             'name_recipe': recipe.name_recipe,
             'image': recipe.image,
             'type': recipe.type,
             'status': recipe.status,
-            'summary': recipe.summary
+            'summary': recipe.summary,
+            'calories': nutrition.calories if nutrition else None
         })
 
     return jsonify(recipes_data)
+
+
+def search_spoonacular_by_keyword():
+    """Tìm kiếm công thức trên Spoonacular theo từ khoá. Trả về list nhẹ để hiển thị card."""
+    query = request.args.get('query', '', type=str).strip()
+    number = request.args.get('number', 20, type=int)
+
+    if not query:
+        return jsonify([]), 200
+
+    try:
+        SPOONACULAR_API_KEY, SPOONACULAR_SEARCH_URL, limited_api_keys = _get_spoonacular_config()
+    except Exception as e:
+        logger_rc.error(f"Spoonacular config error: {e}")
+        return jsonify([]), 200
+
+    params = {
+        'query': query,
+        'number': number,
+        'addRecipeNutrition': True,
+    }
+
+    for api_key in SPOONACULAR_API_KEY:
+        if api_key in limited_api_keys:
+            continue
+        params['apiKey'] = api_key.strip()
+        try:
+            resp = requests.get(SPOONACULAR_SEARCH_URL, params=params, timeout=10)
+            if resp.status_code == 200:
+                data = resp.json()
+                results = []
+                for r in data.get('results', []):
+                    # Lấy calories từ nutrition nếu có (addRecipeNutrition=True)
+                    calories = None
+                    nutrition = r.get('nutrition', {})
+                    if nutrition:
+                        for n in nutrition.get('nutrients', []):
+                            if n.get('name', '').lower() == 'calories':
+                                calories = n.get('amount')
+                                break
+                    results.append({
+                        'spoonacular_id': r.get('id'),
+                        'title': r.get('title'),
+                        'image': r.get('image'),
+                        'calories': calories,
+                        'source': 'spoonacular',
+                    })
+                return jsonify(results), 200
+            elif resp.status_code == 402:
+                limited_api_keys.add(api_key)
+                logger_rc.warning(f"Spoonacular key {api_key} reached limit.")
+            else:
+                logger_rc.error(f"Spoonacular error {resp.status_code}: {resp.text[:200]}")
+        except requests.RequestException as e:
+            logger_rc.error(f"Request error with Spoonacular key {api_key}: {e}")
+
+    # Tất cả key đều hết quota — trả về mảng rỗng thay vì lỗi 500
+    return jsonify([]), 200
+
 
 def get_recipes_unapproved():
     page = request.args.get('page', 1, type=int)
@@ -740,4 +810,80 @@ def get_top_rated_recipes():
             
         return jsonify({'recommendations': recipes_data}), 200
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SEARCH HISTORY
+# ─────────────────────────────────────────────────────────────────────────────
+
+@jwt_required()
+def get_search_history():
+    """Lấy lịch sử tìm kiếm của user hiện tại (tối đa 10 từ khóa gần nhất)"""
+    try:
+        current_user_id = get_jwt_identity()
+        history = SearchHistory.query\
+            .filter_by(id_user=current_user_id)\
+            .order_by(SearchHistory.searched_at.desc())\
+            .limit(10).all()
+        data = [{'keyword': h.keyword, 'searched_at': h.searched_at.isoformat()} for h in history]
+        return jsonify({'history': data}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@jwt_required()
+def add_search_history():
+    """Thêm từ khóa vào lịch sử (UPSERT — nếu đã có thì cập nhật thời gian)"""
+    try:
+        current_user_id = get_jwt_identity()
+        data = request.get_json()
+        keyword = (data.get('keyword') or '').strip()
+        if not keyword:
+            return jsonify({'error': 'keyword is required'}), 400
+
+        existing = SearchHistory.query.filter_by(
+            id_user=current_user_id, keyword=keyword
+        ).first()
+
+        if existing:
+            existing.searched_at = datetime.utcnow()
+        else:
+            new_entry = SearchHistory(id_user=current_user_id, keyword=keyword)
+            db.session.add(new_entry)
+
+        db.session.commit()
+        return jsonify({'message': 'Search history updated'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@jwt_required()
+def delete_search_history_item(keyword):
+    """Xóa 1 từ khóa khỏi lịch sử"""
+    try:
+        current_user_id = get_jwt_identity()
+        entry = SearchHistory.query.filter_by(
+            id_user=current_user_id, keyword=keyword
+        ).first()
+        if entry:
+            db.session.delete(entry)
+            db.session.commit()
+        return jsonify({'message': 'Deleted'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@jwt_required()
+def clear_search_history():
+    """Xóa toàn bộ lịch sử tìm kiếm của user"""
+    try:
+        current_user_id = get_jwt_identity()
+        SearchHistory.query.filter_by(id_user=current_user_id).delete()
+        db.session.commit()
+        return jsonify({'message': 'Search history cleared'}), 200
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500

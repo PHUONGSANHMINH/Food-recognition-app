@@ -231,10 +231,13 @@ export default function HomeScreen() {
         {/* Recommended Meals */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recommended Meals</Text>
-          <TouchableOpacity><Text style={styles.seeAllText}>See all</Text></TouchableOpacity>
         </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.horizontalScroll}
+          contentContainerStyle={styles.horizontalScrollContent}
+        >
           {recommendedMeals.map((meal, index) => (
             <View key={`meal-${index}`} style={styles.mealCard}>
               <Image
@@ -256,8 +259,12 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Suggested Recipes</Text>
         </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.horizontalScroll}
+          contentContainerStyle={styles.horizontalScrollContent}
+        >
           {topRecipes.map((recipe, index) => (
             <View key={`recipe-${index}`} style={styles.recipeCard}>
               <View style={styles.recipeImageContainer}>
@@ -299,7 +306,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F7FA',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
-  scrollContent: { paddingBottom: 50 },
+  scrollContent: { paddingBottom: 110 },
 
   // Header
   header: {
@@ -411,6 +418,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#666' },
   seeAllText: { fontSize: 14, color: '#3F805A', fontWeight: '600' },
   horizontalScroll: { paddingLeft: 20 },
+  horizontalScrollContent: { paddingRight: 20, paddingBottom: 15, paddingTop: 5 },
 
   // Meal Card
   mealCard: {
@@ -419,13 +427,18 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-    overflow: 'hidden',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  mealImage: { width: '100%', height: 120, resizeMode: 'cover' },
+  mealImage: {
+    width: '100%',
+    height: 120,
+    resizeMode: 'cover',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
   mealInfo: { padding: 15 },
   mealTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 8 },
   mealDetails: {
@@ -443,14 +456,19 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-    overflow: 'hidden',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
   },
   recipeImageContainer: { position: 'relative' },
-  recipeImage: { width: '100%', height: 140, resizeMode: 'cover' },
+  recipeImage: {
+    width: '100%',
+    height: 140,
+    resizeMode: 'cover',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
   heartBtn: { position: 'absolute', top: 10, right: 10, padding: 8 },
   recipeInfo: { padding: 15 },
   tagsContainer: { flexDirection: 'row', marginBottom: 8 },

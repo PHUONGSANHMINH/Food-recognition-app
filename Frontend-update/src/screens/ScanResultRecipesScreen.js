@@ -49,7 +49,11 @@ export default function ScanResultRecipesScreen({ route, navigation }) {
         const isFav = !!favourites[id];
 
         return (
-            <View style={styles.card}>
+            <TouchableOpacity
+                style={styles.card}
+                onPress={() => navigation.navigate('RecipeDetail', { recipe: item })}
+                activeOpacity={0.9}
+            >
                 {/* Ảnh */}
                 <View style={styles.cardImageWrap}>
                     {imageUrl ? (
@@ -61,7 +65,7 @@ export default function ScanResultRecipesScreen({ route, navigation }) {
                     )}
                     <TouchableOpacity
                         style={styles.heartBtn}
-                        onPress={() => handleFavourite(id)}
+                        onPress={(e) => { e.stopPropagation(); handleFavourite(id); }}
                         activeOpacity={0.8}
                     >
                         <Ionicons
@@ -90,7 +94,7 @@ export default function ScanResultRecipesScreen({ route, navigation }) {
                         )}
                     </View>
                 </View>
-            </View>
+            </TouchableOpacity>
         );
     };
 

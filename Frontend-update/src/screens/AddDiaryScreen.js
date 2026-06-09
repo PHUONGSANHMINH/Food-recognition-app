@@ -17,6 +17,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Dropdown } from 'react-native-element-dropdown';
 
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
@@ -26,6 +27,13 @@ export default function AddDiaryScreen({ navigation }) {
     const [mealName, setMealName] = useState('');
     const [calories, setCalories] = useState(0);
     const [mealType, setMealType] = useState('Breakfast');
+    const [dropdownItems] = useState([
+        { label: 'Breakfast', value: 'Breakfast' },
+        { label: 'Lunch', value: 'Lunch' },
+        { label: 'Dinner', value: 'Dinner' },
+        { label: 'Snack', value: 'Snack' }
+    ]);
+
     const [image, setImage] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
@@ -258,13 +266,17 @@ export default function AddDiaryScreen({ navigation }) {
                     <TouchableOpacity onPress={decrement} style={styles.stepperBtn}>
                         <Ionicons name="remove" size={20} color="#3F805A" />
                     </TouchableOpacity>
-                    <TextInput
-                        style={styles.calorieInput}
-                        keyboardType="numeric"
-                        value={String(calories)}
-                        onChangeText={handleCaloriesText}
-                    />
-                    <Text style={styles.kcalLabel}>Kcal</Text>
+
+                    <View style={styles.calorieCenter}>
+                        <TextInput
+                            style={styles.calorieInput}
+                            keyboardType="numeric"
+                            value={String(calories)}
+                            onChangeText={handleCaloriesText}
+                        />
+                        <Text style={styles.kcalLabel}>Kcal</Text>
+                    </View>
+
                     <TouchableOpacity onPress={increment} style={styles.stepperBtn}>
                         <Ionicons name="add" size={20} color="#3F805A" />
                     </TouchableOpacity>
@@ -285,20 +297,21 @@ export default function AddDiaryScreen({ navigation }) {
                 />
                 {errors.mealName && <Text style={styles.errorText}>{errors.mealName}</Text>}
 
-                {/* Meal Type Chips */}
+                {/* Meal Type chips -> Dropdown */}
                 <Text style={styles.label}>Category</Text>
                 <View style={styles.pickerContainer}>
-                    {MEAL_TYPES.map((type) => (
-                        <TouchableOpacity
-                            key={type}
-                            style={[styles.typeChip, mealType === type && styles.typeChipSelected]}
-                            onPress={() => setMealType(type)}
-                        >
-                            <Text style={[styles.typeChipText, mealType === type && styles.typeChipTextSelected]}>
-                                {type}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                    <Dropdown
+                        style={styles.dropdownStyle}
+                        data={dropdownItems}
+                        labelField="label"
+                        valueField="value"
+                        value={mealType}
+                        onChange={item => {
+                            setMealType(item.value);
+                        }}
+                        selectedTextStyle={styles.dropdownText}
+                        itemTextStyle={styles.dropdownText}
+                    />
                 </View>
 
                 {/* Image Upload */}
@@ -397,14 +410,15 @@ const styles = StyleSheet.create({
 
     // Stepper
     calorieRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+    calorieCenter: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20 },
     stepperBtn: {
         width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: '#3F805A',
         alignItems: 'center', justifyContent: 'center',
     },
     calorieInput: {
-        fontSize: 40, fontWeight: 'bold', color: '#111', textAlign: 'center', minWidth: 100, paddingHorizontal: 8,
+        fontSize: 40, fontWeight: 'bold', color: '#111', textAlign: 'center', paddingHorizontal: 4,
     },
-    kcalLabel: { fontSize: 18, color: '#888', marginLeft: 4, alignSelf: 'flex-end', marginBottom: 6 },
+    kcalLabel: { fontSize: 18, color: '#888', marginLeft: 4, alignSelf: 'center' },
 
     label: { fontSize: 14, fontWeight: '600', color: '#333', marginTop: 22, marginBottom: 8 },
     requiredStar: { color: '#EF4444' },
@@ -415,15 +429,21 @@ const styles = StyleSheet.create({
     },
     inputError: { borderColor: '#EF4444' },
 
-    // Meal type chips
-    pickerContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    typeChip: {
-        paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-        borderWidth: 1.5, borderColor: '#E5E7EB', backgroundColor: '#fff',
+    // Category Dropdown
+    pickerContainer: { zIndex: 1, elevation: 1 },
+    dropdownStyle: {
+        borderColor: '#E5E7EB',
+        borderWidth: 1,
+        borderRadius: 10,
+        backgroundColor: '#fff',
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        height: 50,
     },
-    typeChipSelected: { borderColor: '#3F805A', backgroundColor: '#E8F5E9' },
-    typeChipText: { fontSize: 13, color: '#888', fontWeight: '500' },
-    typeChipTextSelected: { color: '#3F805A', fontWeight: '700' },
+    dropdownText: {
+        fontSize: 15,
+        color: '#111',
+    },
 
     // Image
     imageUploadBox: {

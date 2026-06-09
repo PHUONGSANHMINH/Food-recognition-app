@@ -176,7 +176,7 @@ export default function ScanScreen({ navigation }) {
             name: asset.fileName || 'photo.jpg',
         });
 
-        const res = await fetch(`${API_URL}/api/detect/detect-recommend-spoonacular`, {
+        const res = await fetch(`${API_URL}/api/detect/detect-food-roboflow`, {
             method: 'POST',
             body: formData,
             headers: {
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 30,
         marginTop: 'auto',
-        paddingBottom: Platform.OS === 'ios' ? 10 : 20,
+        paddingBottom: Platform.OS === 'ios' ? 120 : 110,
         paddingTop: 14,
     },
     galleryBtn: { alignItems: 'center', width: 70 },
