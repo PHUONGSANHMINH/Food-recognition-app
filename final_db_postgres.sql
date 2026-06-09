@@ -118,11 +118,16 @@ CREATE TABLE "recipes_contribution" (
 INSERT INTO "recipes_contribution" VALUES (1,1,1,'2024-12-19 01:44:02'),(2,1,1,'2024-11-19 01:44:02'),(3,1,1,'2024-10-19 01:44:02'),(4,1,1,'2024-12-19 01:44:02'),(5,1,1,'2024-12-19 01:44:02'),(6,1,1,'2024-12-19 01:44:02'),(7,1,1,'2024-12-19 01:44:02'),(8,1,1,'2024-12-19 01:44:02'),(9,1,1,'2024-12-19 01:44:02'),(10,1,1,'2024-12-19 01:44:02'),(11,1,1,'2024-12-19 01:44:02'),(12,1,1,'2024-12-19 01:44:02'),(13,1,1,'2024-12-19 01:44:02'),(14,1,1,'2024-12-19 01:44:02'),(15,1,1,'2024-12-19 01:44:02'),(16,1,1,'2024-12-19 01:44:02'),(17,1,1,'2024-12-19 01:44:02'),(18,1,1,'2024-12-19 01:44:02'),(19,1,1,'2024-12-19 01:44:02'),(20,1,1,'2024-12-19 01:44:02'),(21,1,1,'2024-12-19 01:44:02'),(22,1,1,'2024-12-19 01:44:02'),(23,1,1,'2024-12-19 01:44:02'),(24,1,1,'2024-12-19 01:44:02'),(25,1,1,'2024-12-19 01:44:02'),(26,1,1,'2024-12-19 01:44:02'),(27,1,1,'2024-12-19 01:44:02'),(28,1,1,'2024-12-19 01:44:02'),(29,1,1,'2024-12-19 01:44:02'),(30,1,1,'2024-12-19 01:44:02'),(31,1,1,'2024-12-19 01:44:02'),(32,1,1,'2024-12-19 01:44:02'),(33,1,1,'2024-12-19 01:44:02'),(34,1,1,'2024-12-19 01:44:02'),(35,1,1,'2024-12-19 01:44:02'),(36,1,1,'2024-12-19 01:44:02'),(37,1,1,'2024-12-19 01:44:02'),(38,1,1,'2024-12-19 01:44:02'),(39,1,1,'2024-12-19 01:44:02'),(40,1,1,'2024-12-19 01:44:02'),(41,1,1,'2024-12-19 01:44:02'),(42,1,1,'2024-12-19 01:44:02'),(43,1,1,'2024-12-19 01:44:02'),(44,1,1,'2024-12-19 01:44:02'),(45,2,1,'2024-12-19 01:44:02'),(46,2,1,'2024-12-19 01:44:02'),(47,2,1,'2024-12-19 01:44:02'),(48,2,1,'2024-12-19 01:44:02'),(49,2,1,'2024-12-19 01:44:02'),(50,2,1,'2024-12-19 01:44:02'),(51,2,1,'2024-12-19 01:44:02'),(52,2,1,'2024-10-19 01:44:02'),(53,2,1,'2024-10-19 01:44:02'),(54,2,1,'2024-09-19 01:44:02'),(55,2,1,'2024-12-19 01:44:02'),(56,2,0,'2024-12-19 01:44:02'),(57,2,0,'2024-12-19 01:44:02'),(58,2,0,'2024-12-19 01:44:02'),(59,2,2,'2024-12-19 01:44:02'),(60,2,1,'2024-11-19 01:44:02'),(61,2,0,'2024-10-19 01:44:02'),(62,1,0,'2024-12-19 01:44:02');
 DROP TABLE IF EXISTS "recipes_favourite" CASCADE;
 CREATE TABLE "recipes_favourite" (
-  "id_recipe" int NOT NULL,
+  "id" SERIAL NOT NULL,
   "id_user" int NOT NULL,
-  PRIMARY KEY ("id_recipe","id_user") 
+  "id_recipe" int DEFAULT NULL,
+  "spoonacular_id" int DEFAULT NULL,
+  "recipe_title" varchar(255) DEFAULT NULL,
+  "recipe_image" text DEFAULT NULL,
+  "saved_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY ("id") 
 );
-INSERT INTO "recipes_favourite" VALUES (1,2),(5,2),(6,2),(8,2),(9,2),(43,2),(52,2);
+INSERT INTO "recipes_favourite" ("id_user", "id_recipe") VALUES (2,1),(2,5),(2,6),(2,8),(2,9),(2,43),(2,52);
 DROP TABLE IF EXISTS "user" CASCADE;
 CREATE TABLE "user" (
   "id_user" SERIAL NOT NULL,
@@ -133,11 +138,17 @@ CREATE TABLE "user" (
   "reset_code_expiration" TIMESTAMP DEFAULT NULL,
   "reset_attempts" int NOT NULL,
   "status" varchar(50)  DEFAULT NULL,
+  "gender" varchar(10)  DEFAULT NULL,
+  "height" float DEFAULT NULL,
+  "weight" float DEFAULT NULL,
+  "age" int DEFAULT NULL,
   PRIMARY KEY ("id_user") ,
   UNIQUE ("username"),
   UNIQUE ("email")
 );
-INSERT INTO "user" VALUES (1,'admin','scrypt:32768:8:1$nSS2bDUhQyY0hHSw$31b06df7e2302c0ed47bfaf6ebc1cda87a153f453f2dc088763573ae35a7709bcb56e41a08dfa0537e6a09770cad4db91332595b3b206c0734e3309612487a12','admin@gmail.com',NULL,NULL,0,'hidden'),(2,'camly','scrypt:32768:8:1$PVEyzPQcabYcfPSX$2028ccc86c6abd8670760f8193ce4bddce9f77276ee94d62a2e84f8b407b241e60afe857b1187ae074c9ba50457a7c78398b26ff6b03e2f13eaeca1986c33ffe','nguyenthicamly1112@gmail.com','950963','2024-12-17 16:14:21',0,NULL);
+INSERT INTO "user" ("id_user", "username", "password_hash", "email", "reset_code", "reset_code_expiration", "reset_attempts", "status", "gender", "height", "weight", "age") VALUES 
+(1,'admin','scrypt:32768:8:1$nSS2bDUhQyY0hHSw$31b06df7e2302c0ed47bfaf6ebc1cda87a153f453f2dc088763573ae35a7709bcb56e41a08dfa0537e6a09770cad4db91332595b3b206c0734e3309612487a12','admin@gmail.com',NULL,NULL,0,'hidden',NULL,NULL,NULL,NULL),
+(2,'camly','scrypt:32768:8:1$PVEyzPQcabYcfPSX$2028ccc86c6abd8670760f8193ce4bddce9f77276ee94d62a2e84f8b407b241e60afe857b1187ae074c9ba50457a7c78398b26ff6b03e2f13eaeca1986c33ffe','nguyenthicamly1112@gmail.com','950963','2024-12-17 16:14:21',0,NULL,NULL,NULL,NULL,NULL);
 DROP TABLE IF EXISTS "user_daily_nutrition_goal" CASCADE;
 CREATE TABLE "user_daily_nutrition_goal" (
   "id_goal" SERIAL NOT NULL,
@@ -154,6 +165,46 @@ CREATE TABLE "user_daily_nutrition_goal" (
 );
 INSERT INTO "user_daily_nutrition_goal" VALUES (1,2,1600,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 
+DROP TABLE IF EXISTS "user_daily_log" CASCADE;
+CREATE TABLE "user_daily_log" (
+  "id_log" SERIAL NOT NULL,
+  "id_user" int NOT NULL,
+  "log_date" date NOT NULL,
+  "calories_intake" float NOT NULL DEFAULT 0,
+  "protein_intake" float NOT NULL DEFAULT 0,
+  "fat_intake" float NOT NULL DEFAULT 0,
+  "carb_intake" float NOT NULL DEFAULT 0,
+  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY ("id_log"),
+  CONSTRAINT "uq_user_date" UNIQUE ("id_user", "log_date")
+);
+
+DROP TABLE IF EXISTS "diary_entry" CASCADE;
+CREATE TABLE "diary_entry" (
+  "id_entry" SERIAL NOT NULL,
+  "id_user" int NOT NULL,
+  "entry_date" date NOT NULL,
+  "meal_type" varchar(20) NOT NULL,
+  "meal_name" varchar(255) NOT NULL,
+  "calories" float NOT NULL,
+  "protein_g" float DEFAULT 0,
+  "carbs_g" float DEFAULT 0,
+  "fat_g" float DEFAULT 0,
+  "image" text DEFAULT NULL,
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY ("id_entry")
+);
+
+DROP TABLE IF EXISTS "search_history" CASCADE;
+CREATE TABLE "search_history" (
+  "id" SERIAL NOT NULL,
+  "id_user" int NOT NULL,
+  "keyword" varchar(255) NOT NULL,
+  "searched_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "uq_user_keyword" UNIQUE ("id_user", "keyword")
+);
+
 -- Indexes
 CREATE INDEX "csv_export_version_exported_by_idx" ON "csv_export_version" ("exported_by");
 CREATE INDEX "rating_id_recipe_idx" ON "rating" ("id_recipe");
@@ -165,6 +216,9 @@ CREATE INDEX "recipe_vitamin_id_nutrition_idx" ON "recipe_vitamin" ("id_nutritio
 CREATE INDEX "recipes_contribution_id_user_idx" ON "recipes_contribution" ("id_user");
 CREATE INDEX "recipes_favourite_id_user_idx" ON "recipes_favourite" ("id_user");
 CREATE INDEX "user_daily_nutrition_goal_id_user_idx" ON "user_daily_nutrition_goal" ("id_user");
+CREATE INDEX "user_daily_log_id_user_idx" ON "user_daily_log" ("id_user");
+CREATE INDEX "diary_entry_id_user_idx" ON "diary_entry" ("id_user");
+CREATE INDEX "search_history_id_user_idx" ON "search_history" ("id_user");
 
 
 -- Foreign Keys
@@ -180,4 +234,6 @@ ALTER TABLE "recipes_contribution" ADD CONSTRAINT "recipes_contribution_ibfk_2" 
 ALTER TABLE "recipes_favourite" ADD CONSTRAINT "recipes_favourite_ibfk_1" FOREIGN KEY ("id_recipe") REFERENCES "recipe_info" ("id_recipe") ON DELETE RESTRICT ON UPDATE RESTRICT;
 ALTER TABLE "recipes_favourite" ADD CONSTRAINT "recipes_favourite_ibfk_2" FOREIGN KEY ("id_user") REFERENCES "user" ("id_user") ON DELETE RESTRICT ON UPDATE RESTRICT;
 ALTER TABLE "user_daily_nutrition_goal" ADD CONSTRAINT "user_daily_nutrition_goal_ibfk_1" FOREIGN KEY ("id_user") REFERENCES "user" ("id_user") ON DELETE RESTRICT ON UPDATE RESTRICT;
-
+ALTER TABLE "user_daily_log" ADD CONSTRAINT "user_daily_log_ibfk_1" FOREIGN KEY ("id_user") REFERENCES "user" ("id_user") ON DELETE RESTRICT ON UPDATE RESTRICT;
+ALTER TABLE "diary_entry" ADD CONSTRAINT "diary_entry_ibfk_1" FOREIGN KEY ("id_user") REFERENCES "user" ("id_user") ON DELETE RESTRICT ON UPDATE RESTRICT;
+ALTER TABLE "search_history" ADD CONSTRAINT "search_history_ibfk_1" FOREIGN KEY ("id_user") REFERENCES "user" ("id_user") ON DELETE CASCADE ON UPDATE RESTRICT;
