@@ -49,7 +49,7 @@ const Header = () => {
 
   return (
     <>
-      <div className="header bg-gradient-warning pb-8 pt-5 pt-md-8">
+      <div className="header bg-gradient-success pb-8 pt-5 pt-md-8">
         <Container fluid>
           <div className="header-body">
             {/* Card stats */}
@@ -123,7 +123,7 @@ const Header = () => {
                     <Row>
                       <div className="col">
                         <CardTitle tag="h5" className="text-uppercase text-muted mb-0">
-                        Unapproved contribution
+                          Unapproved contribution
                         </CardTitle>
                         <span className="h2 font-weight-bold mb-0">
                           {stats.totalPendingContributions}

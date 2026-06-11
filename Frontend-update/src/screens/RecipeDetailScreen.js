@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
-const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'];
+const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
 // Helper image URI
 const toImageUri = (path) => {
@@ -29,6 +29,8 @@ export default function RecipeDetailScreen({ route, navigation }) {
     const [favLoading, setFavLoading] = useState(false);
     const [saveLoading, setSaveLoading] = useState(false);
     const [showMealModal, setShowMealModal] = useState(false);
+    const [showFavModal, setShowFavModal] = useState(false);
+    const [favModalMsg, setFavModalMsg] = useState('');
 
     // Nếu là recipe nội bộ (có id_recipe), fetch đầy đủ chi tiết
     useEffect(() => {
@@ -114,18 +116,21 @@ export default function RecipeDetailScreen({ route, navigation }) {
                 res = await fetch(`${API_URL}/api/detect/favourite`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                    body: JSON.stringify({ spoonacular_id: recipe.id, title, image: imageUrl }),
+                    body: JSON.stringify({ spoonacular_id: recipe.id || recipe.spoonacular_id, title, image: imageUrl }),
                 });
             }
             const data = await res.json();
             if (res.ok) {
                 setIsFavourite(data.is_favourite);
-                Alert.alert('', data.msg);
+                setFavModalMsg(data.msg || 'Added to favorite Successfully');
+                setShowFavModal(true);
             } else {
-                Alert.alert('Lỗi', data.msg || 'Không thể cập nhật yêu thích.');
+                setFavModalMsg(data.msg || 'Không thể cập nhật yêu thích.');
+                setShowFavModal(true);
             }
         } catch {
-            Alert.alert('Lỗi', 'Không thể kết nối server.');
+            setFavModalMsg('Không thể kết nối server.');
+            setShowFavModal(true);
         } finally {
             setFavLoading(false);
         }
@@ -159,12 +164,15 @@ export default function RecipeDetailScreen({ route, navigation }) {
             });
             const data = await res.json();
             if (res.ok) {
-                Alert.alert('✅ Đã lưu', `"${title}" đã được thêm vào ${mealType}.`);
+                setFavModalMsg(`"${title}" đã được thêm vào ${mealType}.`);
+                setShowFavModal(true);
             } else {
-                Alert.alert('Lỗi', data.msg || 'Không thể lưu công thức.');
+                setFavModalMsg(data.msg || 'Không thể lưu công thức.');
+                setShowFavModal(true);
             }
         } catch {
-            Alert.alert('Lỗi', 'Không thể kết nối server.');
+            setFavModalMsg('Không thể kết nối server.');
+            setShowFavModal(true);
         } finally {
             setSaveLoading(false);
         }
@@ -328,7 +336,7 @@ export default function RecipeDetailScreen({ route, navigation }) {
                 <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowMealModal(false)}>
                     <View style={styles.modalSheet}>
                         <View style={styles.modalHandle} />
-                        <Text style={styles.modalTitle}>Chọn bữa ăn</Text>
+                        <Text style={styles.modalTitle}>Choose your meal</Text>
                         {MEAL_TYPES.map(mt => (
                             <TouchableOpacity key={mt} style={styles.modalOption} onPress={() => handleSaveRecipe(mt)}>
                                 <Text style={styles.modalOptionText}>{mt.charAt(0).toUpperCase() + mt.slice(1)}</Text>
@@ -339,10 +347,29 @@ export default function RecipeDetailScreen({ route, navigation }) {
                             style={[styles.modalOption, { borderTopWidth: 1, borderTopColor: '#f0f0f0' }]}
                             onPress={() => setShowMealModal(false)}
                         >
-                            <Text style={[styles.modalOptionText, { color: '#999' }]}>Huỷ</Text>
+                            <Text style={[styles.modalOptionText, { color: '#999' }]}>Cancel</Text>
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
+            </Modal>
+
+            {/* Success/Alert Modal */}
+            <Modal
+                transparent visible={showFavModal}
+                animationType="fade"
+                onRequestClose={() => setShowFavModal(false)}
+            >
+                <View style={styles.alertOverlay}>
+                    <View style={styles.alertBox}>
+                        <Text style={styles.alertMsg}>{favModalMsg}</Text>
+                        <TouchableOpacity
+                            style={styles.alertBtn}
+                            onPress={() => setShowFavModal(false)}
+                        >
+                            <Text style={styles.alertBtnText}>OK</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             </Modal>
         </SafeAreaView>
     );
@@ -455,4 +482,47 @@ const styles = StyleSheet.create({
         alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16,
     },
     modalOptionText: { fontSize: 15, color: '#333' },
+
+    // Alert Modal Styles
+    alertOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    alertBox: {
+        width: '80%',
+        backgroundColor: '#fff',
+        borderRadius: 15,
+        borderWidth: 2,
+        borderColor: '#3F805A',
+        padding: 24,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 5,
+    },
+    alertMsg: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#111',
+        textAlign: 'center',
+        marginBottom: 20,
+        lineHeight: 22,
+    },
+    alertBtn: {
+        backgroundColor: '#3F805A',
+        paddingHorizontal: 30,
+        paddingVertical: 10,
+        borderRadius: 8,
+        minWidth: 100,
+        alignItems: 'center',
+    },
+    alertBtnText: {
+        color: '#fff',
+        fontSize: 15,
+        fontWeight: 'bold',
+    },
 });

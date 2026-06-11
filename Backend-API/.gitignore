@@ -28,3 +28,4 @@ fix_sequence.py
 # IDE
 .vscode/
 .idea/
+.env/

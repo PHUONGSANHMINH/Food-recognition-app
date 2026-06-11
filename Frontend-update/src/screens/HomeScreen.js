@@ -25,7 +25,7 @@ const calcPct = (intake, goal) => {
 };
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -239,7 +239,19 @@ export default function HomeScreen() {
           contentContainerStyle={styles.horizontalScrollContent}
         >
           {recommendedMeals.map((meal, index) => (
-            <View key={`meal-${index}`} style={styles.mealCard}>
+            <TouchableOpacity
+              key={`meal-${index}`}
+              style={styles.mealCard}
+              activeOpacity={0.9}
+              onPress={() => navigation.navigate('RecipeDetailScreen', {
+                recipe: {
+                  id_recipe: meal.id_recipe,
+                  name_recipe: meal.recipe_name,
+                  image: meal.image,
+                  calories: meal.calories,
+                }
+              })}
+            >
               <Image
                 source={meal.image ? { uri: `${API_URL}/api/file/get-file/recipes/${meal.image}` } : require('../../assets/Food.png')}
                 style={styles.mealImage}
@@ -251,7 +263,7 @@ export default function HomeScreen() {
                   <Text style={styles.mealType}>{meal.type_label}</Text>
                 </View>
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
         </ScrollView>
 
@@ -266,13 +278,18 @@ export default function HomeScreen() {
           contentContainerStyle={styles.horizontalScrollContent}
         >
           {topRecipes.map((recipe, index) => (
-            <View key={`recipe-${index}`} style={styles.recipeCard}>
+            <TouchableOpacity
+              key={`recipe-${index}`}
+              style={styles.recipeCard}
+              activeOpacity={0.9}
+              onPress={() => navigation.navigate('RecipeDetailScreen', { recipe })}
+            >
               <View style={styles.recipeImageContainer}>
                 <Image
                   source={recipe.image ? { uri: `${API_URL}/api/file/get-file/recipes/${recipe.image}` } : require('../../assets/Food.png')}
                   style={styles.recipeImage}
                 />
-                <TouchableOpacity style={styles.heartBtn}>
+                <TouchableOpacity style={styles.heartBtn} onPress={(e) => e.stopPropagation()}>
                   <Ionicons name="heart-outline" size={20} color="white" />
                 </TouchableOpacity>
               </View>
@@ -291,8 +308,22 @@ export default function HomeScreen() {
                   <Text style={styles.recipeCaloriesText}>{Math.round(recipe.calories)} kcal</Text>
                 </View>
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
+
+          {/* See more card */}
+          {topRecipes.length > 0 && (
+            <TouchableOpacity
+              style={styles.seeMoreCard}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('Recipes')}
+            >
+              <View style={styles.seeMoreCircle}>
+                <Ionicons name="arrow-forward" size={30} color="#3F805A" />
+              </View>
+              <Text style={styles.seeMoreText}>Xem tất cả</Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
 
       </ScrollView>
@@ -486,4 +517,32 @@ const styles = StyleSheet.create({
   recipeDetails: { flexDirection: 'row', alignItems: 'center' },
   recipeTime: { fontSize: 12, color: '#9ca3af', marginLeft: 4 },
   recipeCaloriesText: { fontSize: 12, color: '#9ca3af', marginLeft: 4 },
+  seeMoreCard: {
+    width: 100,
+    height: 250,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  seeMoreCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#E5F3EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  seeMoreText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#3F805A',
+  },
 });

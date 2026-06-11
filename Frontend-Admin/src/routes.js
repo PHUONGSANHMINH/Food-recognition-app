@@ -39,6 +39,7 @@ var routes = [
     component: <Recipes />,
     layout: "/admin",
     displayInSidebar: true,
+    badge: 3
   },
   {
     path: "/accept-recipes",

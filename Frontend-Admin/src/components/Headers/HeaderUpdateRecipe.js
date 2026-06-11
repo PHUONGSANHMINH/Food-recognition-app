@@ -26,13 +26,13 @@ const HeaderUpdateRecipe = () => {
         className="header pb-8 pt-5 pt-lg-8 d-flex align-items-center"
       >
         {/* Mask */}
-        <span className="mask bg-gradient-warning opacity-8" />
+        <span className="mask bg-gradient-success opacity-8" />
         {/* Header container */}
         <Container className="d-flex align-items-center" fluid>
           <Row>
             <Col lg="7" md="10">
               <h1 className="display-2 text-white">Update Recipe</h1>
-              <p className="text-white mt-0 mb-5">           
+              <p className="text-white mt-0 mb-5">
                 You can change the formula information, including user-supplied data, or view the formula information and make no changes.
               </p>
             </Col>

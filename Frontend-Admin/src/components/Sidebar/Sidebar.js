@@ -16,8 +16,10 @@
 
 */
 /*eslint-disable*/
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink as NavLinkRRD, Link } from "react-router-dom";
+import AsyncStorage from "../../AsyncStorageHelper";
+import { jwtDecode } from "jwt-decode";
 // nodejs library to set properties for components
 import { PropTypes } from "prop-types";
 
@@ -56,6 +58,29 @@ var ps;
 
 const Sidebar = (props) => {
   const [collapseOpen, setCollapseOpen] = useState();
+  const [userName, setUserName] = useState("Admin User");
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = await AsyncStorage.getItem("access_token");
+      if (token) {
+        try {
+          const decoded = jwtDecode(token);
+          setUserName(decoded.sub || "Admin User");
+          // If the email is in the payload, we can set it here. 
+          // For now, let's assume it might be in 'email' or just stick to a fallback if not present.
+          if (decoded.email) {
+            setUserEmail(decoded.email);
+          }
+        } catch (error) {
+          console.error("Error decoding token:", error);
+        }
+      }
+    };
+    fetchUserData();
+  }, []);
+
   // verifies if routeName is the one active (in browser input)
   const activeRoute = (routeName) => {
     return props.location.pathname.indexOf(routeName) > -1 ? "active" : "";
@@ -82,12 +107,17 @@ const Sidebar = (props) => {
             >
               <i className={prop.icon} />
               {prop.name}
+              {prop.badge && (
+                <span className="badge badge-pill badge-primary ml-auto">
+                  {prop.badge}
+                </span>
+              )}
             </NavLink>
           </NavItem>
         );
       });
   };
-  
+
 
   const { bgColor, routes, logo } = props;
   let navbarBrandProps;
@@ -119,15 +149,13 @@ const Sidebar = (props) => {
           <span className="navbar-toggler-icon" />
         </button>
         {/* Brand */}
-        {logo ? (
-          <NavbarBrand className="pt-0" {...navbarBrandProps}>
-            <img
-              alt={logo.imgAlt}
-              className="navbar-brand-img"
-              src={logo.imgSrc}
-            />
-          </NavbarBrand>
-        ) : null}
+        <div className="navbar-brand-wrapper">
+          <div className="logo-icon">
+            <i className="ni ni-shop" />
+          </div>
+          <span className="logo-text">Nutrilens</span>
+          <i className="fa fa-chevron-down ml-auto text-muted" style={{ fontSize: "12px" }} />
+        </div>
         {/* User */}
         <Nav className="align-items-center d-md-none">
           <UncontrolledDropdown nav>
@@ -232,6 +260,22 @@ const Sidebar = (props) => {
           </Form>
           {/* Navigation */}
           <Nav navbar>{createLinks(routes)}</Nav>
+
+          <div className="sidebar-footer">
+            <div className="user-profile-card">
+              <div className="avatar-wrapper">
+                <img
+                  alt="..."
+                  className="avatar rounded-circle"
+                  src={require("../../assets/img/theme/chef.png")}
+                />
+              </div>
+              <div className="user-info">
+                <p className="user-name">{userName}</p>
+                <p className="user-email">{userEmail}</p>
+              </div>
+            </div>
+          </div>
 
         </Collapse>
       </Container>

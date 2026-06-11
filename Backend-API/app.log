@@ -92,3 +92,15 @@ WHERE recipes_contribution.accept_contribution = true]
 2026-06-03 08:02:08,413 INFO: Roboflow detected: ['Kimchi Fried Rice'] [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:628]
 2026-06-03 08:02:39,809 INFO: Roboflow detected: ['Pizza'] [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:628]
 2026-06-08 22:20:56,910 INFO: No objects detected [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:183]
+2026-06-10 22:43:45,391 ERROR: toggle_spoonacular_favourite error: (psycopg2.errors.NotNullViolation) null value in column "id_recipe" of relation "recipes_favourite" violates not-null constraint
+DETAIL:  Failing row contains (null, 13, 11, 716300, Plantain Pizza, uploads/favourites/20260610_154345_858b57db.jpg, 2026-06-10 15:43:45.385878).
+
+[SQL: INSERT INTO recipes_favourite (id_user, id_recipe, spoonacular_id, recipe_title, recipe_image, saved_at) VALUES (%(id_user)s, %(id_recipe)s, %(spoonacular_id)s, %(recipe_title)s, %(recipe_image)s, %(saved_at)s) RETURNING recipes_favourite.id]
+[parameters: {'id_user': 13, 'id_recipe': None, 'spoonacular_id': 716300, 'recipe_title': 'Plantain Pizza', 'recipe_image': 'uploads/favourites/20260610_154345_858b57db.jpg', 'saved_at': datetime.datetime(2026, 6, 10, 15, 43, 45, 385878)}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:790]
+2026-06-10 22:45:08,428 ERROR: toggle_spoonacular_favourite error: (psycopg2.errors.NotNullViolation) null value in column "id_recipe" of relation "recipes_favourite" violates not-null constraint
+DETAIL:  Failing row contains (null, 13, 12, 680975, BLT Pizza, uploads/favourites/20260610_154508_d65aa4d4.jpg, 2026-06-10 15:45:08.428642).
+
+[SQL: INSERT INTO recipes_favourite (id_user, id_recipe, spoonacular_id, recipe_title, recipe_image, saved_at) VALUES (%(id_user)s, %(id_recipe)s, %(spoonacular_id)s, %(recipe_title)s, %(recipe_image)s, %(saved_at)s) RETURNING recipes_favourite.id]
+[parameters: {'id_user': 13, 'id_recipe': None, 'spoonacular_id': 680975, 'recipe_title': 'BLT Pizza', 'recipe_image': 'uploads/favourites/20260610_154508_d65aa4d4.jpg', 'saved_at': datetime.datetime(2026, 6, 10, 15, 45, 8, 428642)}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:790]

@@ -23,7 +23,7 @@ import { NavItem, NavLink, Nav, Container, Row, Col } from "reactstrap";
 const Login = () => {
   return (
     <>
-      <footer style={{paddingTop: "18rem"}}>
+      <footer style={{ paddingTop: "18rem" }}>
         <Container>
           <Row className="align-items-center justify-content-xl-between">
             <Col xl="6">
@@ -31,10 +31,10 @@ const Login = () => {
                 © {new Date().getFullYear()}{" "}
                 <a
                   className="font-weight-bold ml-1"
-                  href="https://www.creative-tim.com?ref=adr-auth-footer"
+                  href="#"
                   target="_blank"
                 >
-                  Food Recognition License
+                  Nutrilens
                 </a>
               </div>
             </Col>

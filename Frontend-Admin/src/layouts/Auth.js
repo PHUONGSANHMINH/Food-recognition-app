@@ -31,9 +31,9 @@ const Auth = (props) => {
   const location = useLocation();
 
   React.useEffect(() => {
-    document.body.classList.add("bg-default");
+    document.body.classList.add("bg-secondary");
     return () => {
-      document.body.classList.remove("bg-default");
+      document.body.classList.remove("bg-secondary");
     };
   }, []);
   React.useEffect(() => {
@@ -58,7 +58,7 @@ const Auth = (props) => {
     <>
       <div className="main-content" ref={mainContent}>
         <AuthNavbar />
-        <div className="header bg-gradient-warning py-7 py-lg-8">
+        <div className="header bg-success py-7 py-lg-8">
           <Container>
             <div className="header-body text-center mb-7">
             </div>
@@ -73,7 +73,7 @@ const Auth = (props) => {
               y="0"
             >
               <polygon
-                className="fill-default"
+                className="fill-secondary"
                 points="2560 0 2560 100 0 100"
               />
             </svg>

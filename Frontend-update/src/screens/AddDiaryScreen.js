@@ -13,6 +13,7 @@ import {
     Alert,
     ActivityIndicator,
     Animated,
+    Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -37,6 +38,7 @@ export default function AddDiaryScreen({ navigation }) {
     const [image, setImage] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
+    const [showImagePicker, setShowImagePicker] = useState(false);
 
     // Gemini validation state
     const [validating, setValidating] = useState(false);
@@ -124,24 +126,51 @@ export default function AddDiaryScreen({ navigation }) {
         if (errors.calories) setErrors((e) => ({ ...e, calories: null }));
     };
 
-    // ── Image picker ──────────────────────────────────────────────────────────────
-    const pickImage = async () => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert('Permission required', 'Please allow access to your photo library.');
-            return;
-        }
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: false,
-            quality: 0.85,
-        });
+    // ── Image picker logic ──────────────────────────────────────────────────────
+    const handleImageResult = (result) => {
+        setShowImagePicker(false);
         if (!result.canceled && result.assets?.length > 0) {
             const asset = result.assets[0];
             setImage({ uri: asset.uri, fileName: asset.fileName || 'photo.jpg' });
             setValidResult(null);
             if (errors.image) setErrors((e) => ({ ...e, image: null }));
         }
+    };
+
+    const openCamera = async () => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+            setShowImagePicker(false);
+            Alert.alert('Permission required', 'Please allow access to your camera.');
+            return;
+        }
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 0.85,
+        });
+        handleImageResult(result);
+    };
+
+    const openGallery = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            setShowImagePicker(false);
+            Alert.alert('Permission required', 'Please allow access to your photo library.');
+            return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 0.85,
+        });
+        handleImageResult(result);
+    };
+
+    const pickImage = () => {
+        setShowImagePicker(true);
     };
 
     // ── Validate trước khi submit ─────────────────────────────────────────────────
@@ -377,6 +406,35 @@ export default function AddDiaryScreen({ navigation }) {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
+
+            {/* Custom Image Picker Modal */}
+            <Modal
+                visible={showImagePicker}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowImagePicker(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Upload Photo</Text>
+                        <Text style={styles.modalSubtitle}>Take a photo or choose from your library</Text>
+
+                        <TouchableOpacity style={styles.modalBtnPrimary} onPress={openCamera}>
+                            <Ionicons name="camera" size={20} color="#fff" />
+                            <Text style={styles.modalBtnTextPrimary}>Camera</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.modalBtnPrimary} onPress={openGallery}>
+                            <Ionicons name="images" size={20} color="#fff" />
+                            <Text style={styles.modalBtnTextPrimary}>Library</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setShowImagePicker(false)}>
+                            <Text style={styles.modalBtnTextSecondary}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -448,7 +506,7 @@ const styles = StyleSheet.create({
     // Image
     imageUploadBox: {
         borderWidth: 2, borderColor: '#E5E7EB', borderStyle: 'dashed', borderRadius: 16,
-        height: 160, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fafafa',
+        height: 240, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fafafa',
     },
     imageUploadBoxError: { borderColor: '#EF4444' },
     uploadPlaceholder: { alignItems: 'center', gap: 6 },
@@ -504,4 +562,65 @@ const styles = StyleSheet.create({
         borderRadius: 30, paddingVertical: 14, alignItems: 'center',
     },
     addBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: '85%',
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        padding: 24,
+        borderWidth: 2,
+        borderColor: '#3F805A',
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 24,
+        textAlign: 'center',
+    },
+    modalBtnPrimary: {
+        flexDirection: 'row',
+        width: '100%',
+        backgroundColor: '#3F805A',
+        borderRadius: 12,
+        paddingVertical: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 12,
+        gap: 8,
+    },
+    modalBtnTextPrimary: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    modalBtnSecondary: {
+        width: '100%',
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        paddingVertical: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderColor: '#3F805A',
+    },
+    modalBtnTextSecondary: {
+        color: '#3F805A',
+        fontSize: 16,
+        fontWeight: '600',
+    },
 });

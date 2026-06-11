@@ -204,6 +204,15 @@ export default function DiaryScreen({ navigation }) {
     </View>
   );
 
+  const getDiaryImageUri = (imagePath) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith('http')) return imagePath;
+    // Nếu là full path (đã có API_URL) thì trả về luôn
+    if (imagePath.includes('/api/file/get-file/')) return imagePath;
+    // Còn lại mặc định là file trong diary/
+    return `${API_URL}/api/file/get-file/diary/${imagePath}`;
+  };
+
   const renderFoodItem = ({ item }) => (
     <View style={styles.diaryFoodCard}>
       <View style={styles.diaryFoodTopRow}>
@@ -214,7 +223,7 @@ export default function DiaryScreen({ navigation }) {
         <Image
           source={
             item.image
-              ? { uri: `${API_URL}/api/file/get-file/diary/${item.image}` }
+              ? { uri: getDiaryImageUri(item.image) }
               : require('../../assets/Food.png')
           }
           style={styles.diaryFoodImage}

@@ -51,7 +51,7 @@ const Login = () => {
 
   return (
     <Col lg="5" md="7">
-      <Card className="bg-secondary shadow border-0">
+      <Card className="bg-white shadow-lg border-0" style={{ boxShadow: '0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07)' }}>
         <CardBody className="px-lg-5 py-lg-5">
           <div className="text-center text-muted mb-4">
             <h3>Welcome back to Admin dashboard!</h3>
@@ -91,7 +91,7 @@ const Login = () => {
             </FormGroup>
             {error && <div className="text-danger text-center mb-3">{error}</div>}
             <div className="text-center">
-              <Button className="my-4" color="warning" type="button" onClick={handleLogin}>
+              <Button className="my-4" color="primary" type="button" onClick={handleLogin}>
                 Sign in
               </Button>
             </div>

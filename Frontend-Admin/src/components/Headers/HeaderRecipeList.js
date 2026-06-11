@@ -38,7 +38,7 @@ const Header = () => {
 
   return (
     <>
-      <div className="header bg-gradient-warning pb-8 pt-5 pt-md-8">
+      <div className="header bg-gradient-success pb-8 pt-5 pt-md-8">
         <Container fluid>
           <div className="header-body">
             {/* Card stats */}
@@ -64,7 +64,7 @@ const Header = () => {
                         </div>
                       </Col>
                     </Row>
-                    
+
                   </CardBody>
                 </Card>
               </Col>

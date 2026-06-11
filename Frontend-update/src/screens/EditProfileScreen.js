@@ -181,7 +181,7 @@ export default function EditProfileScreen({ navigation, route }) {
                 placeholder="65"
                 placeholderTextColor="#C4C4C4"
               />
-              <Text style={styles.unitText}>cm</Text>
+              <Text style={styles.unitText}>kg</Text>
             </View>
           </View>
         </View>

@@ -26,15 +26,15 @@ const HeaderAddRecipe = () => {
         className="header pb-8 pt-5 pt-lg-8 d-flex align-items-center"
       >
         {/* Mask */}
-        <span className="mask bg-gradient-warning opacity-8" />
+        <span className="mask bg-gradient-success opacity-8" />
         {/* Header container */}
         <Container className="d-flex align-items-center" fluid>
           <Row>
             <Col lg="7" md="10">
               <h1 className="display-2 text-white">List version csv for recommend system</h1>
               <p className="text-white mt-0 mb-5">
-              You can change the csv version used to make recommendations through the recommendation system.           
-              When changed, the user-side food recommendation function will be suggested based on the corresponding csv data.
+                You can change the csv version used to make recommendations through the recommendation system.
+                When changed, the user-side food recommendation function will be suggested based on the corresponding csv data.
               </p>
             </Col>
           </Row>

@@ -1,0 +1,117 @@
+// Custom Sidebar Styles
+.navbar-vertical {
+    .navbar-brand-wrapper {
+        display: flex;
+        align-items: center;
+        padding: 1.5rem;
+
+        .logo-icon {
+            background-color: #2dce89;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            color: #32325d;
+            font-weight: 700;
+            font-size: 1.5rem;
+            text-transform: none;
+        }
+    }
+
+    .navbar-nav {
+        .nav-item {
+            padding: 0 1rem;
+            margin-bottom: 0.5rem;
+
+            .nav-link {
+                border-radius: 12px;
+                color: #32325d;
+                font-weight: 600;
+                padding: 0.75rem 1rem;
+                transition: all 0.2s ease;
+
+                i {
+                    color: #2dce89 !important;
+                    margin-right: 1rem;
+                    min-width: 1.5rem;
+                    font-size: 1.1rem;
+                }
+
+                &.active {
+                    background-color: #2dce89 !important;
+                    color: white !important;
+
+                    i {
+                        color: white !important;
+                    }
+
+                    .badge {
+                        background-color: #fb6340;
+                        color: white;
+                    }
+                }
+
+                &:hover:not(.active) {
+                    background-color: #f6f9fc;
+                }
+            }
+        }
+    }
+
+    .sidebar-footer {
+        margin-top: auto;
+        padding: 1rem;
+        border-top: 1px solid #e9ecef;
+
+        .user-profile-card {
+            background-color: #e9ecef;
+            border-radius: 15px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+
+            .avatar-wrapper {
+                margin-right: 12px;
+
+                .avatar {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    background-color: #fb6340;
+                    object-fit: cover;
+                }
+            }
+
+            .user-info {
+                overflow: hidden;
+
+                .user-name {
+                    font-weight: 700;
+                    font-size: 0.875rem;
+                    color: #32325d;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    margin-bottom: 0;
+                }
+
+                .user-email {
+                    font-size: 0.75rem;
+                    color: #8898aa;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    margin-bottom: 0;
+                }
+            }
+        }
+    }
+}
