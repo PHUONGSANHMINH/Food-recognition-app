@@ -23,6 +23,12 @@ function calcBMI(weight, height) {
   return (weight / (h * h)).toFixed(1);
 }
 
+const getAvatarUri = (imagePath, API_URL) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith('http')) return imagePath;
+  return `${API_URL}/api/file/get-file/${imagePath}`;
+};
+
 // ─── Row Component ────────────────────────────────────────────────────────────
 function InfoRow({ label, value, isLast }) {
   return (
@@ -35,9 +41,9 @@ function InfoRow({ label, value, isLast }) {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function ProfileScreen({ navigation }) {
-  const [userInfo,    setUserInfo]    = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
   const [calorieGoal, setCalorieGoal] = useState(null);
-  const [loading,     setLoading]     = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -55,7 +61,7 @@ export default function ProfileScreen({ navigation }) {
           const headers = { Authorization: `Bearer ${token}` };
 
           const [userRes, calRes] = await Promise.all([
-            fetch(`${API_URL}/api/user/info`,              { headers }),
+            fetch(`${API_URL}/api/user/info`, { headers }),
             fetch(`${API_URL}/api/nutrition-user/calories`, { headers }),
           ]);
 
@@ -88,10 +94,10 @@ export default function ProfileScreen({ navigation }) {
   const bmi = userInfo ? calcBMI(userInfo.weight, userInfo.height) : null;
 
   // Macros từ API (backend tính theo công thức)
-  const protein = calorieGoal?.protein_goal     ?? null;
-  const carbs   = calorieGoal?.carbohydrate_goal ?? null;
-  const fat     = calorieGoal?.fat_goal          ?? null;
-  const kcal    = calorieGoal?.calories_goal     ?? null;
+  const protein = calorieGoal?.protein_goal ?? null;
+  const carbs = calorieGoal?.carbohydrate_goal ?? null;
+  const fat = calorieGoal?.fat_goal ?? null;
+  const kcal = calorieGoal?.calories_goal ?? null;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -122,10 +128,17 @@ export default function ProfileScreen({ navigation }) {
           {/* ── Avatar + Name ───────────────────────────────────────── */}
           <View style={styles.profileSection}>
             <View style={styles.avatarWrapper}>
-              <Image
-                source={require('../../assets/Food.png')}
-                style={styles.avatar}
-              />
+              {userInfo?.avatar_image ? (
+                <Image
+                  source={{ uri: getAvatarUri(userInfo.avatar_image, API_URL) }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <Image
+                  source={require('../../assets/Food.png')}
+                  style={styles.avatar}
+                />
+              )}
             </View>
             <View style={styles.profileInfo}>
               <Text style={styles.nameText}>

@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -39,6 +40,7 @@ export default function ScanScreen({ navigation }) {
     const [detectedLabel, setDetectedLabel] = useState(null);
     const [recommendations, setRecommendations] = useState([]);
     const [noMatch, setNoMatch] = useState(false);
+    const [avatar, setAvatar] = useState(null);
 
     const cameraRef = useRef(null);
 
@@ -47,7 +49,34 @@ export default function ScanScreen({ navigation }) {
         if (permission && !permission.granted) {
             requestPermission();
         }
-    }, []);
+    }, [permission]);
+
+    useFocusEffect(
+        useCallback(() => {
+            const fetchUserInfo = async () => {
+                try {
+                    const token = await AsyncStorage.getItem('access_token');
+                    if (!token) return;
+                    const res = await fetch(`${API_URL}/api/user/info`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (res.ok) {
+                        const u = await res.json();
+                        setAvatar(u.avatar_image || null);
+                    }
+                } catch (err) {
+                    console.error('ScanScreen fetch error:', err);
+                }
+            };
+            fetchUserInfo();
+        }, [])
+    );
+
+    const getAvatarUri = (imagePath) => {
+        if (!imagePath) return null;
+        if (imagePath.startsWith('http')) return imagePath;
+        return `${API_URL}/api/file/get-file/${imagePath}`;
+    };
 
     // ─── Reset khi đổi mode ───────────────────────────────────────────────────
     const handleModeChange = (mode) => {
@@ -258,7 +287,11 @@ export default function ScanScreen({ navigation }) {
 
             {/* Header */}
             <View style={styles.header}>
-                <Image source={require('../../assets/Food.png')} style={styles.avatar} />
+                {avatar ? (
+                    <Image source={{ uri: getAvatarUri(avatar) }} style={styles.avatar} />
+                ) : (
+                    <Image source={require('../../assets/Food.png')} style={styles.avatar} />
+                )}
                 <Text style={styles.headerTitle}>Scan</Text>
                 <TouchableOpacity>
                     <Ionicons name="search-outline" size={24} color="#333" />

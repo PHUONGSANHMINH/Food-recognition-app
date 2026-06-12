@@ -14,6 +14,7 @@ import ScanResultRecipesScreen from './src/screens/ScanResultRecipesScreen';
 import RecipeDetailScreen from './src/screens/RecipeDetailScreen';
 import SearchScreen from './src/screens/SearchScreen';
 import FavoriteScreen from './src/screens/FavoriteScreen';
+import AddRecipeContributionScreen from './src/screens/AddRecipeContributionScreen';
 import MainTabs from './src/navigation/MainTabs';
 
 const Stack = createNativeStackNavigator();
@@ -35,9 +36,9 @@ export default function App() {
         <Stack.Screen name="RecipeDetailScreen" component={RecipeDetailScreen} />
         <Stack.Screen name="SearchScreen" component={SearchScreen} />
         <Stack.Screen name="FavoriteScreen" component={FavoriteScreen} />
+        <Stack.Screen name="AddRecipeContributionScreen" component={AddRecipeContributionScreen} />
       </Stack.Navigator>
       <StatusBar style="auto" />
     </NavigationContainer>
   );
 }
-

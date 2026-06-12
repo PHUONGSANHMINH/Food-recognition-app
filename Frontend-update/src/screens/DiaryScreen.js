@@ -28,6 +28,7 @@ export default function DiaryScreen({ navigation }) {
   const [consumedFoods, setConsumedFoods] = useState([]);
   const [dailyTotal, setDailyTotal] = useState(0);
   const [calGoal, setCalGoal] = useState(2000);
+  const [avatar, setAvatar] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dayLoading, setDayLoading] = useState(false);
 
@@ -77,6 +78,22 @@ export default function DiaryScreen({ navigation }) {
     }
   }, [API_URL]);
 
+  const fetchUserInfo = useCallback(async (token) => {
+    const res = await fetch(`${API_URL}/api/user/info`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const u = await res.json();
+      setAvatar(u.avatar_image || null);
+    }
+  }, [API_URL]);
+
+  const getAvatarUri = (imagePath) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${API_URL}/api/file/get-file/${imagePath}`;
+  };
+
   // Refresh data tiên khi màn hình focus hoặc quay lại sau add
   useFocusEffect(
     useCallback(() => {
@@ -90,6 +107,7 @@ export default function DiaryScreen({ navigation }) {
             fetchMonthly(currentYear, currentMonth, token),
             fetchDayEntries(selectedYear, selectedMonth, selectedDay, token),
             fetchGoal(token),
+            fetchUserInfo(token),
           ]);
         } finally {
           if (alive) setLoading(false);
@@ -237,7 +255,11 @@ export default function DiaryScreen({ navigation }) {
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
       <View style={styles.header}>
-        <Image source={require('../../assets/Food.png')} style={styles.profileImageHeader} />
+        {avatar ? (
+          <Image source={{ uri: getAvatarUri(avatar) }} style={styles.profileImageHeader} />
+        ) : (
+          <Image source={require('../../assets/Food.png')} style={styles.profileImageHeader} />
+        )}
         <Text style={styles.headerTitle}>Diary</Text>
         <TouchableOpacity
           style={styles.addBtn}

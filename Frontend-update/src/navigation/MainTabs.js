@@ -87,8 +87,6 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     height: Platform.OS === 'ios' ? 90 : 75,
     paddingHorizontal: 10,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
     position: 'absolute',
     bottom: 0,
     left: 0,

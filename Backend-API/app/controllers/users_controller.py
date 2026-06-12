@@ -386,7 +386,52 @@ def update_user():
     db.session.commit()
 
     # Trả về thông báo thành công
-    return jsonify({"msg": "User updated successfully."}), 200
+    return jsonify({
+        "msg": "User updated successfully.",
+        "user": {
+            "username": user.username,
+            "email": user.email,
+            "gender": user.gender,
+            "height": user.height,
+            "weight": user.weight,
+            "age": user.age,
+            "avatar_image": user.avatar_image
+        }
+    }), 200
+
+@jwt_required()
+def update_avatar():
+    current_user_id = get_jwt_identity()
+    user = User.query.get_or_404(current_user_id)
+    
+    if 'avatar' not in request.files:
+        return jsonify({"msg": "No image part"}), 400
+    
+    file = request.files['avatar']
+    if file.filename == '':
+        return jsonify({"msg": "No selected file"}), 400
+    
+    if file:
+        import os
+        from werkzeug.utils import secure_filename
+        from flask import current_app
+        
+        filename = secure_filename(f"avatar_{user.id_user}_{int(datetime.utcnow().timestamp())}.jpg")
+        upload_folder = os.path.join(os.getcwd(), 'uploads', 'avatars')
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+        
+        file_path = os.path.join(upload_folder, filename)
+        file.save(file_path)
+        
+        # Save relative path or URL (relative to uploads/ folder)
+        user.avatar_image = f"avatars/{filename}"
+        db.session.commit()
+        
+        return jsonify({
+            "msg": "Avatar updated successfully.",
+            "avatar_url": user.avatar_image
+        }), 200
 
 @jwt_required()
 def get_user_info():
@@ -399,6 +444,7 @@ def get_user_info():
         'height':   user.height,
         'weight':   user.weight,
         'age':      user.age,
+        'avatar_image': user.avatar_image,
     })
 
 

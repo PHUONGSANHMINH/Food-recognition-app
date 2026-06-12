@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
     View, Text, StyleSheet, SafeAreaView, Image,
     TouchableOpacity, TextInput, Platform, StatusBar,
@@ -11,7 +11,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
-export default function SearchScreen({ navigation }) {
+export default function SearchScreen({ navigation, route }) {
     const [keyword, setKeyword] = useState('');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -69,6 +69,15 @@ export default function SearchScreen({ navigation }) {
             setLoading(false);
         }
     }, [keyword]);
+
+    // Automatically search if initialKeyword is passed from history
+    useEffect(() => {
+        const { initialKeyword } = route.params || {};
+        if (initialKeyword) {
+            setKeyword(initialKeyword);
+            handleSearch(initialKeyword);
+        }
+    }, [route.params]);
 
     // Khi nhấn card Spoonacular: fetch chi tiết rồi navigate sang RecipeDetailScreen
     const [loadingDetailId, setLoadingDetailId] = useState(null);

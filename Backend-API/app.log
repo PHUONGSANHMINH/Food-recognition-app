@@ -104,3 +104,175 @@ DETAIL:  Failing row contains (null, 13, 12, 680975, BLT Pizza, uploads/favourit
 [SQL: INSERT INTO recipes_favourite (id_user, id_recipe, spoonacular_id, recipe_title, recipe_image, saved_at) VALUES (%(id_user)s, %(id_recipe)s, %(spoonacular_id)s, %(recipe_title)s, %(recipe_image)s, %(saved_at)s) RETURNING recipes_favourite.id]
 [parameters: {'id_user': 13, 'id_recipe': None, 'spoonacular_id': 680975, 'recipe_title': 'BLT Pizza', 'recipe_image': 'uploads/favourites/20260610_154508_d65aa4d4.jpg', 'saved_at': datetime.datetime(2026, 6, 10, 15, 45, 8, 428642)}]
 (Background on this error at: https://sqlalche.me/e/20/gkpj) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:790]
+2026-06-11 23:06:00,799 INFO: Roboflow detected: [] [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:628]
+2026-06-11 23:06:26,154 INFO: Roboflow detected: [] [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:628]
+2026-06-12 00:44:10,291 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 00:55:04,635 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 00:56:38,721 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 00:56:45,724 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 00:56:57,133 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 00:58:29,422 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 00:58:39,814 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 01:00:38,184 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 01:00:45,704 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 01:01:47,624 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 01:01:50,377 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 01:04:35,798 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 01:05:20,178 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 01:05:49,219 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 01:07:07,417 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 01:08:03,760 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]
+2026-06-12 01:08:27,203 ERROR: Database error when fetching recipes: (psycopg2.errors.UndefinedFunction) operator does not exist: boolean = integer
+LINE 3: WHERE recipes_contribution.accept_contribution = 1
+                                                       ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT recipe_info.id_recipe AS recipe_info_id_recipe, recipe_info.name_recipe AS recipe_info_name_recipe, recipe_info.image AS recipe_info_image, recipe_info.type AS recipe_info_type, recipe_info.status AS recipe_info_status, recipe_info.summary AS recipe_info_summary 
+FROM recipe_info JOIN recipes_contribution ON recipe_info.id_recipe = recipes_contribution.id_recipe 
+WHERE recipes_contribution.accept_contribution = %(accept_contribution_1)s]
+[parameters: {'accept_contribution_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:593]

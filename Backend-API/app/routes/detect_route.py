@@ -12,6 +12,7 @@ from app.controllers.detect_controller import (
     save_scanned_recipe,
     toggle_spoonacular_favourite,
     get_all_favourites,
+    get_spoonacular_recommendations_v2,
 )
 from flasgger import swag_from
 
@@ -466,3 +467,7 @@ def get_favourites_view():
     """
     return get_all_favourites()
 
+@detect_bp.route('/recommend-paginated', methods=['GET'])
+def recommend_paginated_view():
+    """Get Paginated Spoonacular Recommendations"""
+    return get_spoonacular_recommendations_v2()

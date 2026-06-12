@@ -1,5 +1,5 @@
 from flask import Blueprint
-from app.controllers.users_controller import get_all_users, delete_user, update_user, get_user_info
+from app.controllers.users_controller import get_all_users, delete_user, update_user, get_user_info, update_avatar
 from flask_jwt_extended import jwt_required
 from flasgger import swag_from
 
@@ -198,6 +198,11 @@ def delete_user_view(user_id):
 @jwt_required()  # Ensure that the user is authenticated
 def update_user_view():
     return update_user()
+
+@user_bp.route('/update-avatar', methods=['POST'])
+@jwt_required()
+def update_avatar_view():
+    return update_avatar()
 
 @user_bp.route('/info', methods=['GET'])
 @swag_from({

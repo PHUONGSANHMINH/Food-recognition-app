@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,16 @@ import {
   Platform,
   StatusBar,
   ActivityIndicator,
+  FlatList,
+  Dimensions,
+  Animated,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Progress from 'react-native-progress';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const clamp = (v) => Math.min(100, Math.max(0, Math.round(v)));
@@ -24,12 +29,29 @@ const calcPct = (intake, goal) => {
   return clamp((intake / goal) * 100);
 };
 
+const getAvatarUri = (imagePath, API_URL) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith('http')) return imagePath;
+  return `${API_URL}/api/file/get-file/${imagePath}`;
+};
+
+const { width } = Dimensions.get('window');
+const SLIDE_WIDTH = width * 0.85;
+const SLIDE_SPACING = 10;
+
+const PROMO_SLIDES = [
+  { id: '1', image: require('../../assets/slide 1.png') },
+  { id: '2', image: require('../../assets/slide 2.png') },
+  { id: '3', image: require('../../assets/slide 3.png') },
+];
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function HomeScreen({ navigation }) {
   const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [username, setUsername] = useState('');
+  const [avatar, setAvatar] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [goals, setGoals] = useState({
@@ -48,32 +70,54 @@ export default function HomeScreen({ navigation }) {
 
   const [recommendedMeals, setRecommendedMeals] = useState([]);
   const [topRecipes, setTopRecipes] = useState([]);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const flatListRef = React.useRef(null);
+
+  // ── Animation Scroll ───────────────────────────────────────────────────────
+  const scrollX = React.useRef(new Animated.Value(0)).current;
+
+  // ── Auto-play ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (loading || PROMO_SLIDES.length === 0) return;
+
+    const interval = setInterval(() => {
+      const nextIndex = (currentSlideIndex + 1) % PROMO_SLIDES.length;
+
+      flatListRef.current?.scrollToOffset({
+        offset: nextIndex * (SLIDE_WIDTH + SLIDE_SPACING),
+        animated: true,
+      });
+      setCurrentSlideIndex(nextIndex);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [currentSlideIndex, loading]);
 
   // ── Fetch data every time screen comes into focus ──────────────────────────
-  useFocusEffect(
-    useCallback(() => {
-      async function fetchData() {
-        setLoading(true);
-        try {
-          const token = await AsyncStorage.getItem('access_token');
-          if (!token) { setLoading(false); return; }
-          const headers = { Authorization: `Bearer ${token}` };
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) { setLoading(false); return; }
+      const headers = { Authorization: `Bearer ${token}` };
 
-          const [userRes, goalsRes, logRes, mealPlanRes, topRatedRes] = await Promise.all([
-            fetch(`${API_URL}/api/user/info`, { headers }),
-            fetch(`${API_URL}/api/nutrition-user/calories`, { headers }),
-            fetch(`${API_URL}/api/nutrition-log/today`, { headers }),
-            fetch(`${API_URL}/api/detect/daily-meal-plan`, { headers }),
-            fetch(`${API_URL}/api/recipe/top-rated`, { headers }),
-          ]);
+      console.log('Fetching Home data individually...');
 
-          if (userRes.ok) {
-            const u = await userRes.json();
+      // User Info
+      fetch(`${API_URL}/api/user/info`, { headers })
+        .then(res => res.ok ? res.json() : null)
+        .then(u => {
+          if (u) {
             setUsername(u.username || '');
+            setAvatar(u.avatar_image || null);
           }
+        }).catch(e => console.log('User Info error:', e));
 
-          if (goalsRes.ok) {
-            const g = await goalsRes.json();
+      // Goals
+      fetch(`${API_URL}/api/nutrition-user/calories`, { headers })
+        .then(res => res.ok ? res.json() : null)
+        .then(g => {
+          if (g) {
             setGoals({
               calories: g.calories_goal || 2000,
               protein: g.protein_goal || 150,
@@ -81,9 +125,13 @@ export default function HomeScreen({ navigation }) {
               fat: g.fat_goal || 55,
             });
           }
+        }).catch(e => console.log('Goals error:', e));
 
-          if (logRes.ok) {
-            const l = await logRes.json();
+      // Log
+      fetch(`${API_URL}/api/nutrition-log/today`, { headers })
+        .then(res => res.ok ? res.json() : null)
+        .then(l => {
+          if (l) {
             setIntakes({
               calories: l.calories_intake || 0,
               protein: l.protein_intake || 0,
@@ -91,9 +139,15 @@ export default function HomeScreen({ navigation }) {
               fat: l.fat_intake || 0,
             });
           }
+        }).catch(e => console.log('Log error:', e));
 
-          if (mealPlanRes.ok) {
-            const m = await mealPlanRes.json();
+      // Meal Plan
+      fetch(`${API_URL}/api/detect/daily-meal-plan`, { headers })
+        .then(async res => {
+          console.log('Meal plan status:', res.status);
+          if (res.ok) {
+            const m = await res.json();
+            console.log('Meal plan data:', m);
             if (m.daily_meal_plan) {
               setRecommendedMeals([
                 { ...m.daily_meal_plan.breakfast, type_label: 'Breakfast' },
@@ -101,23 +155,37 @@ export default function HomeScreen({ navigation }) {
                 { ...m.daily_meal_plan.dinner, type_label: 'Dinner' }
               ]);
             }
+          } else {
+            const txt = await res.text();
+            console.log('Meal plan error:', txt);
           }
+        }).catch(e => console.log('Meal Plan fetch error:', e));
 
-          if (topRatedRes.ok) {
-            const t = await topRatedRes.json();
-            if (t.recommendations) {
-              setTopRecipes(t.recommendations);
-            }
+      // Top Rated
+      fetch(`${API_URL}/api/recipe/top-rated`, { headers })
+        .then(res => res.ok ? res.json() : null)
+        .then(t => {
+          if (t && t.recommendations) {
+            setTopRecipes(t.recommendations);
           }
-        } catch (err) {
-          console.error('HomeScreen fetch error:', err);
-        } finally {
-          setLoading(false);
-        }
-      }
+        }).catch(e => console.log('Top Rated error:', e));
+
+    } catch (err) {
+      console.error('HomeScreen fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [API_URL]);
+
+  useFocusEffect(
+    useCallback(() => {
       fetchData();
-    }, [API_URL])
+    }, [fetchData])
   );
+
+  const onRefresh = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
 
   // ── Derived percentages ────────────────────────────────────────────────────
   const caloriesPct = calcPct(intakes.calories, goals.calories);
@@ -128,12 +196,22 @@ export default function HomeScreen({ navigation }) {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={onRefresh} colors={['#3F805A']} />
+        }
+      >
 
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.profileContainer}>
-            <Image source={require('../../assets/Food.png')} style={styles.profileImage} />
+            {avatar ? (
+              <Image source={{ uri: getAvatarUri(avatar, API_URL) }} style={styles.profileImage} />
+            ) : (
+              <Image source={require('../../assets/Food.png')} style={styles.profileImage} />
+            )}
             <Text style={styles.welcomeText}>
               Welcome{username ? `, ${username}` : ''}
             </Text>
@@ -144,7 +222,12 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         {/* Nutrition Card */}
-        <View style={styles.nutritionCard}>
+        <LinearGradient
+          colors={['#0acb54ff', '#00901fff']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.nutritionCard}
+        >
           {loading ? (
             <View style={styles.loadingBox}>
               <ActivityIndicator size="large" color="rgba(255,255,255,0.8)" />
@@ -169,6 +252,10 @@ export default function HomeScreen({ navigation }) {
                     <Text style={styles.caloriesPctText}>{caloriesPct}%</Text>
                   </View>
                 </Progress.Circle>
+                <Image
+                  source={require('../../assets/Exclude.png')}
+                  style={styles.excludeIcon}
+                />
               </View>
 
               {/* Macro bars */}
@@ -226,6 +313,64 @@ export default function HomeScreen({ navigation }) {
               </View>
             </>
           )}
+        </LinearGradient>
+
+        {/* Promo Slider */}
+        <View style={styles.sliderContainer}>
+          <Animated.FlatList
+            ref={flatListRef}
+            data={PROMO_SLIDES}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            pagingEnabled={false}
+            snapToAlignment="center"
+            decelerationRate="fast"
+            snapToInterval={SLIDE_WIDTH + SLIDE_SPACING}
+            contentContainerStyle={styles.sliderContent}
+            keyExtractor={(item) => item.id}
+            getItemLayout={(_, index) => ({
+              length: SLIDE_WIDTH + SLIDE_SPACING,
+              offset: index * (SLIDE_WIDTH + SLIDE_SPACING),
+              index,
+            })}
+            onMomentumScrollEnd={(e) => {
+              const newIndex = Math.round(e.nativeEvent.contentOffset.x / (SLIDE_WIDTH + SLIDE_SPACING));
+              if (newIndex !== currentSlideIndex) {
+                setCurrentSlideIndex(newIndex);
+              }
+            }}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+              { useNativeDriver: true }
+            )}
+            renderItem={({ item, index }) => {
+              const inputRange = [
+                (index - 1) * (SLIDE_WIDTH + SLIDE_SPACING),
+                index * (SLIDE_WIDTH + SLIDE_SPACING),
+                (index + 1) * (SLIDE_WIDTH + SLIDE_SPACING),
+              ];
+
+              const scale = scrollX.interpolate({
+                inputRange,
+                outputRange: [0.9, 1, 0.9],
+                extrapolate: 'clamp',
+              });
+
+              const opacity = scrollX.interpolate({
+                inputRange,
+                outputRange: [0.7, 1, 0.7],
+                extrapolate: 'clamp',
+              });
+
+              return (
+                <Animated.View style={[styles.slideCard, { transform: [{ scale }], opacity }]}>
+                  <TouchableOpacity activeOpacity={0.9}>
+                    <Image source={item.image} style={styles.slideImage} />
+                  </TouchableOpacity>
+                </Animated.View>
+              );
+            }}
+          />
         </View>
 
         {/* Recommended Meals */}
@@ -355,12 +500,11 @@ const styles = StyleSheet.create({
 
   // Nutrition Card
   nutritionCard: {
-    backgroundColor: '#3F805A',
     marginHorizontal: 20,
     borderRadius: 25,
     padding: 25,
     marginTop: 10,
-    shadowColor: '#3F805A',
+    shadowColor: '#1F914B',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 15,
@@ -377,6 +521,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 22,
+    position: 'relative',
+  },
+  excludeIcon: {
+    marginBottom: 40,
+    position: 'absolute',
+    width: 70,
+    height: 70,
+    resizeMode: 'contain',
+    zIndex: 10,
   },
   circleInner: {
     alignItems: 'center',
@@ -443,7 +596,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginTop: 25,
+    marginTop: 5,
     marginBottom: 15,
   },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#666' },
@@ -520,16 +673,9 @@ const styles = StyleSheet.create({
   seeMoreCard: {
     width: 100,
     height: 250,
-    backgroundColor: '#fff',
-    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
   },
   seeMoreCircle: {
     width: 60,
@@ -544,5 +690,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#3F805A',
+  },
+
+  // Promo Slider Styles
+  sliderContainer: {
+    height: 200,
+    marginTop: 20,
+    marginBottom: 5,
+  },
+  sliderContent: {
+    paddingHorizontal: (width - SLIDE_WIDTH) / 2,
+  },
+  slideCard: {
+    width: SLIDE_WIDTH,
+    height: 180,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+    marginRight: SLIDE_SPACING,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  slideImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
 });

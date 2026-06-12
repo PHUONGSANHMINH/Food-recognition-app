@@ -477,10 +477,13 @@ def get_daily_meal_plan(default_calories=2000):
         user_goal = db.session.query(UserDailyNutritionGoal).filter(UserDailyNutritionGoal.id_user == current_user_id).first()
         target_calories = user_goal.calories_goal if user_goal and user_goal.calories_goal is not None else default_calories
         # Lấy các công thức đã được duyệt từ cơ sở dữ liệu
-        recipes = db.session.query(RecipeInfo).join(RecipesContribution).filter(RecipesContribution.accept_contribution == 1).all()
+        recipes = db.session.query(RecipeInfo).join(
+            RecipesContribution, 
+            RecipeInfo.id_recipe == RecipesContribution.id_recipe
+        ).filter(RecipesContribution.accept_contribution == True).all()
         
         if not recipes:
-            raise ValueError("No approved recipes available.")
+            raise ValueError("No approved recipes available in the database.")
 
         # Chuyển đổi các công thức thành danh sách từ điển, bỏ qua các thuộc tính nội bộ của SQLAlchemy
         recipes = [{col: getattr(recipe, col) for col in recipe.__table__.columns.keys()} for recipe in recipes]
@@ -855,3 +858,71 @@ def get_all_favourites():
     except Exception as e:
         logger.error(f"get_all_favourites error: {e}")
         return jsonify({'msg': 'Failed to fetch favourites', 'error': str(e)}), 500
+
+def get_spoonacular_recommendations_v2():
+    """
+    Lấy danh sách gợi ý từ Spoonacular có phân trang (pagination).
+    Dùng complexSearch với sort=popularity.
+    """
+    page = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 20, type=int)
+    offset = (page - 1) * limit
+
+    url = "https://api.spoonacular.com/recipes/complexSearch"
+    params = {
+        'sort': 'popularity',
+        'number': limit,
+        'offset': offset,
+        'addRecipeNutrition': 'true'
+    }
+
+    last_error = None
+    for api_key in SPOONACULAR_API_KEY:
+        if api_key in limited_api_keys:
+            continue
+        
+        params['apiKey'] = api_key.strip()
+        try:
+            response = requests.get(url, params=params, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                results = data.get('results', [])
+                total_results = data.get('totalResults', 0)
+                
+                recommendations = []
+                for item in results:
+                    # Lấy calories từ nutrition if present
+                    nutrition = item.get('nutrition', {})
+                    nutrients = nutrition.get('nutrients', [])
+                    calories = next((n['amount'] for n in nutrients if n['name'] == 'Calories'), 0)
+                    
+                    recommendations.append({
+                        'source': 'spoonacular',
+                        'id_recipe': item.get('id'), # Thống nhất key id_recipe cho frontend
+                        'name_recipe': item.get('title'),
+                        'image': item.get('image'),
+                        'calories': calories,
+                        'avg_rating': round(random.uniform(4.0, 5.0), 1) 
+                    })
+                
+                return jsonify({
+                    'recommendations': recommendations,
+                    'total': total_results,
+                    'page': page,
+                    'limit': limit,
+                    'total_pages': (total_results + limit - 1) // limit,
+                    'has_more': (offset + limit) < total_results
+                }), 200
+                
+            elif response.status_code == 402:
+                limited_api_keys.add(api_key)
+                continue
+            else:
+                last_error = response.text
+                
+        except Exception as e:
+            last_error = str(e)
+            continue
+            
+    return jsonify({'msg': 'Failed to fetch recommendations', 'error': last_error}), 500

@@ -39,6 +39,9 @@ export default function AddDiaryScreen({ navigation }) {
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [showImagePicker, setShowImagePicker] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [successModalMsg, setSuccessModalMsg] = useState('');
+    const [shouldGoBack, setShouldGoBack] = useState(false);
 
     // Gemini validation state
     const [validating, setValidating] = useState(false);
@@ -141,7 +144,9 @@ export default function AddDiaryScreen({ navigation }) {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
         if (status !== 'granted') {
             setShowImagePicker(false);
-            Alert.alert('Permission required', 'Please allow access to your camera.');
+            setSuccessModalMsg('Please allow access to your camera.');
+            setShouldGoBack(false);
+            setShowSuccessModal(true);
             return;
         }
         const result = await ImagePicker.launchCameraAsync({
@@ -157,7 +162,9 @@ export default function AddDiaryScreen({ navigation }) {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
             setShowImagePicker(false);
-            Alert.alert('Permission required', 'Please allow access to your photo library.');
+            setSuccessModalMsg('Please allow access to your photo library.');
+            setShouldGoBack(false);
+            setShowSuccessModal(true);
             return;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -190,7 +197,12 @@ export default function AddDiaryScreen({ navigation }) {
         setLoading(true);
         try {
             const token = await AsyncStorage.getItem('access_token');
-            if (!token) { Alert.alert('Error', 'Please log in again.'); return; }
+            if (!token) {
+                setSuccessModalMsg('Please log in again.');
+                setShouldGoBack(false);
+                setShowSuccessModal(true);
+                return;
+            }
 
             const currentMacros = macrosRef.current;
 
@@ -217,15 +229,19 @@ export default function AddDiaryScreen({ navigation }) {
 
             const data = await res.json();
             if (res.ok) {
-                Alert.alert('Success 🎉', 'Meal added to Diary!', [
-                    { text: 'OK', onPress: () => navigation.goBack() },
-                ]);
+                setSuccessModalMsg('Meal added to Diary! 🎉');
+                setShouldGoBack(true);
+                setShowSuccessModal(true);
             } else {
                 const msg = data.errors ? data.errors.join('\n') : (data.error || 'Failed to add entry.');
-                Alert.alert('Error', msg);
+                setSuccessModalMsg(msg);
+                setShouldGoBack(false);
+                setShowSuccessModal(true);
             }
         } catch (err) {
-            Alert.alert('Error', err.message);
+            setSuccessModalMsg(err.message);
+            setShouldGoBack(false);
+            setShowSuccessModal(true);
         } finally {
             setLoading(false);
         }
@@ -435,6 +451,31 @@ export default function AddDiaryScreen({ navigation }) {
                     </View>
                 </View>
             </Modal>
+
+            {/* Success/Alert Modal */}
+            <Modal
+                transparent visible={showSuccessModal}
+                animationType="fade"
+                onRequestClose={() => {
+                    setShowSuccessModal(false);
+                    if (shouldGoBack) navigation.goBack();
+                }}
+            >
+                <View style={styles.alertOverlay}>
+                    <View style={styles.alertBox}>
+                        <Text style={styles.alertMsg}>{successModalMsg}</Text>
+                        <TouchableOpacity
+                            style={styles.alertBtn}
+                            onPress={() => {
+                                setShowSuccessModal(false);
+                                if (shouldGoBack) navigation.goBack();
+                            }}
+                        >
+                            <Text style={styles.alertBtnText}>OK</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -622,5 +663,48 @@ const styles = StyleSheet.create({
         color: '#3F805A',
         fontSize: 16,
         fontWeight: '600',
+    },
+
+    // Success Modal Styles (copied from RecipeDetailScreen)
+    alertOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    alertBox: {
+        width: '80%',
+        backgroundColor: '#fff',
+        borderRadius: 15,
+        borderWidth: 2,
+        borderColor: '#3F805A',
+        padding: 24,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 5,
+    },
+    alertMsg: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#111',
+        textAlign: 'center',
+        marginBottom: 20,
+        lineHeight: 22,
+    },
+    alertBtn: {
+        backgroundColor: '#3F805A',
+        paddingHorizontal: 30,
+        paddingVertical: 10,
+        borderRadius: 8,
+        minWidth: 100,
+        alignItems: 'center',
+    },
+    alertBtnText: {
+        color: '#fff',
+        fontSize: 15,
+        fontWeight: 'bold',
     },
 });

@@ -18,6 +18,7 @@ class User(db.Model):
     height = db.Column(db.Float,       nullable=True)   # đơn vị: cm
     weight = db.Column(db.Float,       nullable=True)   # đơn vị: kg
     age    = db.Column(db.Integer,     nullable=True)   # đơn vị: tuổi
+    avatar_image = db.Column(db.Text,   nullable=True)
     # ────────────────────────────────────────────────────────────────────────
 
     def set_password(self, password):

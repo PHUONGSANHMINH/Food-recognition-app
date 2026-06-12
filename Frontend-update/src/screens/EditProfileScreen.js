@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 
 const GENDERS = ['Male', 'Female'];
 
@@ -22,12 +23,16 @@ export default function EditProfileScreen({ navigation, route }) {
   const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
   // ── Local state ─────────────────────────────────────────────────────────────
-  const [height,        setHeight]        = useState('');
-  const [weight,        setWeight]        = useState('');
-  const [age,           setAge]           = useState('');
-  const [gender,        setGender]        = useState('Male');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [avatar, setAvatar] = useState(null);
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('Male');
   const [calorieTarget, setCalorieTarget] = useState('');
-  const [isSaving,      setIsSaving]      = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [showGenderPicker, setShowGenderPicker] = useState(false);
 
   // ── Pre-fill from API on mount ───────────────────────────────────────────────
@@ -39,15 +44,18 @@ export default function EditProfileScreen({ navigation, route }) {
         const headers = { Authorization: `Bearer ${token}` };
 
         const [userRes, calRes] = await Promise.all([
-          fetch(`${API_URL}/api/user/info`,               { headers }),
-          fetch(`${API_URL}/api/nutrition-user/calories`,  { headers }),
+          fetch(`${API_URL}/api/user/info`, { headers }),
+          fetch(`${API_URL}/api/nutrition-user/calories`, { headers }),
         ]);
 
         if (userRes.ok) {
           const u = await userRes.json();
-          setHeight(u.height   != null ? String(u.height)   : '');
-          setWeight(u.weight   != null ? String(u.weight)   : '');
-          setAge(u.age         != null ? String(u.age)      : '');
+          setUsername(u.username || '');
+          setEmail(u.email || '');
+          setAvatar(u.avatar_image || null);
+          setHeight(u.height != null ? String(u.height) : '');
+          setWeight(u.weight != null ? String(u.weight) : '');
+          setAge(u.age != null ? String(u.age) : '');
           setGender(u.gender === 'female' ? 'Female' : 'Male');
         }
         if (calRes.ok) {
@@ -61,11 +69,72 @@ export default function EditProfileScreen({ navigation, route }) {
     load();
   }, []);
 
+  const pickAvatar = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please allow gallery access to change your avatar.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        uploadAvatar(result.assets[0].uri);
+      }
+    } catch (err) {
+      console.error('Pick avatar error:', err);
+    }
+  };
+
+  const uploadAvatar = async (uri) => {
+    setIsUploadingAvatar(true);
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const formData = new FormData();
+      formData.append('avatar', {
+        uri: uri,
+        name: `avatar_${Date.now()}.jpg`,
+        type: 'image/jpeg',
+      });
+
+      const res = await fetch(`${API_URL}/api/user/update-avatar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setAvatar(data.avatar_url);
+      } else {
+        Alert.alert('Error', data.msg || 'Failed to upload avatar.');
+      }
+    } catch (err) {
+      console.error('Upload avatar error:', err);
+      Alert.alert('Error', 'Connection error while uploading avatar.');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const getAvatarUri = (imagePath) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${API_URL}/api/file/get-file/${imagePath}`;
+  };
   // ── Save ─────────────────────────────────────────────────────────────────────
   const handleSave = async () => {
-    const h   = parseFloat(height);
-    const w   = parseFloat(weight);
-    const a   = parseInt(age, 10);
+    const h = parseFloat(height);
+    const w = parseFloat(weight);
+    const a = parseInt(age, 10);
     const cal = parseInt(calorieTarget, 10);
 
     if (height && (isNaN(h) || h < 50 || h > 300)) {
@@ -85,16 +154,17 @@ export default function EditProfileScreen({ navigation, route }) {
     try {
       const token = await AsyncStorage.getItem('access_token');
       const headers = {
-        'Content-Type':  'application/json',
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       };
 
-      // 1. Cập nhật thông tin cơ thể
+      // 1. Cập nhật thông tin cơ thể và cá nhân
       const bodyPayload = {
+        username: username,
         gender: gender.toLowerCase(),
-        ...(height        && { height: h }),
-        ...(weight        && { weight: w }),
-        ...(age           && { age: a }),
+        ...(height && { height: h }),
+        ...(weight && { weight: w }),
+        ...(age && { age: a }),
       };
       await fetch(`${API_URL}/api/user/update`, {
         method: 'PUT',
@@ -140,15 +210,47 @@ export default function EditProfileScreen({ navigation, route }) {
       >
         {/* ── Avatar ──────────────────────────────────────────────── */}
         <View style={styles.avatarBlock}>
-          <View style={styles.avatarWrapper}>
-            <Image
-              source={require('../../assets/Food.png')}
-              style={styles.avatar}
-            />
+          <TouchableOpacity
+            style={styles.avatarWrapper}
+            onPress={pickAvatar}
+            disabled={isUploadingAvatar}
+          >
+            {avatar ? (
+              <Image source={{ uri: getAvatarUri(avatar) }} style={styles.avatar} />
+            ) : (
+              <Image
+                source={require('../../assets/Food.png')}
+                style={styles.avatar}
+              />
+            )}
             <View style={styles.cameraBtn}>
-              <Ionicons name="camera" size={16} color="#fff" />
+              {isUploadingAvatar ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="camera" size={16} color="#fff" />
+              )}
             </View>
-          </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Basic Info ───────────────────────────────────────────── */}
+        <View style={styles.fullCard}>
+          <Text style={styles.fieldLabel}>Username</Text>
+          <TextInput
+            style={styles.textInput}
+            value={username}
+            onChangeText={setUsername}
+            placeholder="Your name"
+          />
+        </View>
+
+        <View style={[styles.fullCard, styles.disabledCard]}>
+          <Text style={styles.fieldLabel}>Email Address</Text>
+          <TextInput
+            style={[styles.textInput, styles.disabledInput]}
+            value={email}
+            editable={false}
+          />
         </View>
 
         {/* ── Health Profile ───────────────────────────────────────── */}
@@ -233,12 +335,12 @@ export default function EditProfileScreen({ navigation, route }) {
               />
               <View style={styles.stepperBtns}>
                 <TouchableOpacity
-                  onPress={() => setAge(v => String(Math.min(120, (parseInt(v,10)||0) + 1)))}
+                  onPress={() => setAge(v => String(Math.min(120, (parseInt(v, 10) || 0) + 1)))}
                 >
                   <Ionicons name="chevron-up" size={18} color="#6B7280" />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => setAge(v => String(Math.max(10, (parseInt(v,10)||11) - 1)))}
+                  onPress={() => setAge(v => String(Math.max(10, (parseInt(v, 10) || 11) - 1)))}
                 >
                   <Ionicons name="chevron-down" size={18} color="#6B7280" />
                 </TouchableOpacity>
@@ -399,6 +501,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#111',
     padding: 0,
+  },
+  textInput: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111',
+    paddingVertical: 4,
+  },
+  disabledCard: {
+    backgroundColor: '#F3F4F6',
+  },
+  disabledInput: {
+    color: '#6B7280',
   },
   unitText: {
     fontSize: 14,

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, FlatList, Image,
   TouchableOpacity, Platform, StatusBar, ActivityIndicator,
@@ -16,7 +16,14 @@ export default function RecipesScreen({ navigation }) {
   const [searchHistory, setSearchHistory] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [loadingRec, setLoadingRec] = useState(true);
-  const [favouriteIds, setFavouriteIds] = useState(new Set()); // id_recipe đã yêu thích
+  const [favouriteIds, setFavouriteIds] = useState(new Set());
+  const flatListRef = useRef(null);
+
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [avatar, setAvatar] = useState(null);
 
   const getImageUri = (imagePath) => {
     if (!imagePath) return null;
@@ -56,23 +63,42 @@ export default function RecipesScreen({ navigation }) {
             );
             setFavouriteIds(ids);
           }
+
+          // Lấy user info cho avatar
+          const userRes = await fetch(`${API_URL}/api/user/info`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (userRes.ok) {
+            const u = await userRes.json();
+            setAvatar(u.avatar_image || null);
+          }
         }
 
-        // Lấy top-rated recipes
-        setLoadingRec(true);
-        const recRes = await fetch(`${API_URL}/api/recipe/top-rated?limit=10`);
+        // Lấy danh sách gợi ý phân trang từ Spoonacular
+        if (page === 1) setLoadingRec(true);
+        else setLoadingMore(true);
+
+        const recRes = await fetch(`${API_URL}/api/detect/recommend-paginated?page=${page}&limit=20`);
         if (recRes.ok) {
           const recData = await recRes.json();
           setRecommendations(recData.recommendations || []);
+          setTotalPages(recData.total_pages || 1);
         }
-      } catch {
-        /* ignore */
+      } catch (err) {
+        console.error("fetchData error:", err);
       } finally {
         setLoadingRec(false);
+        setLoadingMore(false);
       }
     };
     load();
-  }, []);
+  }, [page]);
+
+  useEffect(() => {
+    if (flatListRef.current) {
+      flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+    }
+  }, [page]);
 
 
   useFocusEffect(fetchData);
@@ -215,7 +241,11 @@ export default function RecipesScreen({ navigation }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <Image source={require('../../assets/Food.png')} style={styles.avatar} />
+        {avatar ? (
+          <Image source={{ uri: getImageUri(avatar) }} style={styles.avatar} />
+        ) : (
+          <Image source={require('../../assets/Food.png')} style={styles.avatar} />
+        )}
         <Text style={styles.headerTitle}>Recipes</Text>
         <TouchableOpacity onPress={() => navigation.navigate('FavoriteScreen')}>
           <Ionicons name="heart" size={26} color="#EF4444" />
@@ -230,16 +260,73 @@ export default function RecipesScreen({ navigation }) {
         </View>
       ) : (
         <FlatList
+          ref={flatListRef}
           data={recommendations}
-          keyExtractor={(item) => item.id_recipe.toString()}
+          keyExtractor={(item, index) => `${item.id_recipe}-${index}`}
           renderItem={({ item }) => <RecipeCard item={item} />}
           numColumns={2}
           columnWrapperStyle={styles.row}
           ListHeaderComponent={<ListHeader />}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            <View style={styles.footerContainer}>
+              {loadingMore ? (
+                <ActivityIndicator color="#3F805A" style={{ marginBottom: 20 }} />
+              ) : (
+                <View style={styles.paginationBox}>
+                  <View style={styles.pageNumbersContainer}>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      // Logic hiển thị đơn giản: show tối đa 5 trang đầu hoặc quanh trang hiện tại
+                      let pageNum = i + 1;
+                      if (totalPages > 5 && page > 3) {
+                        pageNum = page - 3 + i;
+                        if (pageNum + 5 > totalPages) pageNum = totalPages - 5 + i + 1;
+                      }
+                      if (pageNum <= 0) pageNum = i + 1;
+                      if (pageNum > totalPages) return null;
+
+                      return (
+                        <TouchableOpacity
+                          key={pageNum}
+                          style={[styles.pageBtn, page === pageNum && styles.pageBtnActive]}
+                          onPress={() => setPage(pageNum)}
+                        >
+                          <Text style={[styles.pageBtnText, page === pageNum && styles.pageBtnTextActive]}>
+                            {pageNum}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                    {totalPages > 5 && page < totalPages - 2 && (
+                      <>
+                        <Text style={styles.dots}>...</Text>
+                        <TouchableOpacity
+                          style={[styles.pageBtn, page === totalPages && styles.pageBtnActive]}
+                          onPress={() => setPage(totalPages)}
+                        >
+                          <Text style={[styles.pageBtnText, page === totalPages && styles.pageBtnTextActive]}>
+                            {totalPages}
+                          </Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
+                </View>
+              )}
+            </View>
+          }
         />
       )}
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate('AddRecipeContributionScreen')}
+      >
+        <Ionicons name="add" size={32} color="#fff" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -260,7 +347,7 @@ const styles = StyleSheet.create({
   avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#ddd' },
   headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#000' },
 
-  listContent: { paddingHorizontal: 16, paddingBottom: 120 },
+  listContent: { paddingHorizontal: 16, paddingBottom: 40 },
 
   // Search bar
   searchBar: {
@@ -325,4 +412,83 @@ const styles = StyleSheet.create({
 
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginLeft: 8 },
   ratingText: { fontSize: 12, color: '#6B7280' },
+
+  // Pagination
+  footerContainer: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginBottom: 35,
+  },
+  paginationBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    width: CARD_WIDTH * 2 + 16,
+    alignSelf: 'center',
+  },
+  pageNumbersContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  pageBtn: {
+    width: 34,
+    height: 38,
+    backgroundColor: '#F0F9F4',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 3,
+  },
+  pageBtnActive: {
+    backgroundColor: '#3F805A',
+  },
+  pageBtnText: {
+    color: '#3F805A',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  pageBtnTextActive: {
+    color: '#fff',
+  },
+  pageMoveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  pageMoveText: {
+    color: '#3F805A',
+    fontSize: 16,
+    fontWeight: '600',
+    marginHorizontal: 4,
+  },
+  dots: {
+    color: '#9CA3AF',
+    fontSize: 16,
+    marginHorizontal: 4,
+  },
+
+  // FAB Style — Green Circle with plus
+  fab: {
+    position: 'absolute',
+    bottom: 110,
+    right: 20,
+    width: 65,
+    height: 65,
+    borderRadius: 32.5,
+    backgroundColor: '#3F805A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    // Shadow for iOS
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    // Elevation for Android
+    elevation: 8,
+  },
 });
