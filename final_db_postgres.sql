@@ -5,7 +5,7 @@ CREATE TABLE "advertising_banners" (
   "content" text ,
   "start_date" date DEFAULT NULL,
   "expire_date" date DEFAULT NULL,
-  "activate" SMALLINT NOT NULL,
+  "activate" BOOLEAN NOT NULL,
   "image_background" text ,
   PRIMARY KEY ("id") 
 );
@@ -111,7 +111,7 @@ DROP TABLE IF EXISTS "recipes_contribution" CASCADE;
 CREATE TABLE "recipes_contribution" (
   "id_recipe" int NOT NULL,
   "id_user" int NOT NULL,
-  "accept_contribution" SMALLINT NOT NULL,
+  "accept_contribution" INTEGER NOT NULL,
   "date" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY ("id_recipe","id_user") 
 );
@@ -137,18 +137,19 @@ CREATE TABLE "user" (
   "reset_code" varchar(255)  DEFAULT NULL,
   "reset_code_expiration" TIMESTAMP DEFAULT NULL,
   "reset_attempts" int NOT NULL,
-  "status" varchar(50)  DEFAULT NULL,
+  "status" int DEFAULT 3,
   "gender" varchar(10)  DEFAULT NULL,
   "height" float DEFAULT NULL,
   "weight" float DEFAULT NULL,
   "age" int DEFAULT NULL,
+  "avatar_image" text,
   PRIMARY KEY ("id_user") ,
   UNIQUE ("username"),
   UNIQUE ("email")
 );
 INSERT INTO "user" ("id_user", "username", "password_hash", "email", "reset_code", "reset_code_expiration", "reset_attempts", "status", "gender", "height", "weight", "age") VALUES 
-(1,'admin','scrypt:32768:8:1$nSS2bDUhQyY0hHSw$31b06df7e2302c0ed47bfaf6ebc1cda87a153f453f2dc088763573ae35a7709bcb56e41a08dfa0537e6a09770cad4db91332595b3b206c0734e3309612487a12','admin@gmail.com',NULL,NULL,0,'hidden',NULL,NULL,NULL,NULL),
-(2,'camly','scrypt:32768:8:1$PVEyzPQcabYcfPSX$2028ccc86c6abd8670760f8193ce4bddce9f77276ee94d62a2e84f8b407b241e60afe857b1187ae074c9ba50457a7c78398b26ff6b03e2f13eaeca1986c33ffe','nguyenthicamly1112@gmail.com','950963','2024-12-17 16:14:21',0,NULL,NULL,NULL,NULL,NULL);
+(1,'admin','scrypt:32768:8:1$nSS2bDUhQyY0hHSw$31b06df7e2302c0ed47bfaf6ebc1cda87a153f453f2dc088763573ae35a7709bcb56e41a08dfa0537e6a09770cad4db91332595b3b206c0734e3309612487a12','admin@gmail.com',NULL,NULL,0,1,NULL,NULL,NULL,NULL),
+(2,'camly','scrypt:32768:8:1$PVEyzPQcabYcfPSX$2028ccc86c6abd8670760f8193ce4bddce9f77276ee94d62a2e84f8b407b241e60afe857b1187ae074c9ba50457a7c78398b26ff6b03e2f13eaeca1986c33ffe','nguyenthicamly1112@gmail.com','950963','2024-12-17 16:14:21',0,3,NULL,NULL,NULL,NULL);
 DROP TABLE IF EXISTS "user_daily_nutrition_goal" CASCADE;
 CREATE TABLE "user_daily_nutrition_goal" (
   "id_goal" SERIAL NOT NULL,

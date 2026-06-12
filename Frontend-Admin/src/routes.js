@@ -6,6 +6,7 @@ import VersionsCSV from "views/VersionCSV.js";
 import AcceptRecipe from "views/ApproveRecipe.js";
 import UpdateRecipe from "views/UpdateRecipe.js";
 import Users from "views/Users.js"
+import ScanLogs from "views/ScanLogs.js";
 
 var routes = [
   {
@@ -13,6 +14,14 @@ var routes = [
     name: "Dashboard",
     icon: "ni ni-tv-2 text-primary",
     component: <Index />,
+    layout: "/admin",
+    displayInSidebar: true,
+  },
+  {
+    path: "/scan-logs",
+    name: "Scan Logs",
+    icon: "ni ni-camera-compact text-blue",
+    component: <ScanLogs />,
     layout: "/admin",
     displayInSidebar: true,
   },
@@ -40,14 +49,6 @@ var routes = [
     layout: "/admin",
     displayInSidebar: true,
     badge: 3
-  },
-  {
-    path: "/accept-recipes",
-    name: "Unapproved Recipes",
-    icon: "ni ni-check-bold text-red",
-    component: <AcceptRecipe />,
-    layout: "/admin",
-    displayInSidebar: true,
   },
   {
     path: "/versions-csv",

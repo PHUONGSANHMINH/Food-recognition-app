@@ -86,8 +86,23 @@ export default function ProfileScreen({ navigation }) {
 
   // ── Logout ────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('access_token');
-    navigation.replace('Login');
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (token) {
+        await fetch(`${API_URL}/api/auth/logout`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      await AsyncStorage.removeItem('access_token');
+      await AsyncStorage.removeItem('refresh_token');
+      navigation.replace('Login');
+    }
   };
 
   // ── Derived values ────────────────────────────────────────────────────────

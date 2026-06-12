@@ -6,7 +6,7 @@ import requests
 import logging
 from werkzeug.utils import secure_filename
 from datetime import datetime
-from app.models.model import RecipeInfo, Rating, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin, SearchHistory  
+from app.models.model import User, RecipeInfo, Rating, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin, SearchHistory  
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import desc, func
 
@@ -81,7 +81,7 @@ def add_new_recipe():
         new_contribution = RecipesContribution(
             id_recipe=new_recipe.id_recipe,
             id_user=current_user_id,
-            accept_contribution=False  # Mặc định là chưa được chấp nhận
+            accept_contribution=0  # Mặc định là chưa được chấp nhận (Pending)
         )
         db.session.add(new_contribution)
 
@@ -105,35 +105,47 @@ def add_new_recipe():
                 id_recipe=new_recipe.id_recipe,
                 calories=data['nutrition'].get('calories'),
                 fat=data['nutrition'].get('fat'),
-                saturated_fat=data['nutrition'].get('saturated_fat'),
                 carbohydrates=data['nutrition'].get('carbohydrates'),
                 sugar=data['nutrition'].get('sugar'),
-                cholesterol=data['nutrition'].get('cholesterol'),
                 sodium=data['nutrition'].get('sodium'),
                 protein=data['nutrition'].get('protein'),
-                alcohol=data['nutrition'].get('alcohol')
+                # Giữ lại các trường khác nếu có gửi lên (tương thích ngược)
+                saturated_fat=data['nutrition'].get('saturated_fat', 0),
+                cholesterol=data['nutrition'].get('cholesterol', 0),
+                alcohol=data['nutrition'].get('alcohol', 0)
             )
             db.session.add(new_nutrition)
             db.session.flush()  # Để lấy id_nutrition
 
-            # Thêm vitamin
-            for vitamin in data['vitamins']:
+            # Thêm vitamin và fiber
+            fiber_val = data['nutrition'].get('fiber', 0)
+            vitamins_list = data.get('vitamins', [])
+            
+            if vitamins_list:
+                for vitamin in vitamins_list:
+                    new_vitamin = RecipeVitamin(
+                        id_nutrition=new_nutrition.id_nutrition,
+                        calcium=vitamin.get('calcium'),
+                        iron=vitamin.get('iron'),
+                        vitamin_a=vitamin.get('vitamin_a'),
+                        vitamin_c=vitamin.get('vitamin_c'),
+                        vitamin_d=vitamin.get('vitamin_d'),
+                        vitamin_e=vitamin.get('vitamin_e'),
+                        vitamin_k=vitamin.get('vitamin_k'),
+                        vitamin_b1=vitamin.get('vitamin_b1'),
+                        vitamin_b2=vitamin.get('vitamin_b2'),
+                        vitamin_b3=vitamin.get('vitamin_b3'),
+                        vitamin_b5=vitamin.get('vitamin_b5'),
+                        vitamin_b6=vitamin.get('vitamin_b6'),
+                        vitamin_b12=vitamin.get('vitamin_b12'),
+                        fiber=vitamin.get('fiber') or fiber_val # Lấy từ vitamin list hoặc từ nutrition.fiber
+                    )
+                    db.session.add(new_vitamin)
+            elif fiber_val is not None:
+                # Nếu không có list vitamin nhưng có fiber trong nutrition
                 new_vitamin = RecipeVitamin(
                     id_nutrition=new_nutrition.id_nutrition,
-                    calcium=vitamin.get('calcium'),
-                    iron=vitamin.get('iron'),
-                    vitamin_a=vitamin.get('vitamin_a'),
-                    vitamin_c=vitamin.get('vitamin_c'),
-                    vitamin_d=vitamin.get('vitamin_d'),
-                    vitamin_e=vitamin.get('vitamin_e'),
-                    vitamin_k=vitamin.get('vitamin_k'),
-                    vitamin_b1=vitamin.get('vitamin_b1'),
-                    vitamin_b2=vitamin.get('vitamin_b2'),
-                    vitamin_b3=vitamin.get('vitamin_b3'),
-                    vitamin_b5=vitamin.get('vitamin_b5'),
-                    vitamin_b6=vitamin.get('vitamin_b6'),
-                    vitamin_b12=vitamin.get('vitamin_b12'),
-                    fiber=vitamin.get('fiber')
+                    fiber=fiber_val
                 )
                 db.session.add(new_vitamin)
 
@@ -304,11 +316,15 @@ def delete_recipe(id_recipe):
 # Lấy tổng số bản ghi của tất cả công thức
 def get_total_records():
     search = request.args.get('search', '', type=str)
+    status = request.args.get('status', None, type=int)
     
-    query = RecipeInfo.query
+    query = db.session.query(RecipeInfo).join(RecipesContribution, RecipeInfo.id_recipe == RecipesContribution.id_recipe)
 
     if search:
         query = query.filter(func.lower(RecipeInfo.name_recipe).like(f'%' + search.lower() + '%'))
+    
+    if status is not None:
+        query = query.filter(RecipesContribution.accept_contribution == status)
     
     # Đếm tổng số công thức
     total_records = query.count()
@@ -338,25 +354,67 @@ def get_recipes():
     page = request.args.get('page', 1, type=int)
     limit = request.args.get('limit', 10, type=int)
     search = request.args.get('search', '', type=str)
+    status = request.args.get('status', None, type=int)
 
-    query = RecipeInfo.query
+    # Join RecipeInfo với RecipesContribution và User để lấy đầy đủ thông tin (Author, Status)
+    query = db.session.query(
+        RecipeInfo,
+        RecipesContribution.accept_contribution,
+        RecipesContribution.date,
+        User.username
+    ).join(
+        RecipesContribution, RecipeInfo.id_recipe == RecipesContribution.id_recipe
+    ).join(
+        User, RecipesContribution.id_user == User.id_user
+    )
+
     if search:
         query = query.filter(RecipeInfo.name_recipe.like(f'%{search}%'))
+    
+    if status is not None:
+        query = query.filter(RecipesContribution.accept_contribution == status)
+
+    # Sắp xếp: Pending (0) lên đầu, sau đó đến Approved (1), rồi mới đến Rejected (2)
+    # Trong cùng một trạng thái thì sắp xếp theo ngày mới nhất
+    query = query.order_by(
+        RecipesContribution.accept_contribution.asc(),
+        desc(RecipesContribution.date)
+    )
 
     recipes = query.paginate(page=page, per_page=limit, error_out=False)
 
     recipes_data = []
-    for recipe in recipes.items:
+    for recipe_info, accept_contribution, date, username in recipes.items:
         recipes_data.append({
-            'id_recipe': recipe.id_recipe,
-            'name_recipe': recipe.name_recipe,
-            'image': recipe.image,
-            'type': recipe.type,
-            'status': recipe.status,
-            'summary': recipe.summary
+            'id_recipe': recipe_info.id_recipe,
+            'name_recipe': recipe_info.name_recipe,
+            'image': recipe_info.image,
+            'type': recipe_info.type,
+            'status': recipe_info.status,
+            'summary': recipe_info.summary,
+            'author': username,
+            'accept_contribution': accept_contribution,
+            'date': date.strftime('%Y-%m-%d') if date else None
         })
 
     return jsonify(recipes_data)
+
+def get_recipe_stats():
+    """Lấy thống kê số lượng recipe cho trang quản lý"""
+    try:
+        total = RecipeInfo.query.count()
+        approved = RecipesContribution.query.filter_by(accept_contribution=1).count()
+        pending = RecipesContribution.query.filter_by(accept_contribution=0).count()
+        rejected = RecipesContribution.query.filter_by(accept_contribution=2).count()
+        
+        return jsonify({
+            'total': total,
+            'approved': approved,
+            'pending': pending,
+            'rejected': rejected
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Lấy danh sách các công thức
 def get_recipes_publish():
@@ -575,7 +633,7 @@ def contribute_recipe():
         return jsonify({'message': 'Recipe not found'}), 404
 
     # Tạo bản ghi đóng góp
-    contribution = RecipesContribution(id_recipe=id_recipe, id_user=user_id, accept_contribution=False)
+    contribution = RecipesContribution(id_recipe=id_recipe, id_user=user_id, accept_contribution=0)
     db.session.add(contribution)
     db.session.commit()
 
@@ -722,12 +780,12 @@ def get_user_contributions():
 
 
 def get_total_unaccepted_recipes():
-    total_unaccepted_recipes = RecipesContribution.query.filter_by(accept_contribution=False).count()
+    total_unaccepted_recipes = RecipesContribution.query.filter_by(accept_contribution=0).count()
     return jsonify({'total_unaccepted_recipes': total_unaccepted_recipes})
 
 def get_unaccepted_recipes():
     try:
-        unaccepted_recipes = RecipesContribution.query.filter_by(accept_contribution=False).all()
+        unaccepted_recipes = RecipesContribution.query.filter_by(accept_contribution=0).all()
         
         recipes_data = []
         for contribution in unaccepted_recipes:

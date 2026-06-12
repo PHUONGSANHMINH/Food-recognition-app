@@ -480,7 +480,7 @@ def get_daily_meal_plan(default_calories=2000):
         recipes = db.session.query(RecipeInfo).join(
             RecipesContribution, 
             RecipeInfo.id_recipe == RecipesContribution.id_recipe
-        ).filter(RecipesContribution.accept_contribution == True).all()
+        ).filter(RecipesContribution.accept_contribution == 1).all()
         
         if not recipes:
             raise ValueError("No approved recipes available in the database.")

@@ -60,7 +60,7 @@ const Header = () => {
                     <Row>
                       <div className="col">
                         <CardTitle tag="h5" className="text-uppercase text-muted mb-0">
-                          Recipes
+                          Total Recipes
                         </CardTitle>
                         <span className="h2 font-weight-bold mb-0">
                           {stats.totalRecipes}
@@ -81,7 +81,7 @@ const Header = () => {
                     <Row>
                       <div className="col">
                         <CardTitle tag="h5" className="text-uppercase text-muted mb-0">
-                          Users
+                          Total Users
                         </CardTitle>
                         <span className="h2 font-weight-bold mb-0">
                           {stats.totalUsers}
@@ -123,15 +123,15 @@ const Header = () => {
                     <Row>
                       <div className="col">
                         <CardTitle tag="h5" className="text-uppercase text-muted mb-0">
-                          Unapproved contribution
+                          Total Scanned
                         </CardTitle>
                         <span className="h2 font-weight-bold mb-0">
-                          {stats.totalPendingContributions}
+                          0
                         </span>
                       </div>
                       <Col className="col-auto">
                         <div className="icon icon-shape bg-info text-white rounded-circle shadow">
-                          <i className="fas fa-percent" />
+                          <i className="fas fa-camera" />
                         </div>
                       </Col>
                     </Row>

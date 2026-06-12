@@ -27,39 +27,21 @@ const AddRecipe = () => {
     steps: [{ step_number: 1, content: null }],
     nutrition: {
       calories: null,
-      fat: null,
-      saturated_fat: null,
-      carbohydrates: null,
-      sugar: null,
-      cholesterol: null,
-      sodium: null,
       protein: null,
-      alcohol: null
-    },
-    vitamins: [{
-      calcium: null,
-      iron: null,
-      vitamin_a: null,
-      vitamin_c: null,
-      vitamin_d: null,
-      vitamin_e: null,
-      vitamin_k: null,
-      vitamin_b1: null,
-      vitamin_b2: null,
-      vitamin_b3: null,
-      vitamin_b5: null,
-      vitamin_b6: null,
-      vitamin_b12: null,
-      fiber: null
-    }]
+      carbohydrates: null,
+      fat: null,
+      fiber: null,
+      sugar: null,
+      sodium: null
+    }
   };
 
   const [recipe, setRecipe] = useState(initialRecipeState);
   const [recipeImage, setRecipeImage] = useState(null);
-  const [ingredientImages, setIngredientImages] = useState([null]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [recipeImagePreview, setRecipeImagePreview] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleNavigateRecipesList = () => {
     navigate('/admin/recipes'); // Điều hướng đến màn hình /admin/recipes
@@ -71,19 +53,6 @@ const AddRecipe = () => {
     setRecipe(prev => ({
       ...prev,
       [name]: value
-    }));
-  };
-
-  const handleVitaminChange = (index, e) => {
-    const { name, value } = e.target;
-    const newVitamins = [...recipe.vitamins];
-    newVitamins[index] = {
-      ...newVitamins[index],
-      [name]: value
-    };
-    setRecipe(prev => ({
-      ...prev,
-      vitamins: newVitamins
     }));
   };
 
@@ -129,7 +98,6 @@ const AddRecipe = () => {
       ...prev,
       ingredients: [...prev.ingredients, { name_ingredient: null, quantity: null, unit: null }]
     }));
-    setIngredientImages(prev => [...prev, null]);
   };
 
   const addStep = () => {
@@ -144,7 +112,6 @@ const AddRecipe = () => {
       ...prev,
       ingredients: prev.ingredients.filter((_, i) => i !== index)
     }));
-    setIngredientImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const removeStep = (index) => {
@@ -156,10 +123,43 @@ const AddRecipe = () => {
     }));
   };
 
-  const handleIngredientImageChange = (index, e) => {
-    const newIngredientImages = [...ingredientImages];
-    newIngredientImages[index] = e.target.files[0];
-    setIngredientImages(newIngredientImages);
+  const handleImageFile = (file) => {
+    if (file && file.type.startsWith('image/')) {
+      setRecipeImage(file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setRecipeImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const onDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const onDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const onDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const onDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleImageFile(files[0]);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -182,12 +182,7 @@ const AddRecipe = () => {
           ...acc,
           [key]: parseFloat(value) || 0
         }), {}),
-        vitamins: recipe.vitamins.map(vitamin =>
-          Object.entries(vitamin).reduce((acc, [key, value]) => ({
-            ...acc,
-            [key]: parseFloat(value) || 0
-          }), {})
-        )
+        vitamins: []
       };
 
       // Add recipe data as JSON string
@@ -197,13 +192,6 @@ const AddRecipe = () => {
       if (recipeImage) {
         formData.append('image', recipeImage);
       }
-
-      // Add ingredient images if they exist
-      ingredientImages.forEach((image, index) => {
-        if (image) {
-          formData.append('ingredients_images', image);
-        }
-      });
 
       // Send request to API
       const accessToken = await AsyncStorage.getItem("access_token");
@@ -223,7 +211,7 @@ const AddRecipe = () => {
       // Reset form
       setRecipe(initialRecipeState);
       setRecipeImage(null);
-      setIngredientImages([null]);
+      setRecipeImagePreview(null);
       alert('Recipe added successfully!');
       handleNavigateRecipesList();
     } catch (error) {
@@ -275,13 +263,20 @@ const AddRecipe = () => {
                       </Col>
                       <Col lg="6">
                         <FormGroup>
-                          <label className="form-control-label">Type</label>
+                          <label className="form-control-label">Category</label>
                           <Input
-                            type="text"
+                            type="select"
                             name="type"
-                            value={recipe.type}
+                            value={recipe.type || ""}
                             onChange={handleRecipeChange}
-                          />
+                            style={{ borderRadius: '10px' }}
+                          >
+                            <option value="">Select Category</option>
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Dinner">Dinner</option>
+                            <option value="Snack">Snack</option>
+                          </Input>
                         </FormGroup>
                       </Col>
                     </Row>
@@ -300,24 +295,56 @@ const AddRecipe = () => {
                       </Col>
                     </Row>
                     <Row>
-                      <Col lg="6">
+                      <Col lg="12">
                         <FormGroup>
                           <label className="form-control-label">Recipe Image</label>
-                          <Input
-                            type="file"
-                            onChange={(e) => {
-                              setRecipeImage(e.target.files[0]);
-                              const reader = new FileReader();
-                              reader.onload = () => {
-                                setRecipeImagePreview(reader.result);
-                              };
-                              reader.readAsDataURL(e.target.files[0]);
+                          <div
+                            onDragEnter={onDragEnter}
+                            onDragLeave={onDragLeave}
+                            onDragOver={onDragOver}
+                            onDrop={onDrop}
+                            onClick={() => document.getElementById('recipeImageInput').click()}
+                            style={{
+                              border: isDragging ? '2px dashed #2dce89' : '2px dashed #e9ecef',
+                              borderRadius: '15px',
+                              padding: '40px',
+                              textAlign: 'center',
+                              cursor: 'pointer',
+                              backgroundColor: isDragging ? 'rgba(45, 206, 137, 0.05)' : '#f8f9fe',
+                              transition: 'all 0.2s ease'
                             }}
-                            accept="image/*"
-                          />
-                          {recipeImagePreview && (
-                            <img src={recipeImagePreview} alt="Recipe Preview" style={{ width: '100%', marginTop: '10px' }} />
-                          )}
+                          >
+                            <Input
+                              id="recipeImageInput"
+                              type="file"
+                              onChange={(e) => handleImageFile(e.target.files[0])}
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                            />
+                            {recipeImagePreview ? (
+                              <div style={{ position: 'relative' }}>
+                                <img
+                                  src={recipeImagePreview}
+                                  alt="Recipe Preview"
+                                  style={{
+                                    maxWidth: '100%',
+                                    maxHeight: '300px',
+                                    borderRadius: '10px',
+                                    boxShadow: '0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08)'
+                                  }}
+                                />
+                                <div style={{ marginTop: '10px', color: '#8898aa', fontSize: '0.875rem' }}>
+                                  Click or drag to change image
+                                </div>
+                              </div>
+                            ) : (
+                              <div>
+                                <i className="fas fa-cloud-upload-alt fa-3x mb-3" style={{ color: '#adb5bd' }}></i>
+                                <h4 style={{ color: '#525f7f' }}>Drag and drop your image here</h4>
+                                <p className="text-muted mb-0">or click to browse files</p>
+                              </div>
+                            )}
+                          </div>
                         </FormGroup>
                       </Col>
                     </Row>
@@ -330,7 +357,7 @@ const AddRecipe = () => {
                     {recipe.ingredients.map((ingredient, index) => (
                       <div key={index} className="mb-3">
                         <Row>
-                          <Col lg="4">
+                          <Col lg="5">
                             <FormGroup>
                               <label className="form-control-label">Name</label>
                               <Input
@@ -339,6 +366,7 @@ const AddRecipe = () => {
                                 value={ingredient.name_ingredient}
                                 onChange={(e) => handleIngredientChange(index, e)}
                                 required
+                                style={{ borderRadius: '10px' }}
                               />
                             </FormGroup>
                           </Col>
@@ -351,10 +379,11 @@ const AddRecipe = () => {
                                 value={ingredient.quantity}
                                 onChange={(e) => handleIngredientChange(index, e)}
                                 required
+                                style={{ borderRadius: '10px' }}
                               />
                             </FormGroup>
                           </Col>
-                          <Col lg="3">
+                          <Col lg="2">
                             <FormGroup>
                               <label className="form-control-label">Unit</label>
                               <Input
@@ -363,42 +392,22 @@ const AddRecipe = () => {
                                 value={ingredient.unit}
                                 onChange={(e) => handleIngredientChange(index, e)}
                                 required
+                                style={{ borderRadius: '10px' }}
                               />
                             </FormGroup>
                           </Col>
-                          <Col lg="2">
-                            <FormGroup>
-                              <label className="form-control-label">Image</label>
-                              <Input
-                                type="file"
-                                onChange={(e) => {
-                                  handleIngredientImageChange(index, e);
-                                  const reader = new FileReader();
-                                  reader.onload = () => {
-                                    const newIngredientImages = [...ingredientImages];
-                                    newIngredientImages[index] = reader.result;
-                                    setIngredientImages(newIngredientImages);
-                                  };
-                                  reader.readAsDataURL(e.target.files[0]);
-                                }}
-                                accept="image/*"
-                              />
-                              {ingredientImages[index] && (
-                                <img src={ingredientImages[index]} alt={`Ingredient Preview ${index}`} style={{ width: '100%', marginTop: '10px' }} />
-                              )}
-                            </FormGroup>
-                          </Col>
-                          {index > 0 && (
-                            <Col lg="2" className="d-flex align-items-center">
+                          <Col lg="2" className="d-flex align-items-center justify-content-end">
+                            {index > 0 && (
                               <Button
                                 color="danger"
                                 size="sm"
                                 onClick={() => removeIngredient(index)}
+                                style={{ borderRadius: '10px', marginTop: '14px' }}
                               >
-                                Delete
+                                <i className="fas fa-trash" />
                               </Button>
-                            </Col>
-                          )}
+                            )}
+                          </Col>
                         </Row>
                       </div>
                     ))}
@@ -468,80 +477,7 @@ const AddRecipe = () => {
                             name="calories"
                             value={recipe.nutrition.calories}
                             onChange={handleNutritionChange}
-                          />
-                        </FormGroup>
-                      </Col>
-                      <Col lg="3">
-                        <FormGroup>
-                          <label className="form-control-label">Fat (g)</label>
-                          <Input
-                            type="number"
-                            min="0"
-                            name="fat"
-                            value={recipe.nutrition.fat}
-                            onChange={handleNutritionChange}
-                          />
-                        </FormGroup>
-                      </Col>
-                      <Col lg="3">
-                        <FormGroup>
-                          <label className="form-control-label">Saturated Fat (g)</label>
-                          <Input
-                            type="number"
-                            min="0"
-                            name="saturated_fat"
-                            value={recipe.nutrition.saturated_fat}
-                            onChange={handleNutritionChange}
-                          />
-                        </FormGroup>
-                      </Col>
-                      <Col lg="3">
-                        <FormGroup>
-                          <label className="form-control-label">Carbohydrates (g)</label>
-                          <Input
-                            type="number"
-                            min="0"
-                            name="carbohydrates"
-                            value={recipe.nutrition.carbohydrates}
-                            onChange={handleNutritionChange}
-                          />
-                        </FormGroup>
-                      </Col>
-                    </Row>
-                    <Row>
-                      <Col lg="3">
-                        <FormGroup>
-                          <label className="form-control-label">Sugar (g)</label>
-                          <Input
-                            type="number"
-                            min="0"
-                            name="sugar"
-                            value={recipe.nutrition.sugar}
-                            onChange={handleNutritionChange}
-                          />
-                        </FormGroup>
-                      </Col>
-                      <Col lg="3">
-                        <FormGroup>
-                          <label className="form-control-label">Cholesterol (mg)</label>
-                          <Input
-                            type="number"
-                            min="0"
-                            name="cholesterol"
-                            value={recipe.nutrition.cholesterol}
-                            onChange={handleNutritionChange}
-                          />
-                        </FormGroup>
-                      </Col>
-                      <Col lg="3">
-                        <FormGroup>
-                          <label className="form-control-label">Sodium (mg)</label>
-                          <Input
-                            type="number"
-                            min="0"
-                            name="sodium"
-                            value={recipe.nutrition.sodium}
-                            onChange={handleNutritionChange}
+                            style={{ borderRadius: '10px' }}
                           />
                         </FormGroup>
                       </Col>
@@ -554,6 +490,33 @@ const AddRecipe = () => {
                             name="protein"
                             value={recipe.nutrition.protein}
                             onChange={handleNutritionChange}
+                            style={{ borderRadius: '10px' }}
+                          />
+                        </FormGroup>
+                      </Col>
+                      <Col lg="3">
+                        <FormGroup>
+                          <label className="form-control-label">Carbohydrates (g)</label>
+                          <Input
+                            type="number"
+                            min="0"
+                            name="carbohydrates"
+                            value={recipe.nutrition.carbohydrates}
+                            onChange={handleNutritionChange}
+                            style={{ borderRadius: '10px' }}
+                          />
+                        </FormGroup>
+                      </Col>
+                      <Col lg="3">
+                        <FormGroup>
+                          <label className="form-control-label">Fat (g)</label>
+                          <Input
+                            type="number"
+                            min="0"
+                            name="fat"
+                            value={recipe.nutrition.fat}
+                            onChange={handleNutritionChange}
+                            style={{ borderRadius: '10px' }}
                           />
                         </FormGroup>
                       </Col>
@@ -561,204 +524,46 @@ const AddRecipe = () => {
                     <Row>
                       <Col lg="3">
                         <FormGroup>
-                          <label className="form-control-label">Alcohol (g)</label>
+                          <label className="form-control-label">Fiber (g)</label>
                           <Input
                             type="number"
                             min="0"
-                            name="alcohol"
-                            value={recipe.nutrition.alcohol}
+                            name="fiber"
+                            value={recipe.nutrition.fiber}
                             onChange={handleNutritionChange}
+                            style={{ borderRadius: '10px' }}
+                          />
+                        </FormGroup>
+                      </Col>
+                      <Col lg="3">
+                        <FormGroup>
+                          <label className="form-control-label">Sugar (g)</label>
+                          <Input
+                            type="number"
+                            min="0"
+                            name="sugar"
+                            value={recipe.nutrition.sugar}
+                            onChange={handleNutritionChange}
+                            style={{ borderRadius: '10px' }}
+                          />
+                        </FormGroup>
+                      </Col>
+                      <Col lg="3">
+                        <FormGroup>
+                          <label className="form-control-label">Sodium (mg)</label>
+                          <Input
+                            type="number"
+                            min="0"
+                            name="sodium"
+                            value={recipe.nutrition.sodium}
+                            onChange={handleNutritionChange}
+                            style={{ borderRadius: '10px' }}
                           />
                         </FormGroup>
                       </Col>
                     </Row>
                   </div>
 
-                  {/* Vitamins Section */}
-                  <hr className="my-4" />
-                  <h6 className="heading-small text-muted mb-4">Vitamin Information</h6>
-                  <div className="pl-lg-4">
-                    {recipe.vitamins.map((vitamin, index) => (
-                      <div key={index} className="mb-3">
-                        <Row>
-                          <Col lg="3">
-                            <FormGroup>
-                              <label className="form-control-label">Calcium (mg)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                name="calcium"
-                                value={vitamin.calcium}
-                                onChange={(e) => handleVitaminChange(index, e)}
-                              />
-                            </FormGroup>
-                          </Col>
-                          <Col lg="3">
-                            <FormGroup>
-                              <label className="form-control-label">Iron (mg)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                name="iron"
-                                value={vitamin.iron}
-                                onChange={(e) => handleVitaminChange(index, e)}
-                              />
-                            </FormGroup>
-                          </Col>
-                          <Col lg="3">
-                            <FormGroup>
-                              <label className="form-control-label">Vitamin A (IU)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                name="vitamin_a"
-                                value={vitamin.vitamin_a}
-                                onChange={(e) => handleVitaminChange(index, e)}
-                              />
-                            </FormGroup>
-                          </Col>
-                          <Col lg="3">
-                            <FormGroup>
-                              <label className="form-control-label">Vitamin C (mg)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                name="vitamin_c"
-                                value={vitamin.vitamin_c}
-                                onChange={(e) => handleVitaminChange(index, e)}
-                              />
-                            </FormGroup>
-                          </Col>
-                        </Row>
-                        <Row>
-                          <Col lg="3">
-                            <FormGroup>
-                              <label className="form-control-label">Vitamin D (IU)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                name="vitamin_d"
-                                value={vitamin.vitamin_d}
-                                onChange={(e) => handleVitaminChange(index, e)}
-                              />
-                            </FormGroup>
-                          </Col>
-                          <Col lg="3">
-                            <FormGroup>
-                              <label className="form-control-label">Vitamin E (mg)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                name="vitamin_e"
-                                value={vitamin.vitamin_e}
-                                onChange={(e) => handleVitaminChange(index, e)}
-                              />
-                            </FormGroup>
-                          </Col>
-                          <Col lg="3">
-                            <FormGroup>
-                              <label className="form-control-label">Vitamin K (µg)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                name="vitamin_k"
-                                value={vitamin.vitamin_k}
-                                onChange={(e) => handleVitaminChange(index, e)}
-                              />
-                            </FormGroup>
-                          </Col>
-                          <Col lg="3">
-                            <FormGroup>
-                              <label className="form-control-label">Vitamin B1 (mg)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                name="vitamin_b1"
-                                value={vitamin.vitamin_b1}
-                                onChange={(e) => handleVitaminChange(index, e)}
-                              />
-                            </FormGroup>
-                          </Col>
-                        </Row>
-                        <Row>
-                          <Col lg="3">
-                            <FormGroup>
-                              <label className="form-control-label">Vitamin B2 (mg)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                name="vitamin_b2"
-                                value={vitamin.vitamin_b2}
-                                onChange={(e) => handleVitaminChange(index, e)}
-                              />
-                            </FormGroup>
-                          </Col>
-                          <Col lg="3">
-                            <FormGroup>
-                              <label className="form-control-label">Vitamin B3 (mg)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                name="vitamin_b3"
-                                value={vitamin.vitamin_b3}
-                                onChange={(e) => handleVitaminChange(index, e)}
-                              />
-                            </FormGroup>
-                          </Col>
-                          <Col lg="3">
-                            <FormGroup>
-                              <label className="form-control-label">Vitamin B5 (mg)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                name="vitamin_b5"
-                                value={vitamin.vitamin_b5}
-                                onChange={(e) => handleVitaminChange(index, e)}
-                              />
-                            </FormGroup>
-                          </Col>
-                          <Col lg="3">
-                            <FormGroup>
-                              <label className="form-control-label">Vitamin B6 (mg)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                name="vitamin_b6"
-                                value={vitamin.vitamin_b6}
-                                onChange={(e) => handleVitaminChange(index, e)}
-                              />
-                            </FormGroup>
-                          </Col>
-                        </Row>
-                        <Row>
-                          <Col lg="3">
-                            <FormGroup>
-                              <label className="form-control-label">Vitamin B12 (µg)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                name="vitamin_b12"
-                                value={vitamin.vitamin_b12}
-                                onChange={(e) => handleVitaminChange(index, e)}
-                              />
-                            </FormGroup>
-                          </Col>
-                          <Col lg="3">
-                            <FormGroup>
-                              <label className="form-control-label">Fiber (g)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                name="fiber"
-                                value={vitamin.fiber}
-                                onChange={(e) => handleVitaminChange(index, e)}
-                              />
-                            </FormGroup>
-                          </Col>
-                        </Row>
-                      </div>
-                    ))}
-                  </div>
                   <div className="pl-lg-4 mt-4">
                     <Button
                       color="primary"

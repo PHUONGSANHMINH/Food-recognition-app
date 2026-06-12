@@ -60,6 +60,9 @@ const Sidebar = (props) => {
   const [collapseOpen, setCollapseOpen] = useState();
   const [userName, setUserName] = useState("Admin User");
   const [userEmail, setUserEmail] = useState("");
+  const [pendingCount, setPendingCount] = useState(0);
+
+  const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN;
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -68,8 +71,6 @@ const Sidebar = (props) => {
         try {
           const decoded = jwtDecode(token);
           setUserName(decoded.sub || "Admin User");
-          // If the email is in the payload, we can set it here. 
-          // For now, let's assume it might be in 'email' or just stick to a fallback if not present.
           if (decoded.email) {
             setUserEmail(decoded.email);
           }
@@ -78,8 +79,27 @@ const Sidebar = (props) => {
         }
       }
     };
+
+    const fetchPendingCount = async () => {
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        const response = await fetch(`${apiDomain}/api/recipe/stats`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const stats = await response.json();
+          setPendingCount(stats.pending || 0);
+        }
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      }
+    };
+
     fetchUserData();
-  }, []);
+    fetchPendingCount();
+  }, [apiDomain]);
 
   // verifies if routeName is the one active (in browser input)
   const activeRoute = (routeName) => {
@@ -107,7 +127,12 @@ const Sidebar = (props) => {
             >
               <i className={prop.icon} />
               {prop.name}
-              {prop.badge && (
+              {prop.name === "Recipes" && pendingCount > 0 && (
+                <span className="badge badge-pill badge-danger ml-auto" style={{ backgroundColor: '#f5365c', color: 'white' }}>
+                  {pendingCount}
+                </span>
+              )}
+              {prop.badge && prop.name !== "Recipes" && (
                 <span className="badge badge-pill badge-primary ml-auto">
                   {prop.badge}
                 </span>

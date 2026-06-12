@@ -2,15 +2,21 @@ import {
   Card,
   CardHeader,
   CardFooter,
-  Media,
-  Pagination,
-  PaginationItem,
-  PaginationLink,
   Table,
   Container,
   Row,
+  Col,
   Input,
-  Button
+  Button,
+  Badge,
+  CardBody,
+  Pagination,
+  PaginationItem,
+  PaginationLink,
+  DropdownMenu,
+  DropdownItem,
+  UncontrolledDropdown,
+  DropdownToggle,
 } from "reactstrap";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -25,14 +31,20 @@ const Recipes = () => {
   const [error, setError] = useState(null);
   const [totalPages, setTotalPages] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("all");
   const [hoveredImage, setHoveredImage] = useState(null);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
   const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN;
   const navigate = useNavigate();
 
-  const fetchTotalRecords = async (keyword = '') => {
+  const fetchTotalRecords = async (keyword = '', status = "all") => {
     try {
-      const response = await fetch(`${apiDomain}/api/recipe/total?search=${keyword}`);
+      let url = `${apiDomain}/api/recipe/total?search=${keyword}`;
+      if (status !== "all") {
+        url += `&status=${status}`;
+      }
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error("Lỗi khi lấy tổng số bản ghi");
       }
@@ -47,20 +59,22 @@ const Recipes = () => {
     }
   };
 
-  const fetchData = async (page = 1, limit = itemsPerPage, keyword = '') => {
+  const fetchData = async (page = 1, limit = itemsPerPage, keyword = '', status = "all") => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(
-        `${apiDomain}/api/recipe/?page=${page}&limit=${limit}&search=${keyword}`
-      );
+      let url = `${apiDomain}/api/recipe/?page=${page}&limit=${limit}&search=${keyword}`;
+      if (status !== "all") {
+        url += `&status=${status}`;
+      }
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error("Lỗi khi lấy dữ liệu");
       }
       const result = await response.json();
       setData(result || []);
 
-      fetchTotalRecords(keyword);
+      fetchTotalRecords(keyword, status);
     } catch (error) {
       console.error("Error fetching data: ", error);
       setError(error.message);
@@ -70,16 +84,12 @@ const Recipes = () => {
   };
 
   useEffect(() => {
-    fetchData(currentPage, itemsPerPage, searchKeyword);
-  }, [currentPage, itemsPerPage, searchKeyword]);
+    fetchData(currentPage, itemsPerPage, searchKeyword, filterStatus);
+  }, [currentPage, itemsPerPage, searchKeyword, filterStatus]);
 
   useEffect(() => {
-    if (searchKeyword) {
-      fetchTotalRecords(searchKeyword);
-    } else {
-      fetchTotalRecords();
-    }
-  }, [searchKeyword]);
+    fetchTotalRecords(searchKeyword, filterStatus);
+  }, [searchKeyword, filterStatus]);
 
   const paginate = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -139,6 +149,26 @@ const Recipes = () => {
     }
   };
 
+  const handleApproveRecipe = async (id) => {
+    try {
+      const response = await fetch(`${apiDomain}/api/recipe/approve-recipes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ recipes: [id] }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error while approving recipe");
+      }
+      window.alert("Recipe approved successfully!");
+      fetchData(currentPage, itemsPerPage, searchKeyword);
+    } catch (error) {
+      console.error("Error approving recipe: ", error);
+    }
+  };
+
   return (
     <>
       <Header />
@@ -146,35 +176,119 @@ const Recipes = () => {
         <Row>
           <div className="col">
             <Card className="shadow ">
-              <CardHeader className="border-0">
-                <div className="d-flex justify-content-between align-items-center">
-                  <h3 className="mb-0">Recipes</h3>
-                  <Button
-                    color="success"
-                    onClick={handleAddRecipe}
-                    className="mb-3"
-                  >
-                    Add Recipe
-                  </Button>
-                </div>
-                <Input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchKeyword}
-                  onChange={handleSearchChange}
-                  className="mt-3"
-                />
+              <CardHeader className="border-0 bg-white">
+                <Row className="align-items-center">
+                  <div className="col">
+                    <h2 className="mb-0 font-weight-bold">Recipe Management</h2>
+                    <p className="text-muted small mb-0">Create, update, and approve food recipes for the app</p>
+                  </div>
+                </Row>
+                <Row className="mt-4 align-items-center">
+                  <Col md="6">
+                    <div className="form-group mb-0">
+                      <div className={`input-group input-group-alternative ${searchFocused ? 'focused' : ''}`}
+                        style={{
+                          border: searchFocused ? '1px solid #2dce89' : '1px solid #e9ecef',
+                          borderRadius: '10px',
+                          transition: 'border-color 0.2s ease-in-out'
+                        }}>
+                        <div className="input-group-prepend">
+                          <span className="input-group-text">
+                            <i className="fas fa-search" style={{ color: searchFocused ? '#2dce89' : '#adb5bd' }} />
+                          </span>
+                        </div>
+                        <Input
+                          placeholder="Search recipes..."
+                          type="text"
+                          value={searchKeyword}
+                          onChange={handleSearchChange}
+                          onFocus={() => setSearchFocused(true)}
+                          onBlur={() => setSearchFocused(false)}
+                          style={{
+                            border: 'none',
+                            boxShadow: 'none',
+                            borderRadius: '0 10px 10px 0'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </Col>
+                  <Col md="3">
+                    <UncontrolledDropdown>
+                      <DropdownToggle
+                        caret
+                        style={{
+                          borderRadius: '10px',
+                          height: '45px',
+                          border: '1px solid #e9ecef',
+                          width: '170%',
+                          backgroundColor: '#fff',
+                          color: '#495057',
+                          textAlign: 'left',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}
+                      >
+                        {filterStatus === "all" ? "All Recipes" :
+                          filterStatus === 1 ? "Approved" :
+                            filterStatus === 0 ? "Pending Review" : "All Recipes"}
+                      </DropdownToggle>
+                      <DropdownMenu
+                        style={{
+                          borderRadius: '10px',
+                          padding: '0',
+                          overflow: 'hidden',
+                          border: '1px solid #e9ecef',
+                          width: '170%'
+                        }}
+                      >
+                        <DropdownItem
+                          className="custom-dropdown-item"
+                          onClick={() => { setFilterStatus("all"); setCurrentPage(1); }}
+                        >
+                          All Recipes
+                        </DropdownItem>
+                        <DropdownItem
+                          className="custom-dropdown-item"
+                          onClick={() => { setFilterStatus(1); setCurrentPage(1); }}
+                        >
+                          Approved
+                        </DropdownItem>
+                        <DropdownItem
+                          className="custom-dropdown-item"
+                          onClick={() => { setFilterStatus(0); setCurrentPage(1); }}
+                        >
+                          Pending Review
+                        </DropdownItem>
+                      </DropdownMenu>
+                    </UncontrolledDropdown>
+                  </Col>
+                  <Col md="3" className="text-right">
+                    <Button
+                      color="success"
+                      onClick={handleAddRecipe}
+                      className="btn-icon btn-2 w-100"
+                      style={{ borderRadius: '10px', height: '45px' }}
+                    >
+                      <span className="btn-inner--icon">
+                        <i className="fas fa-plus mr-2" />
+                      </span>
+                      <span className="btn-inner--text">Add Recipe</span>
+                    </Button>
+                  </Col>
+                </Row>
               </CardHeader>
               <div className="fixed-table-container">
                 <Table className="align-items-center table-flush" responsive>
-                  <thead className="thead-light">
+                  <thead style={{ backgroundColor: '#2dce89', color: 'white' }}>
                     <tr>
-                      <th scope="col">Name</th>
-                      <th scope="col">Image</th>
-                      <th scope="col">Status</th>
-                      <th scope="col">Summary</th>
-                      <th scope="col">Update</th>
-                      <th scope="col">Delete</th>
+                      <th scope="col" className="text-white">Recipe Name</th>
+                      <th scope="col" className="text-white">Cuisine</th>
+                      <th scope="col" className="text-white">Author</th>
+                      <th scope="col" className="text-white">Status</th>
+                      <th scope="col" className="text-white">Date</th>
+                      <th scope="col" className="text-white text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -182,69 +296,84 @@ const Recipes = () => {
                       Array.from({ length: 10 }).map((_, index) => (
                         <tr key={index} className="skeleton-row">
                           <td><div className="skeleton skeleton-text" /></td>
-                          <td><div className="skeleton skeleton-image" /></td>
                           <td><div className="skeleton skeleton-text" /></td>
                           <td><div className="skeleton skeleton-text" /></td>
                           <td><div className="skeleton skeleton-text" /></td>
                           <td><div className="skeleton skeleton-text" /></td>
-                          <td><div className="skeleton skeleton-image" /></td>
-                          <td><div className="skeleton skeleton-text" /></td>
-                          <td><div className="skeleton skeleton-text" /></td>
-                          <td><div className="skeleton skeleton-text" /></td>
+                          <td className="text-right"><div className="skeleton skeleton-text" /></td>
                         </tr>
                       ))
                     ) : error ? (
                       <tr>
-                        <td colSpan="4" className="text-center text-danger">
+                        <td colSpan="6" className="text-center text-danger">
                           {error}
                         </td>
                       </tr>
                     ) : data && data.length > 0 ? (
                       data.map((item) => (
                         <tr key={item.id_recipe}>
-                          <td>{item.name_recipe}</td>
+                          <td className="font-weight-bold">{item.name_recipe}</td>
+                          <td>{item.type || "General"}</td>
+                          <td className="text-muted">{item.author || "Admin"}</td>
                           <td>
-                            <Media>
-                              <a href="#pablo" onClick={(e) => e.preventDefault()}>
-                                <img
-                                  alt={item.name_recipe}
-                                  src={`${apiDomain}/api/file/get-file/recipes/${item.image}`}
-                                  style={{
-                                    width: "50px",
-                                    height: "50px",
-                                    borderRadius: "5px",
-                                  }}
-                                  onMouseEnter={(e) => handleMouseEnter(e, `${apiDomain}/api/file/get-file/recipes/${item.image}`)}
-                                  onMouseLeave={handleMouseLeave}
-                                />
-                              </a>
-                            </Media>
+                            {item.accept_contribution === 1 ? (
+                              <Badge color="success" pill style={{ padding: '8px 12px', fontSize: '0.8rem', backgroundColor: '#dcfce7', color: '#166534', border: 'none' }}>
+                                Approved
+                              </Badge>
+                            ) : (
+                              <Badge color="warning" pill style={{ padding: '8px 12px', fontSize: '0.8rem', backgroundColor: '#fef9c3', color: '#854d0e', border: 'none' }}>
+                                Pending Review
+                              </Badge>
+                            )}
                           </td>
-                          <td>{item.status}</td>
-                          <td>{item.summary}</td>
-                          <td>
+                          <td className="text-muted">{item.date}</td>
+                          <td className="text-right">
+                            {item.accept_contribution === 0 && (
+                              <>
+                                <Button
+                                  className="btn-icon btn-2 btn-sm"
+                                  color="success"
+                                  type="button"
+                                  onClick={() => handleApproveRecipe(item.id_recipe)}
+                                  style={{ backgroundColor: 'transparent', border: 'none', color: '#2dce89' }}
+                                >
+                                  <i className="fas fa-check" />
+                                </Button>
+                                <Button
+                                  className="btn-icon btn-2 btn-sm"
+                                  color="danger"
+                                  type="button"
+                                  onClick={() => handleDeleteRecipe(item.id_recipe)}
+                                  style={{ backgroundColor: 'transparent', border: 'none', color: '#f5365c' }}
+                                >
+                                  <i className="fas fa-times" />
+                                </Button>
+                              </>
+                            )}
                             <Button
-                              color="primary"
-                              size="sm"
+                              className="btn-icon btn-2 btn-sm"
+                              color="info"
+                              type="button"
                               onClick={() => handleUpdateRecipe(item.id_recipe)}
+                              style={{ backgroundColor: 'transparent', border: 'none', color: '#11cdef' }}
                             >
-                              Update
+                              <i className="fas fa-edit" />
                             </Button>
-                          </td>
-                          <td>
                             <Button
+                              className="btn-icon btn-2 btn-sm"
                               color="danger"
-                              size="sm"
+                              type="button"
                               onClick={() => handleDeleteRecipe(item.id_recipe)}
+                              style={{ backgroundColor: 'transparent', border: 'none', color: '#f5365c' }}
                             >
-                              Delete
+                              <i className="fas fa-trash" />
                             </Button>
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="4" className="text-center">
+                        <td colSpan="6" className="text-center">
                           There is no data to display
                         </td>
                       </tr>
@@ -279,7 +408,7 @@ const Recipes = () => {
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         .fixed-height {
           height: 60vh;
           display: flex;
@@ -359,6 +488,22 @@ const Recipes = () => {
           width: 50px;
           height: 50px;
           border-radius: 5px;
+        }
+
+        /* Custom Dropdown Item Hover Effect */
+        .custom-dropdown-item {
+          padding: 12px 20px !important;
+          transition: all 0.2s !important;
+          cursor: pointer !important;
+        }
+
+        .custom-dropdown-item:hover {
+          background-color: #2dce89 !important;
+          color: white !important;
+        }
+
+        .custom-dropdown-item:active {
+          background-color: #26af74 !important;
         }
       `}</style>
     </>

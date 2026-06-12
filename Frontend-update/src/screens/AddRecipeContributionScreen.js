@@ -26,6 +26,7 @@ const AddRecipeContributionScreen = () => {
     const navigation = useNavigation();
     const [showNutritionForm, setShowNutritionForm] = useState(false);
     const [recipeName, setRecipeName] = useState('');
+    const [recipeType, setRecipeType] = useState('Breakfast');
     const [mainImage, setMainImage] = useState(null);
     const [loading, setLoading] = useState(false);
     const [showImagePicker, setShowImagePicker] = useState(false);
@@ -43,11 +44,6 @@ const AddRecipeContributionScreen = () => {
         sugar: null,
         sodium: null,
     });
-    const [vitamins, setVitamins] = useState([{
-        calcium: null, iron: null, vitamin_a: null, vitamin_c: null, vitamin_d: null,
-        vitamin_e: null, vitamin_k: null, vitamin_b1: null, vitamin_b2: null,
-        vitamin_b3: null, vitamin_b5: null, vitamin_b6: null, vitamin_b12: null
-    }]);
 
     const handleImageResult = (result) => {
         setShowImagePicker(false);
@@ -131,13 +127,13 @@ const AddRecipeContributionScreen = () => {
 
             const recipeData = {
                 name_recipe: recipeName,
-                type: 'General',
+                type: recipeType,
                 summary: '',
                 status: 'Pending',
                 ingredients: ingredients.filter(ing => ing.name_ingredient && ing.quantity),
                 steps: steps.filter(s => s.content.trim() !== ''),
                 nutrition,
-                vitamins: [vitamins[0]]
+                vitamins: []
             };
 
             formData.append('recipe_data', JSON.stringify(recipeData));
@@ -200,6 +196,20 @@ const AddRecipeContributionScreen = () => {
                             value={recipeName}
                             onChangeText={setRecipeName}
                         />
+
+                        <Text style={styles.sectionTitle}>Category</Text>
+                        <View style={styles.pickerContainer}>
+                            <Picker
+                                selectedValue={recipeType}
+                                onValueChange={(itemValue) => setRecipeType(itemValue)}
+                                style={styles.picker}
+                            >
+                                <Picker.Item label="Breakfast" value="Breakfast" />
+                                <Picker.Item label="Lunch" value="Lunch" />
+                                <Picker.Item label="Dinner" value="Dinner" />
+                                <Picker.Item label="Snack" value="Snack" />
+                            </Picker>
+                        </View>
 
                         <Text style={styles.sectionTitle}>Ingredients</Text>
                         {ingredients.map((ing, idx) => (
@@ -433,7 +443,19 @@ const styles = StyleSheet.create({
     alertBox: { width: '80%', backgroundColor: '#fff', borderRadius: 15, borderWidth: 2, borderColor: '#3F805A', padding: 24, alignItems: 'center', elevation: 5 },
     alertMsg: { fontSize: 16, fontWeight: '600', color: '#111', textAlign: 'center', marginBottom: 20, lineHeight: 22 },
     alertBtn: { backgroundColor: '#3F805A', paddingHorizontal: 30, paddingVertical: 10, borderRadius: 8, minWidth: 100, alignItems: 'center' },
-    alertBtnText: { color: '#fff', fontSize: 15, fontWeight: 'bold' }
+    alertBtnText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
+    pickerContainer: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 10,
+        marginBottom: 12,
+        overflow: 'hidden',
+    },
+    picker: {
+        height: 50,
+        width: '100%',
+    },
 });
 
 export default AddRecipeContributionScreen;

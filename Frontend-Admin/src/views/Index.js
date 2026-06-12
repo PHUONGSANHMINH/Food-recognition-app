@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import classnames from "classnames";
 import Chart from "chart.js";
-import { Line, Bar } from "react-chartjs-2";
+import { Line, Bar, Doughnut } from "react-chartjs-2";
 import {
   Button,
   Card,
@@ -32,8 +32,12 @@ const Index = () => {
   const [activeNav, setActiveNav] = useState(1);
   const [chartExample1Data, setChartExample1Data] = useState("data1");
   const [unapprovedRecipes, setUnapprovedRecipes] = useState([]);
-  const [chartData, setChartData] = useState({}); // Dữ liệu biểu đồ
-  const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN; // Đảm bảo biến môi trường này đúng
+  const [chartData, setChartData] = useState({});
+  const [calorieData, setCalorieData] = useState({});
+  const [recentRecipes, setRecentRecipes] = useState([]);
+  const [userStatuses, setUserStatuses] = useState([]);
+  // Dữ liệu biểu đồ calo
+  const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN;
 
   useEffect(() => {
     const fetchUnapprovedRecipes = async () => {
@@ -65,49 +69,101 @@ const Index = () => {
 
     const fetchChartData = async () => {
       try {
-        // Lấy access token từ AsyncStorage
         const accessToken = await AsyncStorage.getItem('access_token');
-        if (!accessToken) {
-          console.error("No access token found");
-          return;
-        }
+        if (!accessToken) return;
 
-        // Gọi API để lấy dữ liệu thống kê (ví dụ: số lượng đóng góp theo tháng)
-        const response = await fetch(`${apiDomain}/admin/contribution-analysis`, {
+        const response = await fetch(`${apiDomain}/api/recipe/stats`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
         });
 
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-
+        if (!response.ok) throw new Error("Network response was not ok");
         const data = await response.json();
 
-        // Cập nhật dữ liệu cho biểu đồ
-        const months = data.map(item => item.month);
-        const contributions = data.map(item => item.contributions);
-
         setChartData({
-          labels: months,
+          labels: ['Approved', 'Pending', 'Rejected'],
           datasets: [
             {
-              label: 'Contributions',
-              backgroundColor: 'rgba(53, 162, 235, 0.5)',
-              borderColor: 'rgba(53, 162, 235, 1)',
-              data: contributions,
+              data: [data.approved, data.pending, data.rejected],
+              backgroundColor: ['#2dce89', '#ff9f43', '#f5365c'],
+              hoverBackgroundColor: ['#2dce89', '#ff9f43', '#f5365c'],
+              borderWidth: 0,
             },
           ],
+          stats: data // Save raw data for legend display
         });
       } catch (error) {
         console.error("There was an error fetching the chart data:", error);
       }
     };
 
+    const fetchCalorieData = async () => {
+      try {
+        const accessToken = await AsyncStorage.getItem('access_token');
+        if (!accessToken) return;
+
+        const response = await fetch(`${apiDomain}/admin/calorie-observation`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (!response.ok) throw new Error("Network response was not ok");
+        const data = await response.json();
+
+        setCalorieData({
+          labels: data.labels.map(l => l.split('-').slice(1).join('/')), // MM/DD format
+          datasets: [
+            {
+              label: 'Actual Calories',
+              data: data.intake_data,
+              backgroundColor: '#2dce89',
+              borderRadius: 5,
+              barPercentage: 0.6,
+              categoryPercentage: 0.5,
+            },
+            {
+              label: 'Recommended Calories',
+              data: data.goal_data,
+              backgroundColor: '#e1f99aff',
+              borderRadius: 5,
+              barPercentage: 0.6,
+              categoryPercentage: 0.5,
+            }
+          ],
+        });
+      } catch (error) {
+        console.error("Error fetching calorie data:", error);
+      }
+    };
+
     fetchUnapprovedRecipes();
+    const fetchRecentData = async () => {
+      try {
+        const accessToken = await AsyncStorage.getItem('access_token');
+        if (!accessToken) return;
+
+        const [recipesRes, usersRes] = await Promise.all([
+          fetch(`${apiDomain}/admin/recent-contributions`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }),
+          fetch(`${apiDomain}/admin/user-status`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          })
+        ]);
+
+        if (recipesRes.ok) setRecentRecipes(await recipesRes.json());
+        if (usersRes.ok) setUserStatuses(await usersRes.json());
+      } catch (error) {
+        console.error("Error fetching recent data:", error);
+      }
+    };
+
     fetchChartData();
-  }, []); // Chạy mỗi khi component mount
+    fetchCalorieData();
+    fetchRecentData();
+  }, [apiDomain]);
 
   if (window.Chart) {
     parseOptions(Chart, chartOptions());
@@ -125,51 +181,81 @@ const Index = () => {
       {/* Page content */}
       <Container className="mt--7" fluid>
         <Row>
-          <Col className="mb-5 mb-xl-4" xl="8">
+          <Col className="mb-5 mb-xl-0" xl="8">
             <Card className="shadow">
-              <CardHeader className="border-0">
+              <CardHeader className="bg-transparent border-0">
                 <Row className="align-items-center">
                   <div className="col">
-                    <h3 className="mb-0">Unapproved Contributions</h3>
-                  </div>
-                  <div className="col text-right">
+                    <h2 className="mb-0 font-weight-bold">Daily Average Calories</h2>
                   </div>
                 </Row>
               </CardHeader>
-              <Table className="align-items-center table-flush" responsive style={{ minHeight: '430px', overflowY: 'auto' }}>
-                <thead className="thead-light">
-                  <tr>
-                    <th scope="col">Recipe Name</th>
-                    <th scope="col">Image</th>
-                    <th scope="col">Type</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Summary</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {unapprovedRecipes.length > 0 ? (
-                    unapprovedRecipes.map((recipe) => (
-                      <tr key={recipe.id_recipe}>
-                        <th scope="row">{recipe.name_recipe}</th>
-                        <td>
-                          <img
-                            src={`${apiDomain}/api/file/get-file/recipes/${recipe.image}`}
-                            alt={recipe.name_recipe}
-                            style={{ width: "50px", height: "50px", objectFit: "cover" }}
-                          />
-                        </td>
-                        <td>{recipe.type}</td>
-                        <td>{recipe.status}</td>
-                        <td>{recipe.summary}</td>
-                      </tr>
-                    ))
+              <CardBody>
+                <div className="chart" style={{ height: '400px' }}>
+                  {calorieData.labels ? (
+                    <Bar
+                      data={calorieData}
+                      options={{
+                        maintainAspectRatio: false,
+                        layout: {
+                          padding: {
+                            left: -10,
+                            right: 0,
+                            top: 0,
+                            bottom: 0
+                          }
+                        },
+                        scales: {
+                          yAxes: [{
+                            ticks: {
+                              beginAtZero: true,
+                              padding: 10,
+                              stepSize: 600,
+                              fontColor: '#8898aa',
+                              callback: function (value) {
+                                if (value % 600 === 0) return value;
+                              }
+                            },
+                            gridLines: {
+                              color: '#e9ecef',
+                              borderDash: [2],
+                              borderDashOffset: [2],
+                              drawBorder: false,
+                              drawTicks: false,
+                              zeroLineColor: 'transparent'
+                            }
+                          }],
+                          xAxes: [{
+                            gridLines: {
+                              display: false,
+                              drawBorder: false
+                            },
+                            ticks: {
+                              padding: 20,
+                              fontColor: '#8898aa'
+                            }
+                          }]
+                        },
+                        legend: {
+                          display: true,
+                          position: 'bottom',
+                          labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            fontColor: '#8898aa'
+                          }
+                        },
+                        tooltips: {
+                          mode: 'index',
+                          intersect: false,
+                        }
+                      }}
+                    />
                   ) : (
-                    <tr>
-                      <td colSpan="5">No unapproved recipes available</td>
-                    </tr>
+                    <p className="text-center mt-5">Loading observation data...</p>
                   )}
-                </tbody>
-              </Table>
+                </div>
+              </CardBody>
             </Card>
           </Col>
           <Col xl="4">
@@ -177,40 +263,118 @@ const Index = () => {
               <CardHeader className="bg-transparent">
                 <Row className="align-items-center">
                   <div className="col">
-                    <h6 className="text-uppercase text-muted ls-1 mb-1">
-                      Performance
-                    </h6>
-                    <h2 className="mb-0">Recipes Contributions</h2>
+                    <h2 className="mb-0 font-weight-bold">Recipe Status</h2>
                   </div>
                 </Row>
               </CardHeader>
               <CardBody>
-                {/* Chart */}
-                <div className="chart" style={{ minHeight: '382px'}}>
+                <div className="chart-container" style={{ position: 'relative', height: '300px' }}>
                   {chartData.labels ? (
-                    <Bar
+                    <Doughnut
                       data={chartData}
                       options={{
-                        scales: {
-                          x: {
-                            title: {
-                              display: true,
-                              text: 'Month',
-                            },
-                          },
-                          y: {
-                            title: {
-                              display: true,
-                              text: 'Contributions',
-                            },
-                          },
+                        maintainAspectRatio: false,
+                        cutoutPercentage: 70,
+                        legend: {
+                          display: false
                         },
+                        tooltips: {
+                          enabled: true,
+                          mode: 'index',
+                          intersect: false,
+                        }
                       }}
                     />
                   ) : (
-                    <p>Loading chart data...</p>
+                    <p className="text-center">Loading chart data...</p>
                   )}
                 </div>
+                {chartData.stats && (
+                  <div className="mt-4">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span className="text-muted"><i className="fas fa-circle mr-2" style={{ color: '#2dce89' }}></i> Approved</span>
+                      <span className="font-weight-bold text-dark">{chartData.stats.approved}</span>
+                    </div>
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span className="text-muted"><i className="fas fa-circle mr-2" style={{ color: '#ff9f43' }}></i> Pending</span>
+                      <span className="font-weight-bold text-dark">{chartData.stats.pending}</span>
+                    </div>
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span className="text-muted"><i className="fas fa-circle mr-2" style={{ color: '#f5365c' }}></i> Rejected</span>
+                      <span className="font-weight-bold text-dark">{chartData.stats.rejected}</span>
+                    </div>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          </Col>
+        </Row>
+        <Row className="mt-5">
+          <Col xl="8" className="mb-5 mb-xl-0">
+            <Card className="shadow pb-2">
+              <CardHeader className="bg-transparent border-0">
+                <Row className="align-items-center">
+                  <div className="col">
+                    <h2 className="mb-0 font-weight-bold" style={{ borderLeft: '4px solid #2dce89', paddingLeft: '15px' }}>Recent Recipes</h2>
+                  </div>
+                </Row>
+              </CardHeader>
+              <CardBody className="pt-0">
+                {recentRecipes.map((recipe, index) => (
+                  <div key={index} className="p-3 mb-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: '#f8f9fe', borderRadius: '12px' }}>
+                    <div>
+                      <h4 className="mb-0 font-weight-bold">{recipe.name_recipe}</h4>
+                      <small className="text-muted"> {recipe.username}</small>
+                    </div>
+                    <div
+                      className="px-3 py-1"
+                      style={{
+                        borderRadius: '20px',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        backgroundColor: recipe.status === 'Approved' ? '#e1f99aff' : (recipe.status === 'Rejected' ? '#ffdada' : '#fff4d1'),
+                        color: recipe.status === 'Approved' ? '#2d6a4f' : (recipe.status === 'Rejected' ? '#c92a2a' : '#927c36')
+                      }}
+                    >
+                      {recipe.status}
+                    </div>
+                  </div>
+                ))}
+              </CardBody>
+            </Card>
+          </Col>
+          <Col xl="4">
+            <Card className="shadow pb-2">
+              <CardHeader className="bg-transparent border-0">
+                <Row className="align-items-center">
+                  <div className="col">
+                    <h2 className="mb-0 font-weight-bold" style={{ borderLeft: '4px solid #2dce89', paddingLeft: '15px' }}>User Status</h2>
+                  </div>
+                </Row>
+              </CardHeader>
+              <CardBody className="pt-0">
+                {userStatuses.map((user, index) => (
+                  <div key={index} className="p-3 mb-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: '#f8f9fe', borderRadius: '12px' }}>
+                    <h4 className="mb-0 font-weight-bold">{user.username}</h4>
+                    <div className="d-flex align-items-center">
+                      <span className="mr-2" style={{ height: '10px', width: '10px', borderRadius: '50%', backgroundColor: user.status === 'Online' ? '#2dce89' : '#adb5bd', display: 'inline-block' }}></span>
+                      <div
+                        className="px-2 py-1"
+                        style={{
+                          borderRadius: '15px',
+                          fontSize: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          backgroundColor: user.status === 'Online' ? '#e2f9ed' : '#f1f3f7',
+                          color: user.status === 'Online' ? '#2dce89' : '#8898aa'
+                        }}
+                      >
+                        <span style={{ marginRight: '5px', height: '12px', width: '12px', borderRadius: '50%', background: user.status === 'Online' ? 'radial-gradient(circle, #2dce89 0%, #1a9e66 100%)' : '#adb5bd' }}></span>
+                        {user.status}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </CardBody>
             </Card>
           </Col>

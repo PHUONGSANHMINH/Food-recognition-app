@@ -31,12 +31,27 @@ const AdminNavbar = (props) => {
 
   const handleLogout = async (e) => {
     e.preventDefault();
-    // Xóa access token và refresh token từ AsyncStorage
-    await AsyncStorage.removeItem("access_token");
-    await AsyncStorage.removeItem("refresh_token");
+    try {
+      const accessToken = await AsyncStorage.getItem("access_token");
+      const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN;
+      if (accessToken && apiDomain) {
+        await fetch(`${apiDomain}/api/auth/logout`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      // Xóa access token và refresh token từ AsyncStorage
+      await AsyncStorage.removeItem("access_token");
+      await AsyncStorage.removeItem("refresh_token");
 
-    // Điều hướng người dùng về trang đăng nhập
-    navigate("/auth/login");
+      // Điều hướng người dùng về trang đăng nhập
+      navigate("/auth/login");
+    }
   };
 
   return (

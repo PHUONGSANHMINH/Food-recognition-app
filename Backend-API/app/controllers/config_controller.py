@@ -1,7 +1,7 @@
 import re
 from flask import request, jsonify
 from app import db
-from app.models.model import Config, RecipeInfo, User, RecipesContribution
+from app.models.model import Config, RecipeInfo, User, RecipesContribution, UserDailyNutritionGoal, UserDailyLog
 from app.utils.common import get_locale, get_message
 from sqlalchemy import or_, func
 from datetime import datetime, timedelta
@@ -87,8 +87,8 @@ def get_statistics():
     # Tổng số recipe
     total_recipes = RecipeInfo.query.count()
 
-    # Tổng số user
-    total_users = User.query.filter(or_(User.status != 'hidden', User.status == None)).count()
+    # Tổng số user (loại trừ status 0 và 1)
+    total_users = User.query.filter(User.status.notin_([0, 1])).count()
 
     # Tổng số contribution (loại trừ contribution của userid 1)
     total_contributions = RecipesContribution.query.filter(RecipesContribution.id_user != 1).count()
@@ -138,3 +138,84 @@ def get_monthly_contributions():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@jwt_required()
+def get_calorie_observation():
+    """Lấy dữ liệu quan sát calo: trung bình mục tiêu vs trung bình tiêu thụ 7 ngày qua"""
+    try:
+        # 1. Tính trung bình calo mục tiêu của tất cả người dùng
+        avg_goal = db.session.query(func.avg(UserDailyNutritionGoal.calories_goal)).scalar() or 0
+        
+        # 2. Lấy trung bình calo tiêu thụ của tất cả người dùng theo từng ngày trong 7 ngày qua
+        end_date = datetime.now().date()
+        start_date = end_date - timedelta(days=6)
+        
+        # Tạo danh sách các ngày trong khoảng
+        date_list = [start_date + timedelta(days=i) for i in range(7)]
+        date_labels = [d.strftime('%Y-%m-%d') for d in date_list]
+        
+        # Truy vấn dữ liệu tiêu thụ trung bình theo ngày
+        daily_averages = db.session.query(
+            UserDailyLog.log_date,
+            func.avg(UserDailyLog.calories_intake).label('avg_intake')
+        ).filter(
+            UserDailyLog.log_date >= start_date,
+            UserDailyLog.log_date <= end_date
+        ).group_by(UserDailyLog.log_date).all()
+        
+        # Mapping dữ liệu vào label
+        avg_intake_map = {str(row.log_date): row.avg_intake for row in daily_averages}
+        intake_data = [round(avg_intake_map.get(label, 0), 2) for label in date_labels]
+        goal_data = [round(avg_goal, 2)] * 7
+        
+        return jsonify({
+            "labels": date_labels,
+            "goal_data": goal_data,
+            "intake_data": intake_data
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@jwt_required()
+def get_recent_contributions():
+    """Lấy 5 công thức đóng góp mới nhất"""
+    try:
+        recent = db.session.query(
+            RecipeInfo.name_recipe,
+            RecipesContribution.accept_contribution,
+            User.username
+        ).join(
+            RecipesContribution, RecipeInfo.id_recipe == RecipesContribution.id_recipe
+        ).join(
+            User, RecipesContribution.id_user == User.id_user
+        ).order_by(RecipesContribution.date.desc()).limit(5).all()
+
+        result = [{
+            'name_recipe': r.name_recipe,
+            'status': 'Approved' if r.accept_contribution == 1 else 'Pending Review' if r.accept_contribution == 0 else 'Rejected',
+            'username': r.username
+        } for r in recent]
+
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@jwt_required()
+def get_user_status():
+    """Lấy trạng thái online/offline của 5 user mới nhất"""
+    try:
+        users = User.query.filter(User.status.notin_([0, 1])).order_by(User.id_user.desc()).limit(5).all()
+        
+        status_map = {
+            2: 'Online',
+            3: 'Offline'
+        }
+
+        result = [{
+            'username': u.username,
+            'status': status_map.get(u.status, 'Offline')
+        } for u in users]
+
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

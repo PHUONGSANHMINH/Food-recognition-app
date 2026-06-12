@@ -12,7 +12,7 @@ class User(db.Model):
     reset_code = db.Column(db.String(255), nullable=True)
     reset_code_expiration = db.Column(db.DateTime, nullable=True)
     reset_attempts = db.Column(db.Integer, default=0, nullable=False)
-    status = db.Column(db.String(50), nullable=True)
+    status = db.Column(db.Integer, nullable=True)
     # ── Thông số cơ thể (được điền qua Setup flow sau khi đăng ký) ──────────
     gender = db.Column(db.String(10),  nullable=True)   # 'male' | 'female'
     height = db.Column(db.Float,       nullable=True)   # đơn vị: cm
@@ -119,7 +119,7 @@ class RecipesFavourite(db.Model):
 class RecipesContribution(db.Model):
     id_recipe = db.Column(db.Integer, db.ForeignKey('recipe_info.id_recipe'), primary_key=True)
     id_user = db.Column(db.Integer, db.ForeignKey('user.id_user'), primary_key=True)
-    accept_contribution = db.Column(db.Boolean, nullable=False)
+    accept_contribution = db.Column(db.Integer, nullable=False) # 0: Pending, 1: Approved, 2: Rejected
     date = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Rating(db.Model):

@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from app.controllers.users_controller import login, register, send_code_forget_password, change_password, verify_code, refresh_token
+from app.controllers.users_controller import login, logout, register, send_code_forget_password, change_password, verify_code, refresh_token
 from flasgger import swag_from
 from flask_jwt_extended import (
     jwt_required
@@ -59,6 +59,25 @@ auth_bp = Blueprint('auth', __name__)
 })
 def login_view():
     return login()
+
+@auth_bp.route('/logout', methods=['POST'])
+@jwt_required()
+@swag_from({
+    'tags': ['Authentication'],
+    'summary': 'User Logout',
+    'description': 'Log out the current user and set their status to Offline.',
+    'security': [{'Bearer': []}],
+    'responses': {
+        200: {
+            'description': 'Logout successful'
+        },
+        401: {
+            'description': 'Unauthorized'
+        }
+    }
+})
+def logout_view():
+    return logout()
 
 @auth_bp.route('/register', methods=['POST'])
 def register_view():

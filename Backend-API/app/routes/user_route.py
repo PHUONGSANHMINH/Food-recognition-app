@@ -1,9 +1,14 @@
-from flask import Blueprint
-from app.controllers.users_controller import get_all_users, delete_user, update_user, get_user_info, update_avatar
+from flask import Blueprint, request
+from app.controllers.users_controller import get_all_users, delete_user, update_user, get_user_info, update_avatar, change_user_status
 from flask_jwt_extended import jwt_required
 from flasgger import swag_from
 
 user_bp = Blueprint('user', __name__)
+
+@user_bp.route('/status', methods=['PATCH'])
+@jwt_required()
+def change_user_status_view():
+    return change_user_status()
 
 @user_bp.route('/users', methods=['GET'])
 @swag_from({

@@ -1,6 +1,7 @@
 # routes/recipes_route.py
 from flask import Blueprint, request
 from flasgger import swag_from
+from flask_jwt_extended import jwt_required
 from app.controllers.recipes_controller import (
     get_recipes,
     get_recipes_publish,
@@ -24,6 +25,7 @@ from app.controllers.recipes_controller import (
     delete_search_history_item,
     clear_search_history,
     search_spoonacular_by_keyword,
+    get_recipe_stats,
 )
 
 
@@ -401,6 +403,11 @@ def get_recipes_total():
 })
 def get_recipes_unapproved_total():
     return get_total_unapproved_recipes_records()
+
+@recipe_bp.route('/stats', methods=['GET'])
+@jwt_required()
+def get_recipe_stats_view():
+    return get_recipe_stats()
 
 @recipe_bp.route('/add', methods=['POST'])
 @swag_from({

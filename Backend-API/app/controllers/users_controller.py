@@ -22,12 +22,27 @@ def login():
 
     user = User.query.filter_by(username=username).first()
     if user and user.check_password(password):
+        user.status = 2 # Online
+        db.session.commit()
         access_token = create_access_token(identity=user.id_user)
         refresh_token = create_refresh_token(identity=user.id_user)
         return jsonify(access_token=access_token, refresh_token=refresh_token), 200
     else:
         lang = get_locale()
         return jsonify({"msg": get_message('bad_credentials', lang)}), 401
+
+@jwt_required()
+def logout():
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        if user:
+            user.status = 3 # Offline
+            db.session.commit()
+            return jsonify({"msg": "Logout successful"}), 200
+        return jsonify({"msg": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 def is_valid_username(username):
     # Username phải từ 4-16 ký tự, chỉ chứa chữ cái, số và dấu gạch dưới
@@ -101,12 +116,23 @@ def get_all_users():
         page = request.args.get('page', 1, type=int)
         limit = request.args.get('limit', 10, type=int)
         search = request.args.get('search', '', type=str)
+        status_filter = request.args.get('status', 'all', type=str)
 
-        # Xây dựng query
-        from sqlalchemy import or_
-        users_query = db.session.query(User).filter(or_(User.status != 'hidden', User.status == None))
+        # Xây dựng query - Hiển thị tất cả người dùng (bao gồm cả status 0: Inactive)
+        users_query = db.session.query(User)
+        
+        # Lọc theo trạng thái
+        if status_filter == 'active':
+            users_query = users_query.filter(User.status > 0)
+        elif status_filter == 'inactive':
+            users_query = users_query.filter(User.status == 0)
+
         if search:
-            users_query = users_query.filter(User.username.like(f'%{search}%'))
+            from sqlalchemy import or_
+            users_query = users_query.filter(or_(
+                User.username.like(f'%{search}%'),
+                User.email.like(f'%{search}%')
+            ))
 
         # Phân trang
         users_paginated = users_query.paginate(page=page, per_page=limit, error_out=False)
@@ -124,6 +150,7 @@ def get_all_users():
                 "username": user.username,
                 "email": user.email,
                 "status": user.status,
+                "avatar_image": user.avatar_image,
                 "recipes_contribution": contribution_count,
                 "recipes_contribution_approved": approved_recipes_count,
                 "recipes_contribution_waiting": waiting_recipes_count,
@@ -140,6 +167,27 @@ def get_all_users():
 
     except Exception as e:
         return jsonify({"error": "An unexpected error occurred", "message": str(e)}), 500
+
+@jwt_required()
+def change_user_status():
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        new_status = data.get('status')
+
+        if user_id is None or new_status is None:
+            return jsonify({"msg": "Missing fields"}), 400
+
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"msg": "User not found"}), 404
+
+        user.status = new_status
+        db.session.commit()
+
+        return jsonify({"msg": "User status updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @jwt_required()
 def delete_user(user_id):
