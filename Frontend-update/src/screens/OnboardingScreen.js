@@ -42,7 +42,7 @@ const OnboardingScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      
+
       {/* Skip Button */}
       <View style={styles.skipContainer}>
         <TouchableOpacity onPress={skip} style={styles.skipButton}>

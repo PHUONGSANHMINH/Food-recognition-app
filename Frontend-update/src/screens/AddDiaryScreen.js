@@ -253,7 +253,7 @@ export default function AddDiaryScreen({ navigation }) {
             return (
                 <View style={styles.validatingRow}>
                     <ActivityIndicator size="small" color="#3F805A" />
-                    <Text style={styles.validatingText}> Đang xác thực món ăn với Gemini AI…</Text>
+                    <Text style={styles.validatingText}> Validating meal with Gemini AI…</Text>
                 </View>
             );
         }
@@ -264,7 +264,7 @@ export default function AddDiaryScreen({ navigation }) {
                 <Ionicons name={matched ? 'checkmark-circle' : 'close-circle'} size={18} color={matched ? '#3F805A' : '#EF4444'} />
                 <View style={{ flex: 1, marginLeft: 8 }}>
                     <Text style={[styles.validBadgeTitle, { color: matched ? '#3F805A' : '#EF4444' }]}>
-                        {matched ? `Khớp – ${validResult.detected_food}` : `Không trùng – ${validResult.detected_food}`}
+                        {matched ? `Match – ${validResult.detected_food}` : `Mismatch – ${validResult.detected_food}`}
                     </Text>
                     <Text style={styles.validBadgeMsg}>{validResult.message}</Text>
                 </View>
@@ -400,7 +400,7 @@ export default function AddDiaryScreen({ navigation }) {
                 {/* Notice nếu không khớp */}
                 {validResult && !validResult.is_match && (
                     <Text style={styles.mismatchNote}>
-                        ⚠️ Tên món không khớp với ảnh. Bạn vẫn có thể thêm nhưng calo sẽ tự nhập.
+                        ⚠️ Food name doesn't match the image. You can still add it, but calories must be entered manually.
                     </Text>
                 )}
 

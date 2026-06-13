@@ -90,12 +90,12 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView contentContainerStyle={styles.scrollContainer} bounces={false}>
-          
+
           <View style={styles.card}>
             {/* Logo Placeholder */}
             <View style={styles.logoContainer}>
@@ -150,11 +150,11 @@ export default function RegisterScreen({ navigation }) {
                   secureTextEntry={!showPassword}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                  <Ionicons 
-                    name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                    size={20} 
-                    color="#62656b" 
-                    style={styles.iconRight} 
+                  <Ionicons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color="#62656b"
+                    style={styles.iconRight}
                   />
                 </TouchableOpacity>
               </View>
@@ -175,8 +175,8 @@ export default function RegisterScreen({ navigation }) {
               </View>
             </View>
 
-            <TouchableOpacity 
-              style={[styles.button, isLoading && styles.buttonDisabled]} 
+            <TouchableOpacity
+              style={[styles.button, isLoading && styles.buttonDisabled]}
               onPress={handleRegister}
               disabled={isLoading}
             >

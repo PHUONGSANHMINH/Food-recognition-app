@@ -466,7 +466,7 @@ export default function HomeScreen({ navigation }) {
               <View style={styles.seeMoreCircle}>
                 <Ionicons name="arrow-forward" size={30} color="#3F805A" />
               </View>
-              <Text style={styles.seeMoreText}>Xem tất cả</Text>
+              <Text style={styles.seeMoreText}>See all</Text>
             </TouchableOpacity>
           )}
         </ScrollView>

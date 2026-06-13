@@ -79,7 +79,7 @@ export default function RecipeDetailScreen({ route, navigation }) {
         return (
             <SafeAreaView style={styles.safeArea}>
                 <Text style={{ textAlign: 'center', marginTop: 40, color: '#999' }}>
-                    Không có dữ liệu công thức.
+                    No recipe data found.
                 </Text>
             </SafeAreaView>
         );
@@ -102,7 +102,7 @@ export default function RecipeDetailScreen({ route, navigation }) {
         try {
             setFavLoading(true);
             const token = await AsyncStorage.getItem('access_token');
-            if (!token) { Alert.alert('Chưa đăng nhập', 'Vui lòng đăng nhập.'); return; }
+            if (!token) { Alert.alert('Not logged in', 'Please log in.'); return; }
 
             let res;
             if (recipe.id_recipe) {
@@ -125,11 +125,11 @@ export default function RecipeDetailScreen({ route, navigation }) {
                 setFavModalMsg(data.msg || 'Added to favorite Successfully');
                 setShowFavModal(true);
             } else {
-                setFavModalMsg(data.msg || 'Không thể cập nhật yêu thích.');
+                setFavModalMsg(data.msg || 'Could not update favorites.');
                 setShowFavModal(true);
             }
         } catch {
-            setFavModalMsg('Không thể kết nối server.');
+            setFavModalMsg('Could not connect to server.');
             setShowFavModal(true);
         } finally {
             setFavLoading(false);
@@ -142,7 +142,7 @@ export default function RecipeDetailScreen({ route, navigation }) {
         try {
             setSaveLoading(true);
             const token = await AsyncStorage.getItem('access_token');
-            if (!token) { Alert.alert('Chưa đăng nhập', 'Vui lòng đăng nhập.'); return; }
+            if (!token) { Alert.alert('Not logged in', 'Please log in.'); return; }
 
             const proteinN = nutrients.find(n => n.name?.toLowerCase() === 'protein');
             const carbsN = nutrients.find(n => n.name?.toLowerCase() === 'carbohydrates');
@@ -164,14 +164,14 @@ export default function RecipeDetailScreen({ route, navigation }) {
             });
             const data = await res.json();
             if (res.ok) {
-                setFavModalMsg(`"${title}" đã được thêm vào ${mealType}.`);
+                setFavModalMsg(`"${title}" has been added to ${mealType}.`);
                 setShowFavModal(true);
             } else {
-                setFavModalMsg(data.msg || 'Không thể lưu công thức.');
+                setFavModalMsg(data.msg || 'Could not save recipe.');
                 setShowFavModal(true);
             }
         } catch {
-            setFavModalMsg('Không thể kết nối server.');
+            setFavModalMsg('Could not connect to server.');
             setShowFavModal(true);
         } finally {
             setSaveLoading(false);

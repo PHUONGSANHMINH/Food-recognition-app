@@ -39,10 +39,10 @@ export default function SetupGoalScreen({ navigation, route }) {
 
   const recommended = calcRecommended({ gender, age, height, weight });
 
-  const [calories, setCalories]         = useState(recommended);
-  const [isSaving,  setIsSaving]        = useState(false);
+  const [calories, setCalories] = useState(recommended);
+  const [isSaving, setIsSaving] = useState(false);
   const [manualVisible, setManualVisible] = useState(false);
-  const [manualInput,   setManualInput]   = useState('');
+  const [manualInput, setManualInput] = useState('');
 
   const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -54,7 +54,7 @@ export default function SetupGoalScreen({ navigation, route }) {
       const res = await fetch(`${API_URL}/api/nutrition-user/update`, {
         method: 'POST',
         headers: {
-          'Content-Type':  'application/json',
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${savedToken}`,
         },
         body: JSON.stringify({ calories_goal: calories }),

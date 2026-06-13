@@ -275,7 +275,7 @@ export default function SearchScreen({ navigation, route }) {
                     {results.length === 0 ? (
                         <View style={styles.center}>
                             <Ionicons name="search-outline" size={56} color="#ddd" />
-                            <Text style={styles.emptyText}>Không tìm thấy công thức</Text>
+                            <Text style={styles.emptyText}>No recipes found</Text>
                         </View>
                     ) : (
                         <FlatList
@@ -296,7 +296,7 @@ export default function SearchScreen({ navigation, route }) {
             ) : (
                 <View style={styles.center}>
                     <Ionicons name="search-outline" size={56} color="#ddd" />
-                    <Text style={styles.emptyText}>Nhập từ khóa và nhấn Enter để tìm</Text>
+                    <Text style={styles.emptyText}>Enter keywords and press Enter to search</Text>
                 </View>
             )}
         </SafeAreaView>

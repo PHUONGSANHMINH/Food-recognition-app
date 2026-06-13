@@ -123,7 +123,7 @@ export default function ScanResultRecipesScreen({ route, navigation }) {
             {recipes.length === 0 ? (
                 <View style={styles.emptyWrap}>
                     <Ionicons name="search-outline" size={48} color="#ddd" />
-                    <Text style={styles.emptyText}>Không có công thức nào</Text>
+                    <Text style={styles.emptyText}>No recipes found</Text>
                 </View>
             ) : (
                 <FlatList

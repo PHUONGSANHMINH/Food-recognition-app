@@ -20,7 +20,7 @@ export default function FavoriteScreen({ navigation }) {
                 setLoading(true);
                 const token = await AsyncStorage.getItem('access_token');
                 if (!token) {
-                    Alert.alert('', 'Vui lòng đăng nhập để xem Favorites.');
+                    Alert.alert('', 'Please log in to view Favorites.');
                     navigation.goBack();
                     return;
                 }
@@ -71,7 +71,7 @@ export default function FavoriteScreen({ navigation }) {
                 return f.id_recipe !== item.id_recipe;
             }));
         } catch {
-            Alert.alert('Lỗi', 'Không thể xóa khỏi Favorites.');
+            Alert.alert('Error', 'Could not remove from Favorites.');
         }
     };
 
@@ -169,8 +169,8 @@ export default function FavoriteScreen({ navigation }) {
             ) : favourites.length === 0 ? (
                 <View style={styles.center}>
                     <Ionicons name="heart-outline" size={64} color="#ddd" />
-                    <Text style={styles.emptyTitle}>Chưa có món yêu thích</Text>
-                    <Text style={styles.emptySubtitle}>Nhấn ❤️ trên trang chi tiết để thêm vào đây</Text>
+                    <Text style={styles.emptyTitle}>No favorites yet</Text>
+                    <Text style={styles.emptySubtitle}>Tap ❤️ on the detail page to add it here</Text>
                 </View>
             ) : (
                 <FlatList

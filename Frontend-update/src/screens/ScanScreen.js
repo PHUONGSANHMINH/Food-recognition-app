@@ -101,7 +101,7 @@ export default function ScanScreen({ navigation }) {
             setNoMatch(false);
             await processImage({ uri: photo.uri, mimeType: 'image/jpeg', fileName: 'photo.jpg' });
         } catch (e) {
-            Alert.alert('Lỗi', 'Không thể chụp ảnh. Vui lòng thử lại.');
+            Alert.alert('Error', 'Unable to take photo. Please try again.');
         }
     }, [capturedImage, scanMode]);
 
@@ -109,7 +109,7 @@ export default function ScanScreen({ navigation }) {
     const handleGallery = useCallback(async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-            Alert.alert('Quyền truy cập', 'Cần cấp quyền thư viện ảnh.');
+            Alert.alert('Access Denied', 'Need gallery permission.');
             return;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -148,7 +148,7 @@ export default function ScanScreen({ navigation }) {
             }
         } catch (err) {
             console.error('processImage error:', err);
-            Alert.alert('Lỗi', 'Đã có lỗi xảy ra khi xử lý ảnh. Vui lòng thử lại.');
+            Alert.alert('Error', 'An error occurred while processing the image. Please try again.');
             setNoMatch(true);
         } finally {
             setIsLoading(false);
@@ -190,9 +190,9 @@ export default function ScanScreen({ navigation }) {
     const scanFood = async (asset) => {
         const token = await AsyncStorage.getItem('access_token');
         if (!token) {
-            Alert.alert('Chưa đăng nhập', 'Vui lòng đăng nhập để sử dụng Scan Food.', [
-                { text: 'Đăng nhập', onPress: () => navigation.navigate('Login') },
-                { text: 'Huỷ', style: 'cancel' },
+            Alert.alert('Not logged in', 'Please log in to use Scan Food.', [
+                { text: 'Log In', onPress: () => navigation.navigate('Login') },
+                { text: 'Cancel', style: 'cancel' },
             ]);
             setNoMatch(true);
             return;
@@ -215,9 +215,9 @@ export default function ScanScreen({ navigation }) {
         });
 
         if (res.status === 401) {
-            Alert.alert('Phiên hết hạn', 'Vui lòng đăng nhập lại.', [
-                { text: 'Đăng nhập', onPress: () => navigation.navigate('Login') },
-                { text: 'Huỷ', style: 'cancel' },
+            Alert.alert('Session Expired', 'Please log in again.', [
+                { text: 'Log In', onPress: () => navigation.navigate('Login') },
+                { text: 'Cancel', style: 'cancel' },
             ]);
             setNoMatch(true);
             return;
@@ -262,9 +262,9 @@ export default function ScanScreen({ navigation }) {
             return (
                 <View style={styles.previewPlaceholder}>
                     <Ionicons name="camera-off-outline" size={44} color="#bbb" />
-                    <Text style={styles.previewPlaceholderText}>Chưa cấp quyền camera</Text>
+                    <Text style={styles.previewPlaceholderText}>Camera permission not granted</Text>
                     <TouchableOpacity style={styles.grantBtn} onPress={requestPermission}>
-                        <Text style={styles.grantBtnText}>Cấp quyền</Text>
+                        <Text style={styles.grantBtnText}>Grant Permission</Text>
                     </TouchableOpacity>
                 </View>
             );
@@ -328,7 +328,7 @@ export default function ScanScreen({ navigation }) {
                 {isLoading && (
                     <View style={styles.loadingOverlay}>
                         <ActivityIndicator size="large" color="#fff" />
-                        <Text style={styles.loadingText}>Đang phân tích...</Text>
+                        <Text style={styles.loadingText}>Analyzing...</Text>
                     </View>
                 )}
 
@@ -336,7 +336,7 @@ export default function ScanScreen({ navigation }) {
                 {capturedImage && !isLoading && (
                     <TouchableOpacity style={styles.retakeBtn} onPress={handleRetake}>
                         <Ionicons name="refresh-outline" size={18} color="#fff" />
-                        <Text style={styles.retakeBtnText}>Chụp lại</Text>
+                        <Text style={styles.retakeBtnText}>Retake</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -366,7 +366,7 @@ export default function ScanScreen({ navigation }) {
             {!isLoading && noMatch && (
                 <View style={styles.badgeRed}>
                     <Ionicons name="close-circle-outline" size={20} color="#C53030" />
-                    <Text style={styles.badgeTitleRed}>Không có kết quả trùng khớp</Text>
+                    <Text style={styles.badgeTitleRed}>No match found</Text>
                 </View>
             )}
 
