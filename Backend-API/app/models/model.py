@@ -203,3 +203,16 @@ class SearchHistory(db.Model):
     __table_args__ = (
         db.UniqueConstraint('id_user', 'keyword', name='uq_user_keyword'),
     )
+
+class ScanLog(db.Model):
+    """Lưu lịch sử quét món ăn của người dùng."""
+    __tablename__ = 'scan_logs'
+    id          = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id_user     = db.Column(db.Integer, db.ForeignKey('user.id_user', ondelete='CASCADE'), nullable=False)
+    food_name   = db.Column(db.String(255), nullable=True)
+    confidence  = db.Column(db.Float, nullable=True) # Độ chính xác (0-100)
+    image_url   = db.Column(db.Text, nullable=True)    # Path tới ảnh lưu local
+    status      = db.Column(db.Integer, nullable=True) # 1: Success, 2: Mismatch, 0: No Food
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('scan_logs', lazy=True))

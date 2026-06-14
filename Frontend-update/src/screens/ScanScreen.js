@@ -157,6 +157,16 @@ export default function ScanScreen({ navigation }) {
 
     // ─── Scan Ingredient: 2 bước ─────────────────────────────────────────────
     const scanIngredient = async (asset) => {
+        const token = await AsyncStorage.getItem('access_token');
+        if (!token) {
+            Alert.alert('Not logged in', 'Please log in to use Scan Ingredient.', [
+                { text: 'Log In', onPress: () => navigation.navigate('Login') },
+                { text: 'Cancel', style: 'cancel' },
+            ]);
+            setNoMatch(true);
+            return;
+        }
+
         const formData = new FormData();
         formData.append('image', {
             uri: asset.uri,
@@ -167,8 +177,20 @@ export default function ScanScreen({ navigation }) {
         const detectRes = await fetch(`${API_URL}/api/detect/detect-objects`, {
             method: 'POST',
             body: formData,
-            headers: { 'Content-Type': 'multipart/form-data' },
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'Authorization': `Bearer ${token}`
+            },
         });
+
+        if (detectRes.status === 500) {
+            const errData = await safeJson(detectRes);
+            console.error('Detection Server Error:', errData);
+            Alert.alert('Server Error', 'An error occurred on the server during detection.');
+            setNoMatch(true);
+            return;
+        }
+
         const detectData = await safeJson(detectRes);
         const detected = detectData?.detected_objects || [];
 
@@ -177,9 +199,19 @@ export default function ScanScreen({ navigation }) {
 
         const recRes = await fetch(`${API_URL}/api/detect/recommend-recipes-spoonacular`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ detected_objects: detected }),
         });
+
+        if (recRes.status === 500) {
+            Alert.alert('Server Error', 'An error occurred while fetching recommendations.');
+            setNoMatch(true);
+            return;
+        }
+
         const recData = await safeJson(recRes);
         const recs = recData?.recommendations || [];
 

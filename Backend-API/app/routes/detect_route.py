@@ -13,12 +13,25 @@ from app.controllers.detect_controller import (
     toggle_spoonacular_favourite,
     get_all_favourites,
     get_spoonacular_recommendations_v2,
+    get_scan_logs,
+    get_scan_stats,
 )
 from flasgger import swag_from
 
 detect_bp = Blueprint('detect', __name__)
 
+@detect_bp.route('/scan-logs', methods=['GET'])
+def get_scan_logs_view():
+    """Get All Scan Logs (Admin)"""
+    return get_scan_logs()
+
+@detect_bp.route('/scan-stats', methods=['GET'])
+def get_scan_stats_view():
+    """Get Scan Statistics (Admin)"""
+    return get_scan_stats()
+
 @detect_bp.route('/detect-objects', methods=['POST'])
+@jwt_required()
 @swag_from({
     'tags': ['Detection'],
     'summary': 'Detect Objects from an Image',
@@ -119,6 +132,7 @@ def recommend_recipes_view():
 
 
 @detect_bp.route('/detect-recommend-spoonacular', methods=['POST'])
+@jwt_required()
 def detect_and_recommend_view():
     """
     Detect and Recommend Recipes
@@ -227,6 +241,7 @@ def get_instructions_view(recipe_id):
     return get_recipe_instructions(recipe_id)
 
 @detect_bp.route('/recommend-by-keyword/<string:keyword>', methods=['GET'])
+@jwt_required()
 def recommend_by_keyword_view(keyword):
     """Recommend Recipes by Keyword
     ---

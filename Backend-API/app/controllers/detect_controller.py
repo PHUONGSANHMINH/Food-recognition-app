@@ -14,7 +14,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
 from inference_sdk import InferenceHTTPClient
-from app.models.model import Config, CSVExportVersion, RecipeInfo, RecipesContribution, RecipeNutrition, RecipeIngredients, UserDailyNutritionGoal, UserDailyLog, DiaryEntry, RecipesFavourite, db
+from app.models.model import Config, CSVExportVersion, RecipeInfo, RecipesContribution, RecipeNutrition, RecipeIngredients, UserDailyNutritionGoal, UserDailyLog, DiaryEntry, RecipesFavourite, ScanLog, User, db
 
 global tfidf, tfidf_matrix, cosine_sim_text, indices, df
 global CSV_PATH, FULL_CSV_PATH
@@ -37,13 +37,67 @@ SPOONACULAR_SEARCH_URL = 'https://api.spoonacular.com/recipes/complexSearch'
 SPOONACULAR_NUTRITION_URL = 'https://api.spoonacular.com/recipes/{id}/nutritionWidget.json'
 
 # Cấu hình Roboflow (Scan Food)
-ROBOFLOW_API_KEY    = os.getenv('ROBOFLOW_API_KEY', 'Wre9TGGWweRBqiO0MvIL')
-ROBOFLOW_MODEL_ID   = os.getenv('ROBOFLOW_FOOD_MODEL_ID', 'food-yklgo/3')
-ROBOFLOW_API_URL    = os.getenv('ROBOFLOW_API_URL', 'https://serverless.roboflow.com')
+ROBOFLOW_API_KEY            = os.getenv('ROBOFLOW_API_KEY', 'Wre9TGGWweRBqiO0MvIL')
+ROBOFLOW_MODEL_ID           = os.getenv('ROBOFLOW_FOOD_MODEL_ID', 'food-yklgo/3')
+ROBOFLOW_INGREDIENT_MODEL_ID= os.getenv('ROBOFLOW_INGREDIENT_MODEL_ID', 'ingredients-mqhxf/1')
+ROBOFLOW_API_URL            = os.getenv('ROBOFLOW_API_URL', 'https://serverless.roboflow.com')
 roboflow_client = InferenceHTTPClient(
     api_url=ROBOFLOW_API_URL,
     api_key=ROBOFLOW_API_KEY,
 )
+
+# ── Confidence threshold cho Roboflow predictions ─────────────────────────────
+CONF_THRESHOLD = float(os.getenv('ROBOFLOW_CONF_THRESHOLD', '0.45'))
+
+# ── Map tên class → tên chuẩn Spoonacular-friendly ───────────────────────────
+LABEL_MAP = {
+    # General food normalization
+    'spring_roll':      'spring roll',
+    'fried_rice':       'fried rice',
+    'banh_mi':          'vietnamese sandwich',
+    'pho':              'pho noodle soup',
+    'bun_bo_hue':       'spicy beef noodle soup',
+    'com_tam':          'broken rice',
+    'banh_xeo':         'vietnamese crepe',
+    'hu_tieu':          'clear noodle soup',
+    'bun_rieu':         'crab noodle soup',
+    'banh_cuon':        'steamed rice rolls',
+    'hot_pot':          'hot pot',
+    'dim_sum':          'dim sum',
+    'fried_chicken':    'fried chicken',
+    'grilled_chicken':  'grilled chicken',
+    'stir_fry':         'stir fry',
+    'pad_thai':         'pad thai',
+    'ramen':            'ramen noodles',
+    'sushi':            'sushi',
+    'pizza':            'pizza',
+    'hamburger':        'hamburger',
+    'sandwich':         'sandwich',
+    'salad':            'salad',
+    'soup':             'soup',
+    'pasta':            'pasta',
+    'steak':            'steak',
+    'fish':             'fish',
+    'shrimp':           'shrimp',
+    'crab':             'crab',
+    'chicken':          'chicken',
+    'pork':             'pork',
+    'beef':             'beef',
+    'tofu':             'tofu',
+    'egg':              'egg',
+    'rice':             'rice',
+    'noodle':           'noodles',
+    'bread':            'bread',
+    'cake':             'cake',
+    'ice_cream':        'ice cream',
+    'fruit_salad':      'fruit salad',
+    'french_fries':     'french fries',
+}
+
+def normalize_label(label: str) -> str:
+    """Normalize a detection label to a Spoonacular-friendly name."""
+    key = label.lower().replace(' ', '_').replace('-', '_')
+    return LABEL_MAP.get(key, label.replace('_', ' ').replace('-', ' '))
 
 
 # CSV recommend system
@@ -102,6 +156,40 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
+def log_scan_event(user_id, food_name, confidence, image_path, status):
+    """
+    Lưu dự đoán của AI vào bảng scan_logs và di chuyển ảnh sang thư mục lâu dài.
+    """
+    try:
+        # Tạo thư mục scan-logs nếu chưa có
+        log_folder = os.path.join(os.getcwd(), 'uploads', 'scan-logs')
+        os.makedirs(log_folder, exist_ok=True)
+
+        if image_path and os.path.exists(image_path):
+            filename = os.path.basename(image_path)
+            new_path = os.path.join(log_folder, filename)
+            # Di chuyển ảnh thay vì xóa
+            import shutil
+            shutil.copy2(image_path, new_path)
+            # Lưu đường dẫn tương đối để dễ hiển thị ở frontend (getFile sẽ tự prepend uploads/)
+            relative_image_url = f"scan-logs/{filename}"
+        else:
+            relative_image_url = None
+
+        new_log = ScanLog(
+            id_user=user_id,
+            food_name=food_name,
+            confidence=float(confidence * 100) if confidence else 0,
+            image_url=relative_image_url,
+            status=status
+        )
+        db.session.add(new_log)
+        db.session.commit()
+        logger.info(f"Scan log created for user {user_id}: {food_name} ({status})")
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error logging scan event: {str(e)}")
+
 # Hàm recommend dựa trên các nhãn từ khóa
 def recommend_recipes_by_labels(labels, threshold=0.3):  # threshold: ngưỡng độ tương đồng
     global tfidf, tfidf_matrix, df
@@ -120,147 +208,157 @@ def recommend_recipes_by_labels(labels, threshold=0.3):  # threshold: ngưỡng 
     return recommendations
 
 def detect_objects():
-    # Kiểm tra file và xử lý ngoại lệ
+    """Phát hiện nguyên liệu qua Roboflow (thay thế YOLOv8 local)."""
     if 'image' not in request.files:
         logger.warning('No image part in the request')
         return jsonify({'msg': 'No image part in the request'}), 400
-    
+
     file = request.files['image']
-    
-    # Kiểm tra tên file
     if file.filename == '':
         logger.warning('No selected file')
         return jsonify({'msg': 'No selected file'}), 400
 
-    # Mở rộng danh sách file được phép
-    def allowed_file(filename):
-        ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
-        return '.' in filename and \
-               filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-    # Kiểm tra định dạng file
     if not allowed_file(file.filename):
         logger.warning(f'Unsupported file type: {file.filename}')
         return jsonify({'msg': 'Unsupported file type'}), 400
 
-    try:
-        # Tạo thư mục upload an toàn
-        upload_folder = os.path.join(os.getcwd(), 'uploads/detect-images')
-        os.makedirs(upload_folder, exist_ok=True)
+    upload_folder = os.path.join(os.getcwd(), 'uploads', 'detect-images')
+    os.makedirs(upload_folder, exist_ok=True)
+    filename = secure_filename(f"{uuid.uuid4()}_{file.filename}")
+    filepath = os.path.join(upload_folder, filename)
+    file.save(filepath)
 
-        # Tạo tên file duy nhất để tránh ghi đè
-        filename = secure_filename(f"{uuid.uuid4()}_{file.filename}")
-        filepath = os.path.join(upload_folder, filename)
-        
-        # Lưu file
-        file.save(filepath)
+    try:
+        current_user_id = get_jwt_identity()
+        if current_user_id == 'admin': current_user_id = 1
 
         # Kiểm tra kích thước file
         file_size = os.path.getsize(filepath)
-        max_file_size = 10 * 1024 * 1024  # 10MB
-        if file_size > max_file_size:
-            os.remove(filepath)
-            logger.warning(f'File too large: {file_size} bytes')
+        if file_size > 10 * 1024 * 1024:
             return jsonify({'msg': 'File is too large'}), 400
 
-        # Phát hiện đối tượng
-        results = model.predict(source=filepath, save=False)
-        detected_labels = set()
+        # ── Gọi Roboflow Ingredient Detection ────────────────────────────────
+        result = roboflow_client.infer(filepath, model_id=ROBOFLOW_INGREDIENT_MODEL_ID)
+        predictions = result.get('predictions', [])
+        logger.info(f"Roboflow raw: {[(p['class'], round(p.get('confidence',0),3)) for p in predictions]}")
 
-        # Lấy kết quả từ model
-        for result in results:
-            for cls in result.boxes.cls:
-                label = model.names[int(cls)]
-                clean_label = re.sub(r'^\d+\s+', '', label)
-                detected_labels.add(clean_label)
+        # Lọc confidence threshold
+        filtered = [p for p in predictions if p.get('confidence', 0) >= CONF_THRESHOLD]
 
-        # Chuyển sang list và loại bỏ file
-        detected_labels = list(detected_labels)
-        os.remove(filepath)
+        # Normalize & deduplicate (ưu tiên confidence cao nhất)
+        seen: dict = {}
+        for p in sorted(filtered, key=lambda x: x.get('confidence', 0), reverse=True):
+            norm = normalize_label(p['class'])
+            if norm not in seen:
+                seen[norm] = p.get('confidence', 0)
 
-        # Trả về kết quả
+        detected_labels    = list(seen.keys())
+        detected_with_conf = [{'class': k, 'confidence': round(v, 4)} for k, v in seen.items()]
+
+        best_p = max(filtered, key=lambda x: x.get('confidence', 0)) if filtered else (
+                 max(predictions, key=lambda x: x.get('confidence', 0)) if predictions else None)
+
         if not detected_labels:
-            logger.info('No objects detected')
-            return jsonify({'msg': 'No objects detected'}), 200
+            low_hints = [
+                {'class': normalize_label(p['class']), 'confidence': round(p.get('confidence', 0), 4)}
+                for p in sorted(predictions, key=lambda x: x.get('confidence', 0), reverse=True)[:3]
+            ] if predictions else []
+            log_scan_event(current_user_id, "Unknown", 0, filepath, 0)
+            return jsonify({
+                'msg': 'No ingredients detected with sufficient confidence',
+                'conf_threshold': CONF_THRESHOLD,
+                'low_confidence_hints': low_hints,
+            }), 200
 
-        return jsonify({'detected_objects': detected_labels}), 200
+        best_label = best_p['class'] if best_p else 'Unknown'
+        best_conf  = best_p.get('confidence', 0) if best_p else 0
+        log_scan_event(current_user_id, best_label, best_conf, filepath, 1)
+
+        return jsonify({
+            'detected_objects':         detected_labels,
+            'detected_with_confidence': detected_with_conf,
+            'conf_threshold':           CONF_THRESHOLD,
+        }), 200
 
     except Exception as e:
-        # Xử lý ngoại lệ và đảm bảo file tạm bị xóa
-        logger.error(f"Error during object detection: {str(e)}")
-        
-        # Xóa file tạm nếu tồn tại
-        if 'filepath' in locals() and os.path.exists(filepath):
+        logger.error(f"detect_objects error: {str(e)}")
+        return jsonify({'msg': 'An error occurred during detection', 'error': str(e)}), 500
+    finally:
+        if os.path.exists(filepath):
             os.remove(filepath)
-        
-        return jsonify({
-            'msg': 'An error occurred during detection', 
-            'error': str(e)
-        }), 500
 
 def recommend_recipes_spoonacular():
-    detected_labels = request.json.get('detected_objects', [])
-    if not detected_labels:
-        return jsonify({'msg': 'No detected objects provided'}), 400
+    try:
+        detected_labels = request.json.get('detected_objects', [])
+        logger.info(f"Recommending recipes for labels: {detected_labels}")
+        if not detected_labels:
+            return jsonify({'msg': 'No detected objects provided'}), 400
 
-    ingredients = ','.join(detected_labels)
-    params = {
-        'includeIngredients': ingredients,
-        'number': 10,  # Số món được gợi ý từ spoonacular
-        'ranking': 1,
-        'addRecipeInformation': True
-    }
+        ingredients = ','.join(detected_labels)
+        params = {
+            'includeIngredients': ingredients,
+            'number': 10,
+            'ranking': 1,
+            'addRecipeInformation': True
+        }
 
-    for api_key in SPOONACULAR_API_KEY:
-        if api_key in limited_api_keys:
-            continue
-        params['apiKey'] = api_key.strip()
+        for api_key in SPOONACULAR_API_KEY:
+            if api_key in limited_api_keys:
+                continue
+            params['apiKey'] = api_key.strip()
+            logger.info(f"Trying Spoonacular API key: {api_key.strip()[:5]}...")
 
-        try:
-            response = requests.get(SPOONACULAR_SEARCH_URL, params=params)
+            try:
+                response = requests.get(SPOONACULAR_SEARCH_URL, params=params)
+                logger.info(f"Spoonacular response status: {response.status_code}")
 
-            if response.status_code == 200:
-                data = response.json()
-                recipes = data.get('results', [])
+                if response.status_code == 200:
+                    data = response.json()
+                    recipes = data.get('results', [])
+                    logger.info(f"Found {len(recipes)} recipes")
 
-                if not recipes:
-                    return jsonify({'msg': 'No recipes found for detected ingredients'}), 200
+                    if not recipes:
+                        return jsonify({'msg': 'No recipes found for detected ingredients'}), 200
 
-                recommendations = []
-                for recipe in recipes:
-                    recipe_info = get_recipe_info(recipe.get('id'))
-                    instructions_result = get_recipe_instructions(recipe.get('id'))
+                    recommendations = []
+                    for recipe in recipes:
+                        recipe_info = get_recipe_info(recipe.get('id'))
+                        instructions_result = get_recipe_instructions(recipe.get('id'))
 
-                    combined_info = {
-                        'id': recipe_info.get('id'),
-                        'title': recipe.get('title'),
-                        'image': recipe.get('image'),
-                        'cookingMinutes': recipe.get('cookingMinutes'),
-                        'summary': recipe.get('summary'),
-                        'sourceUrl': recipe.get('sourceUrl'),
-                        'calories': recipe_info.get('calories'),
-                        'nutrients': recipe_info.get('nutrients'),
-                        'ingredients': recipe_info.get('ingredients'),
-                        'instructions': instructions_result.get('instructions', []),
-                    }
-                    recommendations.append(combined_info)
+                        combined_info = {
+                            'id': recipe_info.get('id'),
+                            'title': recipe.get('title'),
+                            'image': recipe.get('image'),
+                            'cookingMinutes': recipe.get('cookingMinutes'),
+                            'summary': recipe.get('summary'),
+                            'sourceUrl': recipe.get('sourceUrl'),
+                            'calories': recipe_info.get('calories'),
+                            'nutrients': recipe_info.get('nutrients'),
+                            'ingredients': recipe_info.get('ingredients'),
+                            'instructions': instructions_result.get('instructions', []),
+                        }
+                        recommendations.append(combined_info)
 
-                return jsonify({'recommendations': recommendations}), 200
+                    return jsonify({'recommendations': recommendations}), 200
 
-            elif response.status_code == 402:
-                limited_api_keys.add(api_key)
-                logging.warning(f"API key {api_key} has reached the request limit. Trying the next API key.")
-            else:
-                logging.error(f"Unexpected error with API key {api_key}: {response.text}")
+                elif response.status_code == 402:
+                    limited_api_keys.add(api_key)
+                    logger.warning(f"API key {api_key} has reached the request limit.")
+                else:
+                    logger.error(f"Unexpected error with API key {api_key}: {response.status_code} - {response.text}")
 
-        except requests.RequestException as e:
-            logging.error(f"Request error with API key {api_key}: {str(e)}")
+            except requests.RequestException as e:
+                logger.error(f"Request error with API key {api_key}: {str(e)}")
 
-    return jsonify({'msg': 'All API keys have reached their limits or encountered an error'}), 500
+        return jsonify({'msg': 'All API keys have reached their limits or encountered an error'}), 500
+    except Exception as e:
+        logger.error(f"Unhandled error in recommend_recipes_spoonacular: {str(e)}")
+        return jsonify({'msg': 'Internal server error', 'error': str(e)}), 500
 
 
 @jwt_required()
 def detect_recommend_spoonacular():
+    """Phát hiện nguyên liệu qua Roboflow rồi gợi ý công thức qua Spoonacular."""
     if 'image' not in request.files:
         return jsonify({'msg': 'No image part in the request'}), 400
 
@@ -268,102 +366,129 @@ def detect_recommend_spoonacular():
     if file.filename == '':
         return jsonify({'msg': 'No selected file'}), 400
 
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        upload_folder = os.path.join(os.getcwd(), 'uploads')
-        os.makedirs(upload_folder, exist_ok=True)
-        filepath = os.path.join(upload_folder, filename)
-        file.save(filepath)
-
-        try:
-            # Chạy YOLOv8 để phát hiện vật thể
-            results = model.predict(source=filepath, save=False)
-            detected_labels = set()
-
-            # Lấy kết quả từ model
-            for result in results:
-                for cls in result.boxes.cls:
-                    label = model.names[int(cls)]
-                    clean_label = re.sub(r'^\d+\s+', '', label)
-                    detected_labels.add(clean_label)
-
-            detected_labels = list(detected_labels)
-            os.remove(filepath)
-
-            if not detected_labels:
-                return jsonify({'msg': 'No objects detected'}), 200
-
-            # Recommendations từ Spoonacular
-            ingredients = ','.join(detected_labels)
-            params = {
-                'includeIngredients': ingredients,
-                'number': 10, # Số món được gợi ý từ spoonacular
-                'ranking': 1,
-                'addRecipeInformation': True
-            }
-
-            # Thử từng APIKey trong list
-            for api_key in SPOONACULAR_API_KEY:
-                # Trường hợp key tồn tại trong list limited thì sẽ không gọi đến.
-                if api_key in limited_api_keys:
-                    continue
-                params['apiKey'] = api_key.strip()
-
-                try:
-                    response = requests.get(SPOONACULAR_SEARCH_URL, params=params)
-
-                    if response.status_code == 200:
-                        data = response.json()
-                        recipes = data.get('results', [])
-
-                        if not recipes:
-                            return jsonify({'msg': 'No recipes found for detected ingredients'}), 200
-
-                        recommendations = []
-                        for recipe in recipes:
-                            # Gọi hàm để lấy ra thông tin calories.
-                            recipe_info = get_recipe_info(recipe.get('id'))
-                            # Gọi hàm để lấy hướng dẫn chế biến
-                            instructions_result = get_recipe_instructions(recipe.get('id'))
-                            # Kết hợp data trả về
-                            print(recipe)
-                            combined_info = {
-                                'id': recipe_info.get('id'),
-                                'title': recipe.get('title'),
-                                'image': recipe.get('image'),
-                                'cookingMinutes': recipe.get('cookingMinutes'),
-                                'summary': recipe.get('summary'),
-                                'sourceUrl': recipe.get('sourceUrl'),
-                                'calories': recipe_info.get('calories'),
-                                'nutrients': recipe_info.get('nutrients'),
-                                'ingredients': recipe_info.get('ingredients'),
-                                'instructions': instructions_result.get('instructions', []),
-                            }
-                            recommendations.append(combined_info)
-
-                        return jsonify({
-                            'detected_objects': detected_labels,
-                            'recommendations': recommendations
-                        }), 200
-
-                    elif response.status_code == 402:
-                        # Thêm key vào list limited do giới hạn do key hết số lượt request theo ngày.
-                        limited_api_keys.add(api_key)
-                        logging.warning(f"API key {api_key} has reached the request limit. Trying the next API key.")
-                    else:
-                        logging.error(f"Unexpected error with API key {api_key}: {response.text}")
-                
-                except requests.RequestException as e:
-                    logging.error(f"Request error with API key {api_key}: {str(e)}")
-
-            # If all API keys fail
-            return jsonify({'msg': 'All API keys have reached their limits or encountered an error'}), 500
-
-        except Exception as e:
-            logger.error(f"Error during processing: {str(e)}")
-            return jsonify({'msg': 'An error occurred during processing', 'error': str(e)}), 500
-    else:
+    if not allowed_file(file.filename):
         return jsonify({'msg': 'Unsupported file type'}), 400
+
+    upload_folder = os.path.join(os.getcwd(), 'uploads', 'detect-images')
+    os.makedirs(upload_folder, exist_ok=True)
+    filename = secure_filename(f"{uuid.uuid4()}_{file.filename}")
+    filepath = os.path.join(upload_folder, filename)
+    file.save(filepath)
+
+    try:
+        current_user_id = get_jwt_identity()
+        if current_user_id == 'admin': current_user_id = 1
+
+        # ── 1. Gọi Roboflow Ingredient Detection ─────────────────────────────
+        result = roboflow_client.infer(filepath, model_id=ROBOFLOW_INGREDIENT_MODEL_ID)
+        predictions = result.get('predictions', [])
+        logger.info(f"Roboflow raw: {[(p['class'], round(p.get('confidence',0),3)) for p in predictions]}")
+
+        filtered = [p for p in predictions if p.get('confidence', 0) >= CONF_THRESHOLD]
+
+        seen: dict = {}
+        for p in sorted(filtered, key=lambda x: x.get('confidence', 0), reverse=True):
+            norm = normalize_label(p['class'])
+            if norm not in seen:
+                seen[norm] = p.get('confidence', 0)
+
+        detected_labels    = list(seen.keys())
+        detected_with_conf = [{'class': k, 'confidence': round(v, 4)} for k, v in seen.items()]
+
+        best_p = max(filtered, key=lambda x: x.get('confidence', 0)) if filtered else (
+                 max(predictions, key=lambda x: x.get('confidence', 0)) if predictions else None)
+
+        if not detected_labels:
+            log_scan_event(current_user_id, "Unknown", 0, filepath, 0)
+            return jsonify({
+                'msg': 'No ingredients detected with sufficient confidence',
+                'conf_threshold': CONF_THRESHOLD,
+            }), 200
+
+        # ── 2. Gọi Spoonacular complexSearch ─────────────────────────────────
+        primary_query = detected_labels[0]
+        include_ingr  = ','.join(detected_labels)
+        params = {
+            'query':              primary_query,
+            'includeIngredients': include_ingr,
+            'number':             10,
+            'ranking':            2,
+            'addRecipeInformation': True,
+        }
+
+        for api_key in SPOONACULAR_API_KEY:
+            if api_key in limited_api_keys:
+                continue
+            params['apiKey'] = api_key.strip()
+
+            try:
+                response = requests.get(SPOONACULAR_SEARCH_URL, params=params)
+
+                if response.status_code == 200:
+                    data    = response.json()
+                    recipes = data.get('results', [])
+
+                    # Fallback: thử lại chỉ với query nếu không có kết quả
+                    if not recipes and len(detected_labels) > 1:
+                        fb = requests.get(SPOONACULAR_SEARCH_URL, params={
+                            'query': primary_query, 'number': 10,
+                            'addRecipeInformation': True, 'apiKey': api_key.strip()
+                        })
+                        if fb.status_code == 200:
+                            recipes = fb.json().get('results', [])
+
+                    if not recipes:
+                        best_label = best_p['class'] if best_p else 'Unknown'
+                        log_scan_event(current_user_id, best_label,
+                                       best_p.get('confidence', 0) if best_p else 0, filepath, 2)
+                        return jsonify({'msg': 'No recipes found for detected ingredients',
+                                        'detected_objects': detected_with_conf}), 200
+
+                    best_label = best_p['class'] if best_p else 'Unknown'
+                    log_scan_event(current_user_id, best_label,
+                                   best_p.get('confidence', 0) if best_p else 0, filepath, 1)
+
+                    recommendations = []
+                    for recipe in recipes:
+                        recipe_info  = get_recipe_info(recipe.get('id'))
+                        instructions = get_recipe_instructions(recipe.get('id'))
+                        recommendations.append({
+                            'id':             recipe_info.get('id'),
+                            'title':          recipe.get('title'),
+                            'image':          recipe.get('image'),
+                            'cookingMinutes': recipe.get('cookingMinutes'),
+                            'summary':        recipe.get('summary'),
+                            'sourceUrl':      recipe.get('sourceUrl'),
+                            'calories':       recipe_info.get('calories'),
+                            'nutrients':      recipe_info.get('nutrients'),
+                            'ingredients':    recipe_info.get('ingredients'),
+                            'instructions':   instructions.get('instructions', []),
+                        })
+
+                    return jsonify({
+                        'detected_objects':         list({p['class'] for p in filtered}),
+                        'detected_with_confidence': detected_with_conf,
+                        'conf_threshold':           CONF_THRESHOLD,
+                        'recommendations':          recommendations,
+                    }), 200
+
+                elif response.status_code == 402:
+                    limited_api_keys.add(api_key)
+                    logging.warning(f"API key {api_key} reached limit.")
+                else:
+                    logging.error(f"Spoonacular error: {response.text}")
+
+            except requests.RequestException as e:
+                logging.error(f"Request error with API key {api_key}: {str(e)}")
+
+        return jsonify({'msg': 'All API keys have reached their limits or encountered an error'}), 500
+
+    except Exception as e:
+        logger.error(f"detect_recommend_spoonacular error: {str(e)}")
+        return jsonify({'msg': 'An error occurred during processing', 'error': str(e)}), 500
+    finally:
+        if os.path.exists(filepath):
+            os.remove(filepath)
 
 def get_recipe_info(recipe_id):
     """Lấy thông tin dinh dưỡng của công thức món ăn bao gồm calo."""
@@ -624,21 +749,64 @@ def detect_food_roboflow():
     file.save(filepath)
 
     try:
-        # ── 1. Gọi Roboflow để phát hiện món ăn ──────────────────────────────
-        result = roboflow_client.infer(filepath, model_id=ROBOFLOW_MODEL_ID)
+        current_user_id = get_jwt_identity()
+        if current_user_id == 'admin': current_user_id = 1
+        
+        # ── 1. Gọi Roboflow để phát hiện nguyên liệu (ingredients model) ────────
+        result = roboflow_client.infer(filepath, model_id=ROBOFLOW_INGREDIENT_MODEL_ID)
         predictions = result.get('predictions', [])
-        detected_labels = list({p['class'] for p in predictions})
-        logger.info(f"Roboflow detected: {detected_labels}")
+        logger.info(f"Roboflow raw predictions: {[(p['class'], round(p.get('confidence',0),3)) for p in predictions]}")
+
+        # A) Lọc theo confidence threshold
+        filtered_predictions = [p for p in predictions if p.get('confidence', 0) >= CONF_THRESHOLD]
+        logger.info(f"After confidence filter (>={CONF_THRESHOLD}): {[(p['class'], round(p['confidence'],3)) for p in filtered_predictions]}")
+
+        # B) Normalize labels và deduplicate
+        seen_normalized = {}
+        for p in sorted(filtered_predictions, key=lambda x: x.get('confidence', 0), reverse=True):
+            normalized = normalize_label(p['class'])
+            if normalized not in seen_normalized:
+                seen_normalized[normalized] = p.get('confidence', 0)
+
+        detected_labels    = list(seen_normalized.keys())       # tên đã normalize
+        detected_raw       = list({p['class'] for p in filtered_predictions})  # tên gốc
+        detected_with_conf = [{'class': k, 'confidence': round(v, 4)} for k, v in seen_normalized.items()]
+        logger.info(f"Normalized labels: {detected_labels}")
+
+        # Lấy prediction có confidence cao nhất để log
+        best_p = None
+        if filtered_predictions:
+            best_p = max(filtered_predictions, key=lambda x: x.get('confidence', 0))
+        elif predictions:  # fallback nếu tất cả bị filter
+            best_p = max(predictions, key=lambda x: x.get('confidence', 0))
 
         if not detected_labels:
-            return jsonify({'msg': 'No food detected in the image'}), 200
+            # Trả thêm low-confidence hints nếu có
+            low_conf_hints = []
+            if predictions:
+                low_conf_hints = [
+                    {'class': normalize_label(p['class']), 'confidence': round(p.get('confidence', 0), 4)}
+                    for p in sorted(predictions, key=lambda x: x.get('confidence', 0), reverse=True)[:3]
+                ]
+            log_scan_event(current_user_id, "Unknown", 0, filepath, 0)
+            return jsonify({
+                'msg': 'No food detected with sufficient confidence',
+                'conf_threshold': CONF_THRESHOLD,
+                'low_confidence_hints': low_conf_hints,
+            }), 200
 
         # ── 2. Gọi Spoonacular complexSearch ─────────────────────────────────
-        query = ', '.join(detected_labels)
+        # B) Dùng cả query (tên món chính) + includeIngredients (tất cả labels)
+        #    ranking=2: tối đa hóa số ingredients được dùng
+        primary_query     = detected_labels[0]               # label confidence cao nhất
+        include_ingr      = ','.join(detected_labels)         # tất cả labels
         params = {
-            'query': query,
-            'number': 10,
+            'query':              primary_query,
+            'includeIngredients': include_ingr,
+            'number':             10,
+            'ranking':            2,              # maximize ingredient usage
             'addRecipeInformation': True,
+            'addRecipeNutrition': False,
         }
 
         for api_key in SPOONACULAR_API_KEY:
@@ -653,13 +821,45 @@ def detect_food_roboflow():
                     data = response.json()
                     recipes = data.get('results', [])
 
+                    # Fallback: nếu không có kết quả, thử tìm rộng hơn chỉ với query
+                    if not recipes and len(detected_labels) > 1:
+                        logger.info("No results with combined search, retrying with query only...")
+                        fallback_params = {
+                            'query':              primary_query,
+                            'number':             10,
+                            'addRecipeInformation': True,
+                            'apiKey':             api_key.strip(),
+                        }
+                        fb_response = requests.get(SPOONACULAR_SEARCH_URL, params=fallback_params)
+                        if fb_response.status_code == 200:
+                            recipes = fb_response.json().get('results', [])
+
                     if not recipes:
-                        return jsonify({'msg': 'No recipes found for detected food'}), 200
+                        log_scan_event(
+                            current_user_id,
+                            best_p['class'] if best_p else "Unknown",
+                            best_p['confidence'] if best_p else 0,
+                            filepath,
+                            2
+                        )
+                        return jsonify({
+                            'msg': 'No recipes found for detected food',
+                            'detected_objects': detected_with_conf,
+                        }), 200
+
+                    # Log Success (1)
+                    log_scan_event(
+                        current_user_id,
+                        best_p['class'] if best_p else "Unknown",
+                        best_p['confidence'] if best_p else 0,
+                        filepath,
+                        1
+                    )
 
                     recommendations = []
                     for recipe in recipes:
-                        recipe_info   = get_recipe_info(recipe.get('id'))
-                        instructions  = get_recipe_instructions(recipe.get('id'))
+                        recipe_info  = get_recipe_info(recipe.get('id'))
+                        instructions = get_recipe_instructions(recipe.get('id'))
                         combined = {
                             'id':             recipe_info.get('id'),
                             'title':          recipe.get('title'),
@@ -674,8 +874,11 @@ def detect_food_roboflow():
                         }
                         recommendations.append(combined)
 
+                    # C) Trả về confidence info trong response
                     return jsonify({
-                        'detected_objects':  detected_labels,
+                        'detected_objects':  detected_raw,
+                        'detected_with_confidence': detected_with_conf,
+                        'conf_threshold':    CONF_THRESHOLD,
                         'recommendations':   recommendations,
                     }), 200
 
@@ -926,3 +1129,82 @@ def get_spoonacular_recommendations_v2():
             continue
             
     return jsonify({'msg': 'Failed to fetch recommendations', 'error': last_error}), 500
+
+@jwt_required()
+def get_scan_logs():
+    """Lấy danh sách scan logs cho admin dashboard."""
+    user_id = get_jwt_identity()
+    # Robust check for identity type
+    if isinstance(user_id, str) and not str(user_id).isdigit():
+        user = User.query.filter_by(username=user_id).first()
+    else:
+        user = User.query.get(user_id)
+
+    if not user or user.username != 'admin':
+        return jsonify({'msg': 'Permission denied'}), 403
+
+    page = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 10, type=int)
+    search = request.args.get('search', '')
+    status_filter = request.args.get('status', 'all')
+
+    query = db.session.query(ScanLog).join(User, ScanLog.id_user == User.id_user)
+
+    if search:
+        query = query.filter(
+            (ScanLog.food_name.ilike(f'%{search}%')) |
+            (User.username.ilike(f'%{search}%'))
+        )
+
+    if status_filter != 'all':
+        try:
+            status_int = int(status_filter)
+            query = query.filter(ScanLog.status == status_int)
+        except ValueError:
+            pass
+
+    pagination = query.order_by(ScanLog.created_at.desc()).paginate(page=page, per_page=limit)
+
+    logs = []
+    for log in pagination.items:
+        logs.append({
+            'id': log.id,
+            'food_name': log.food_name,
+            'user': log.user.username if log.user else "Unknown",
+            'accuracy': log.confidence,
+            'image': log.image_url,
+            'status': log.status,
+            'time': log.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        })
+
+    return jsonify({
+        'logs': logs,
+        'total': pagination.total,
+        'pages': pagination.pages,
+        'current_page': page
+    }), 200
+
+@jwt_required()
+def get_scan_stats():
+    """Lấy thống kê scan logs cho admin dashboard."""
+    user_id = get_jwt_identity()
+    # Robust check for identity type
+    if isinstance(user_id, str) and not str(user_id).isdigit():
+        user = User.query.filter_by(username=user_id).first()
+    else:
+        user = User.query.get(user_id)
+
+    if not user or user.username != 'admin':
+        return jsonify({'msg': 'Permission denied'}), 403
+
+    total = ScanLog.query.count()
+    success = ScanLog.query.filter_by(status=1).count()
+    needs_conf = ScanLog.query.filter_by(status=0).count()
+    mismatch = ScanLog.query.filter_by(status=2).count()
+
+    return jsonify({
+        'total': total,
+        'success': success,
+        'needs_confirmation': needs_conf,
+        'mismatched': mismatch
+    }), 200

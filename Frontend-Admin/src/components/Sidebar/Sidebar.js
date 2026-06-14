@@ -70,7 +70,7 @@ const Sidebar = (props) => {
       if (token) {
         try {
           const decoded = jwtDecode(token);
-          setUserName(decoded.sub || "Admin User");
+          setUserName(decoded.username || decoded.sub || "Admin User");
           if (decoded.email) {
             setUserEmail(decoded.email);
           }

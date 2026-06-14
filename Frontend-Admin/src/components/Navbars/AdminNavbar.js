@@ -22,7 +22,7 @@ const AdminNavbar = (props) => {
       const token = await AsyncStorage.getItem("access_token");
       if (token) {
         const decoded = jwtDecode(token);
-        setUserName(decoded.sub); // Giả sử tên người dùng được lưu trong thuộc tính `name` của JWT
+        setUserName(decoded.username || decoded.sub); // Ưu tiên sử dụng username từ JWT
       }
     };
 

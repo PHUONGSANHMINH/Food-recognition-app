@@ -81,7 +81,7 @@ def create_app():
         from app.routes.diary_route import diary_bp
 
         # Import models để Flask-Migrate nhận diện
-        from app.models.model import Config, AdvertisingBanners, Rating, RecipeInfo, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin, User, CSVExportVersion, UserDailyNutritionGoal, UserDailyLog, DiaryEntry
+        from app.models.model import Config, AdvertisingBanners, Rating, RecipeInfo, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin, User, CSVExportVersion, UserDailyNutritionGoal, UserDailyLog, DiaryEntry, ScanLog
 
         app.register_blueprint(auth_bp, url_prefix='/api/auth')
         app.register_blueprint(user_bp, url_prefix='/api/user')

@@ -17,86 +17,84 @@ import {
     Badge,
     Media,
     Progress,
+    Spinner,
+    Button,
 } from "reactstrap";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "components/Headers/HeaderScanLogs.js";
+import axios from "axios";
 
 const ScanLogs = () => {
     const [searchKeyword, setSearchKeyword] = useState("");
     const [filterStatus, setFilterStatus] = useState("all");
     const [searchFocused, setSearchFocused] = useState(false);
+    const [logs, setLogs] = useState([]);
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalLogs, setTotalLogs] = useState(0);
 
-    // Mock data
-    const [logs, setLogs] = useState([
-        {
-            id: 1,
-            food_name: "Hainanese Chicken Rice",
-            user: "Nguyen Van A",
-            accuracy: 96.5,
-            status: "Success",
-            time: "2024-01-17 14:30",
-            image: "https://via.placeholder.com/40"
-        },
-        {
-            id: 2,
-            food_name: "Green Salad",
-            user: "Tran Thi B",
-            accuracy: 88.2,
-            status: "Success",
-            time: "2024-01-17 13:15",
-            image: "https://via.placeholder.com/40"
-        },
-        {
-            id: 3,
-            food_name: "Pizza (Unidentified)",
-            user: "Le Minh C",
-            accuracy: 62.4,
-            status: "Needs Confirmation",
-            time: "2024-01-17 12:45",
-            image: "https://via.placeholder.com/40"
-        },
-        {
-            id: 4,
-            food_name: "Tomato Sauce",
-            user: "Nguyen Van A",
-            accuracy: 94.8,
-            status: "Success",
-            time: "2024-01-17 11:20",
-            image: "https://via.placeholder.com/40"
-        },
-        {
-            id: 5,
-            food_name: "Beef Noodle Soup",
-            user: "Pham Van D",
-            accuracy: 45.0,
-            status: "Mismatch",
-            time: "2024-01-17 10:05",
-            image: "https://via.placeholder.com/40"
+    const apiDomain = process.env.REACT_APP_PUBLIC_DOMAIN || 'http://localhost:5207';
+    const API_URL = `${apiDomain}/api`;
+
+    useEffect(() => {
+        fetchLogs();
+    }, [currentPage, filterStatus, searchKeyword]);
+
+    const fetchLogs = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const token = localStorage.getItem("access_token");
+            const response = await axios.get(`${API_URL}/detect/scan-logs`, {
+                headers: { Authorization: `Bearer ${token}` },
+                params: {
+                    page: currentPage,
+                    per_page: 10,
+                    search: searchKeyword,
+                    status: filterStatus
+                }
+            });
+
+            if (response.data && response.data.logs) {
+                setLogs(response.data.logs);
+                setTotalPages(response.data.pages || 1);
+                setTotalLogs(response.data.total || 0);
+            } else {
+                setLogs([]);
+            }
+        } catch (error) {
+            console.error("Error fetching scan logs:", error);
+            setError(error.message || "Failed to fetch scan logs");
+            setLogs([]);
+        } finally {
+            setLoading(false);
         }
-    ]);
+    };
 
     const handleStatusChange = (id, newStatus) => {
         setLogs(logs.map(log => log.id === id ? { ...log, status: newStatus } : log));
     };
 
     const getStatusBadge = (status) => {
-        switch (status) {
-            case "Success":
+        switch (Number(status)) {
+            case 1:
                 return (
                     <Badge color="success" pill style={{ padding: '8px 12px', fontSize: '0.8rem', backgroundColor: '#dcfce7', color: '#166534', border: 'none' }}>
                         ✓ Success
                     </Badge>
                 );
-            case "Needs Confirmation":
-                return (
-                    <Badge color="warning" pill style={{ padding: '8px 12px', fontSize: '0.8rem', backgroundColor: '#fef3c7', color: '#92400e', border: 'none' }}>
-                        ? Needs Confirmation
-                    </Badge>
-                );
-            case "Mismatch":
+            case 2:
                 return (
                     <Badge color="danger" pill style={{ padding: '8px 12px', fontSize: '0.8rem', backgroundColor: '#fee2e2', color: '#991b1b', border: 'none' }}>
                         ✕ Mismatch
+                    </Badge>
+                );
+            case 0:
+                return (
+                    <Badge color="warning" pill style={{ padding: '8px 12px', fontSize: '0.8rem', backgroundColor: '#fef3c7', color: '#92400e', border: 'none' }}>
+                        ? Needs Confirmation
                     </Badge>
                 );
             default:
@@ -143,7 +141,10 @@ const ScanLogs = () => {
                                                     placeholder="Search for food or user..."
                                                     type="text"
                                                     value={searchKeyword}
-                                                    onChange={(e) => setSearchKeyword(e.target.value)}
+                                                    onChange={(e) => {
+                                                        setSearchKeyword(e.target.value);
+                                                        setCurrentPage(1); // Reset to first page on search
+                                                    }}
                                                     onFocus={() => setSearchFocused(true)}
                                                     onBlur={() => setSearchFocused(false)}
                                                     style={{
@@ -164,12 +165,15 @@ const ScanLogs = () => {
                                                 className="d-flex align-items-center ml-auto"
                                             >
                                                 <i className="fas fa-filter mr-2"></i>
-                                                {filterStatus === "all" ? "All Results" : filterStatus}
+                                                {filterStatus === "all" ? "All Results" :
+                                                    filterStatus === "1" ? "Success" :
+                                                        filterStatus === "2" ? "Mismatch" : "No Food"}
                                             </DropdownToggle>
                                             <DropdownMenu right style={{ borderRadius: '12px', padding: '8px', border: '1px solid #f1f3f9' }}>
-                                                <DropdownItem onClick={() => setFilterStatus("all")} className="py-2">All</DropdownItem>
-                                                <DropdownItem onClick={() => setFilterStatus("Success")} className="py-2">Success</DropdownItem>
-                                                <DropdownItem onClick={() => setFilterStatus("Needs Confirmation")} className="py-2">Needs Confirmation</DropdownItem>
+                                                <DropdownItem onClick={() => { setFilterStatus("all"); setCurrentPage(1); }} className="py-2">All</DropdownItem>
+                                                <DropdownItem onClick={() => { setFilterStatus("1"); setCurrentPage(1); }} className="py-2">Success</DropdownItem>
+                                                <DropdownItem onClick={() => { setFilterStatus("2"); setCurrentPage(1); }} className="py-2">Mismatch</DropdownItem>
+                                                <DropdownItem onClick={() => { setFilterStatus("0"); setCurrentPage(1); }} className="py-2">No Food</DropdownItem>
                                             </DropdownMenu>
                                         </UncontrolledDropdown>
                                     </Col>
@@ -188,19 +192,49 @@ const ScanLogs = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr style={{ height: '15px' }}><td colSpan="6" style={{ border: 'none', padding: 0 }}></td></tr>
-                                        {filteredLogs.length > 0 ? (
-                                            filteredLogs.map((log) => (
+                                        {error ? (
+                                            <tr>
+                                                <td colSpan="6" className="text-center py-5">
+                                                    <div className="text-danger">
+                                                        <i className="fas fa-exclamation-triangle mr-2"></i>
+                                                        {error}
+                                                    </div>
+                                                    <Button
+                                                        color="link"
+                                                        size="sm"
+                                                        onClick={() => fetchLogs()}
+                                                        className="mt-2"
+                                                    >
+                                                        Try Again
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ) : loading ? (
+                                            <tr>
+                                                <td colSpan="6" className="text-center py-5">
+                                                    <Spinner color="success" />
+                                                </td>
+                                            </tr>
+                                        ) : logs.length > 0 ? (
+                                            logs.map((log) => (
                                                 <React.Fragment key={log.id}>
                                                     <tr style={{ backgroundColor: 'white', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
                                                         <td className="border-0">
                                                             <Media className="align-items-center">
-                                                                <div className="avatar rounded mr-3 bg-light">
-                                                                    <i className="far fa-image text-muted" />
+                                                                <div className="mr-3 bg-light overflow-hidden shadow-sm" style={{ width: '55px', height: '55px', borderRadius: '4px' }}>
+                                                                    {log.image ? (
+                                                                        <img
+                                                                            src={`${API_URL}/file/get-file/${log.image}`}
+                                                                            alt={log.food_name}
+                                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                        />
+                                                                    ) : (
+                                                                        <i className="far fa-image text-muted" />
+                                                                    )}
                                                                 </div>
                                                                 <Media>
                                                                     <span className="mb-0 text-sm font-weight-bold" style={{ color: '#32325d' }}>
-                                                                        {log.food_name}
+                                                                        {log.food_name || "Unknown"}
                                                                     </span>
                                                                 </Media>
                                                             </Media>
@@ -208,11 +242,11 @@ const ScanLogs = () => {
                                                         <td className="border-0 text-muted">{log.user}</td>
                                                         <td className="border-0">
                                                             <div className="d-flex align-items-center">
-                                                                <span className="mr-2">{log.accuracy}%</span>
+                                                                <span className="mr-2">{log.accuracy?.toFixed(1) || 0}%</span>
                                                                 <div>
                                                                     <Progress
                                                                         max="100"
-                                                                        value={log.accuracy}
+                                                                        value={log.accuracy || 0}
                                                                         barClassName={log.accuracy > 80 ? "bg-success" : log.accuracy > 60 ? "bg-warning" : "bg-danger"}
                                                                         style={{ height: "5px", width: "100px" }}
                                                                     />
@@ -230,33 +264,16 @@ const ScanLogs = () => {
                                                         </td>
                                                         <td className="border-0 text-right">
                                                             <div className="d-flex justify-content-end align-items-center">
-                                                                <i className="far fa-eye mr-3 text-muted" style={{ cursor: 'pointer' }} title="View Original Image" />
-                                                                <UncontrolledDropdown>
-                                                                    <DropdownToggle
-                                                                        className="btn-icon-only text-light"
-                                                                        role="button"
-                                                                        size="sm"
-                                                                        color=""
-                                                                        onClick={(e) => e.preventDefault()}
-                                                                        style={{ boxShadow: 'none' }}
+                                                                {log.image && (
+                                                                    <a
+                                                                        href={`${API_URL}/file/get-file/${log.image}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="mr-3"
                                                                     >
-                                                                        <i className="fas fa-ellipsis-v" style={{ color: '#adb5bd' }} />
-                                                                    </DropdownToggle>
-                                                                    <DropdownMenu className="dropdown-menu-arrow" right style={{ borderRadius: '12px', padding: '8px', border: '1px solid #f1f3f9', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}>
-                                                                        <DropdownItem onClick={() => alert("Viewing original image...")} className="d-flex align-items-center py-2" style={{ borderRadius: '8px' }}>
-                                                                            <i className="far fa-image mr-2" style={{ fontSize: '14px', color: '#8898aa' }}></i>
-                                                                            <span style={{ color: '#32325d' }}>View original image</span>
-                                                                        </DropdownItem>
-                                                                        <DropdownItem onClick={() => handleStatusChange(log.id, "Success")} className="d-flex align-items-center py-2" style={{ borderRadius: '8px' }}>
-                                                                            <i className="fas fa-check-circle mr-2" style={{ fontSize: '14px', color: '#2dce89' }}></i>
-                                                                            <span style={{ color: '#32325d' }}>Confirm result</span>
-                                                                        </DropdownItem>
-                                                                        <DropdownItem onClick={() => handleStatusChange(log.id, "Mismatch")} className="d-flex align-items-center py-2 text-danger" style={{ borderRadius: '8px' }}>
-                                                                            <i className="fas fa-times-circle mr-2" style={{ fontSize: '14px', color: '#f5365c' }}></i>
-                                                                            <span>Mark as incorrect</span>
-                                                                        </DropdownItem>
-                                                                    </DropdownMenu>
-                                                                </UncontrolledDropdown>
+                                                                        <i className="far fa-eye text-muted" title="View Original Image" />
+                                                                    </a>
+                                                                )}
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -265,8 +282,15 @@ const ScanLogs = () => {
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan="6" className="text-center">
-                                                    No logs found
+                                                <td colSpan="6" className="text-center py-5">
+                                                    <div className="text-muted">
+                                                        <i className="fas fa-info-circle mr-2"></i>
+                                                        No logs found in database.
+                                                        <div className="small mt-2">
+                                                            API URL: {API_URL}<br />
+                                                            Search: "{searchKeyword}" | Status: {filterStatus}
+                                                        </div>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         )}
@@ -275,19 +299,21 @@ const ScanLogs = () => {
                             </div>
                             <CardFooter className="py-4">
                                 <Pagination className="pagination justify-content-end mb-0">
-                                    <PaginationItem className="disabled">
-                                        <PaginationLink href="#pablo" onClick={(e) => e.preventDefault()} tabIndex="-1">
+                                    <PaginationItem className={currentPage === 1 ? "disabled" : ""}>
+                                        <PaginationLink href="#" onClick={(e) => { e.preventDefault(); if (currentPage > 1) setCurrentPage(currentPage - 1); }}>
                                             <i className="fas fa-angle-left" />
                                             <span className="sr-only">Previous</span>
                                         </PaginationLink>
                                     </PaginationItem>
-                                    <PaginationItem className="active">
-                                        <PaginationLink href="#pablo" onClick={(e) => e.preventDefault()}>
-                                            1
-                                        </PaginationLink>
-                                    </PaginationItem>
-                                    <PaginationItem>
-                                        <PaginationLink href="#pablo" onClick={(e) => e.preventDefault()}>
+                                    {[...Array(totalPages)].map((_, i) => (
+                                        <PaginationItem key={i + 1} className={currentPage === i + 1 ? "active" : ""}>
+                                            <PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(i + 1); }}>
+                                                {i + 1}
+                                            </PaginationLink>
+                                        </PaginationItem>
+                                    ))}
+                                    <PaginationItem className={currentPage === totalPages ? "disabled" : ""}>
+                                        <PaginationLink href="#" onClick={(e) => { e.preventDefault(); if (currentPage < totalPages) setCurrentPage(currentPage + 1); }}>
                                             <i className="fas fa-angle-right" />
                                             <span className="sr-only">Next</span>
                                         </PaginationLink>

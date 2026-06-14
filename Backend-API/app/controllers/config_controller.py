@@ -28,8 +28,12 @@ def superadmin_login():
 
         # Kiểm tra thông tin đăng nhập
         if stored_username == username and stored_password == password:
-            access_token = create_access_token(identity=stored_username, additional_claims={"role": "admin"})
-            refresh_token = create_refresh_token(identity=stored_username, additional_claims={"role": "admin"})
+            # Fetch the user to get their id_user for consistent JWT identity
+            user = User.query.filter_by(username=stored_username).first()
+            identity = user.id_user if user else stored_username
+            
+            access_token = create_access_token(identity=identity, additional_claims={"role": "admin", "username": stored_username})
+            refresh_token = create_refresh_token(identity=identity, additional_claims={"role": "admin", "username": stored_username})
             return jsonify(access_token=access_token, refresh_token=refresh_token), 200
         else:
             lang = get_locale()

@@ -180,6 +180,18 @@ CREATE TABLE "user_daily_log" (
   CONSTRAINT "uq_user_date" UNIQUE ("id_user", "log_date")
 );
 
+DROP TABLE IF EXISTS "scan_logs" CASCADE;
+CREATE TABLE "scan_logs" (
+  "id" SERIAL NOT NULL,
+  "id_user" int NOT NULL,
+  "food_name" varchar(255) DEFAULT NULL,
+  "confidence" float DEFAULT NULL,
+  "image_url" text DEFAULT NULL,
+  "status" int DEFAULT NULL,
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY ("id")
+);
+
 DROP TABLE IF EXISTS "diary_entry" CASCADE;
 CREATE TABLE "diary_entry" (
   "id_entry" SERIAL NOT NULL,
@@ -220,6 +232,7 @@ CREATE INDEX "user_daily_nutrition_goal_id_user_idx" ON "user_daily_nutrition_go
 CREATE INDEX "user_daily_log_id_user_idx" ON "user_daily_log" ("id_user");
 CREATE INDEX "diary_entry_id_user_idx" ON "diary_entry" ("id_user");
 CREATE INDEX "search_history_id_user_idx" ON "search_history" ("id_user");
+CREATE INDEX "scan_logs_id_user_idx" ON "scan_logs" ("id_user");
 
 
 -- Foreign Keys
@@ -238,3 +251,4 @@ ALTER TABLE "user_daily_nutrition_goal" ADD CONSTRAINT "user_daily_nutrition_goa
 ALTER TABLE "user_daily_log" ADD CONSTRAINT "user_daily_log_ibfk_1" FOREIGN KEY ("id_user") REFERENCES "user" ("id_user") ON DELETE RESTRICT ON UPDATE RESTRICT;
 ALTER TABLE "diary_entry" ADD CONSTRAINT "diary_entry_ibfk_1" FOREIGN KEY ("id_user") REFERENCES "user" ("id_user") ON DELETE RESTRICT ON UPDATE RESTRICT;
 ALTER TABLE "search_history" ADD CONSTRAINT "search_history_ibfk_1" FOREIGN KEY ("id_user") REFERENCES "user" ("id_user") ON DELETE CASCADE ON UPDATE RESTRICT;
+ALTER TABLE "scan_logs" ADD CONSTRAINT "scan_logs_ibfk_1" FOREIGN KEY ("id_user") REFERENCES "user" ("id_user") ON DELETE CASCADE ON UPDATE RESTRICT;

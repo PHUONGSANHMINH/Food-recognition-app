@@ -24,7 +24,7 @@ def login():
     if user and user.check_password(password):
         user.status = 2 # Online
         db.session.commit()
-        access_token = create_access_token(identity=user.id_user)
+        access_token = create_access_token(identity=user.id_user, additional_claims={"username": user.username})
         refresh_token = create_refresh_token(identity=user.id_user)
         return jsonify(access_token=access_token, refresh_token=refresh_token), 200
     else:
@@ -206,7 +206,10 @@ def delete_user(user_id):
 @jwt_required(refresh=True)
 def refresh_token():
     current_user_id = get_jwt_identity()
-    new_access_token = create_access_token(identity=current_user_id)
+    user = User.query.get(current_user_id)
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+    new_access_token = create_access_token(identity=current_user_id, additional_claims={"username": user.username})
     return jsonify(access_token=new_access_token), 200
 
 def send_code_forget_password():
