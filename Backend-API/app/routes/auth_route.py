@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from app.controllers.users_controller import login, logout, register, send_code_forget_password, change_password, verify_code, refresh_token
+from app.controllers.users_controller import login, logout, register, send_code_forget_password, change_password, verify_code, refresh_token, google_login
 from flasgger import swag_from
 from flask_jwt_extended import (
     jwt_required
@@ -59,6 +59,34 @@ auth_bp = Blueprint('auth', __name__)
 })
 def login_view():
     return login()
+
+@auth_bp.route('/google-login', methods=['POST'])
+@swag_from({
+    'tags': ['Authentication'],
+    'summary': 'Google OAuth Login',
+    'description': 'Authenticate user with Google ID Token. Creates a new account if not exists.',
+    'parameters': [
+        {
+            'name': 'body',
+            'in': 'body',
+            'required': True,
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'id_token': {'type': 'string', 'example': '<Google ID Token>'}
+                },
+                'required': ['id_token']
+            }
+        }
+    ],
+    'responses': {
+        200: {'description': 'Login successful, returns JWT tokens'},
+        400: {'description': 'Missing id_token'},
+        401: {'description': 'Invalid Google token'}
+    }
+})
+def google_login_view():
+    return google_login()
 
 @auth_bp.route('/logout', methods=['POST'])
 @jwt_required()

@@ -1,7 +1,8 @@
 {
   "expo": {
     "name": "Frontend-update",
-    "slug": "Frontend-update",
+    "slug": "frontend-update",
+    "scheme": "nutrilens",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,6 +17,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.sanhminh.nutrilens",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -24,6 +26,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-web-browser"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b87e603e-c401-4d1c-8839-5fb6a71ce4ae"
+      }
     }
   }
 }

@@ -12,6 +12,7 @@ from app.utils.common import get_locale, get_message
 from flask_mail import Mail, Message
 import secrets
 from datetime import datetime, timedelta
+import os
 
 def login():
     data = request.get_json()
@@ -30,6 +31,71 @@ def login():
     else:
         lang = get_locale()
         return jsonify({"msg": get_message('bad_credentials', lang)}), 401
+
+def google_login():
+    """Đăng nhập bằng Google OAuth2. Nhận id_token từ client, verify và trả về JWT."""
+    # Lazy import — tránh xung đột TypedDict với các package google khác khi import cấp module
+    try:
+        from google.oauth2 import id_token as google_id_token
+        from google.auth.transport import requests as google_requests
+    except ImportError:
+        return jsonify({"msg": "google-auth package not installed. Run: pip install google-auth"}), 500
+
+    data = request.get_json()
+    token = data.get('id_token')
+    if not token:
+        return jsonify({"msg": "Missing id_token"}), 400
+
+    client_id = os.environ.get('GOOGLE_CLIENT_ID')
+    try:
+        # Xác thực token với Google
+        idinfo = google_id_token.verify_oauth2_token(
+            token,
+            google_requests.Request(),
+            client_id
+        )
+    except ValueError as e:
+        return jsonify({"msg": "Invalid Google token", "error": str(e)}), 401
+
+    google_id = idinfo.get('sub')       # Google unique user ID
+    email     = idinfo.get('email', '')
+    name      = idinfo.get('name', '')
+
+    # Tìm user theo google_id
+    user = User.query.filter_by(google_id=google_id).first()
+
+    if not user:
+        # Thử tìm theo email (user đã đăng ký bằng email thông thường)
+        user = User.query.filter_by(email=email).first()
+        if user:
+            # Liên kết google_id với tài khoản hiện có
+            user.google_id = google_id
+        else:
+            # Tạo tài khoản mới từ Google
+            base_username = email.split('@')[0].replace('.', '_')[:12]
+            username = base_username
+            # Đảm bảo username không trùng
+            counter = 1
+            while User.query.filter_by(username=username).first():
+                username = f"{base_username}{counter}"
+                counter += 1
+
+            user = User(
+                username=username,
+                email=email,
+                google_id=google_id,
+                status=2
+            )
+            # Đặt password_hash ngẫu nhiên (user không dùng password thường)
+            user.set_password(secrets.token_urlsafe(24))
+            db.session.add(user)
+
+    user.status = 2  # Online
+    db.session.commit()
+
+    access_token  = create_access_token(identity=user.id_user, additional_claims={"username": user.username})
+    refresh_token = create_refresh_token(identity=user.id_user)
+    return jsonify(access_token=access_token, refresh_token=refresh_token), 200
 
 @jwt_required()
 def logout():

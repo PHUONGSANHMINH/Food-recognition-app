@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import SetupProfileScreen from './src/screens/SetupProfileScreen';
 import SetupGoalScreen from './src/screens/SetupGoalScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
@@ -15,9 +16,6 @@ import RecipeDetailScreen from './src/screens/RecipeDetailScreen';
 import SearchScreen from './src/screens/SearchScreen';
 import FavoriteScreen from './src/screens/FavoriteScreen';
 import AddRecipeContributionScreen from './src/screens/AddRecipeContributionScreen';
-import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
-import VerifyCodeScreen from './src/screens/VerifyCodeScreen';
-import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 import MainTabs from './src/navigation/MainTabs';
 
 const Stack = createNativeStackNavigator();
@@ -29,6 +27,7 @@ export default function App() {
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="SetupProfile" component={SetupProfileScreen} />
         <Stack.Screen name="SetupGoal" component={SetupGoalScreen} />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
@@ -40,9 +39,6 @@ export default function App() {
         <Stack.Screen name="SearchScreen" component={SearchScreen} />
         <Stack.Screen name="FavoriteScreen" component={FavoriteScreen} />
         <Stack.Screen name="AddRecipeContributionScreen" component={AddRecipeContributionScreen} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-        <Stack.Screen name="VerifyCode" component={VerifyCodeScreen} />
-        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       </Stack.Navigator>
       <StatusBar style="auto" />
     </NavigationContainer>

@@ -19,6 +19,7 @@ class User(db.Model):
     weight = db.Column(db.Float,       nullable=True)   # đơn vị: kg
     age    = db.Column(db.Integer,     nullable=True)   # đơn vị: tuổi
     avatar_image = db.Column(db.Text,   nullable=True)
+    google_id    = db.Column(db.String(255), unique=True, nullable=True)  # Google OAuth UID
     # ────────────────────────────────────────────────────────────────────────
 
     def set_password(self, password):
