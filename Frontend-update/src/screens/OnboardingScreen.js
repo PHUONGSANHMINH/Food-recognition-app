@@ -145,11 +145,10 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   skipContainer: {
-    alignItems: 'flex-end',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    height: 50,
-    justifyContent: 'center',
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 40,
+    right: 20,
+    zIndex: 10,
   },
   skipButton: {
     padding: 10,

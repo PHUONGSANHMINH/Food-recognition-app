@@ -85,17 +85,18 @@ export default function SearchScreen({ navigation, route }) {
     const handleSpoonacularPress = useCallback(async (item) => {
         setLoadingDetailId(item.spoonacular_id);
         try {
-            // Fetch song song: nutrition widget + instructions
-            const [nutRes, insRes] = await Promise.allSettled([
-                fetch(`${API_URL}/api/detect/get-recipe-instructions/${item.spoonacular_id}`),
-                fetch(`${API_URL}/api/detect/get-recipe-instructions/${item.spoonacular_id}`),
-            ]);
+            const detailRes = await fetch(`${API_URL}/api/recipe/spoonacular/${item.spoonacular_id}/full-details`);
 
             let instructions = [];
-            // Chỉ 1 endpoint instructions, dùng insRes
-            if (insRes.status === 'fulfilled' && insRes.value.ok) {
-                const d = await insRes.value.json();
-                instructions = d.instructions || [];
+            let ingredients = [];
+            let nutrients = [];
+            let detailCalories = null;
+            if (detailRes.ok) {
+                const data = await detailRes.json();
+                instructions = data.instructions || [];
+                ingredients = data.ingredients || [];
+                nutrients = data.nutrients || [];
+                detailCalories = data.calories;
             }
 
             navigation.navigate('RecipeDetailScreen', {
@@ -103,10 +104,10 @@ export default function SearchScreen({ navigation, route }) {
                     id: item.spoonacular_id,
                     title: item.title,
                     image: item.image,
-                    calories: item.calories,
+                    calories: detailCalories || item.calories,
                     instructions,
-                    nutrients: [],
-                    ingredients: [],
+                    nutrients,
+                    ingredients,
                 },
             });
         } catch {

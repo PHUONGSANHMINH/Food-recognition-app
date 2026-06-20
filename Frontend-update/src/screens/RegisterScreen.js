@@ -107,12 +107,12 @@ export default function RegisterScreen({ navigation }) {
                         <Text style={styles.title}>Create your account</Text>
 
                         <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Full Name</Text>
+                            <Text style={styles.label}>User Name</Text>
                             <View style={styles.inputWrapper}>
                                 <Ionicons name="person-outline" size={20} color="#62656b" style={styles.icon} />
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Your Full Name"
+                                    placeholder="Your User Name"
                                     placeholderTextColor="#9ca3af"
                                     value={fullName}
                                     onChangeText={setFullName}

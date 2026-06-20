@@ -15,6 +15,7 @@ from app.controllers.detect_controller import (
     get_spoonacular_recommendations_v2,
     get_scan_logs,
     get_scan_stats,
+    detect_food_gemini,
 )
 from flasgger import swag_from
 
@@ -486,3 +487,37 @@ def get_favourites_view():
 def recommend_paginated_view():
     """Get Paginated Spoonacular Recommendations"""
     return get_spoonacular_recommendations_v2()
+
+@detect_bp.route('/detect-food-gemini', methods=['POST'])
+@jwt_required()
+def detect_food_gemini_view():
+    """Scan Food with Gemini
+    ---
+    tags:
+      - Detection
+    summary: Scan Food with Google Gemini API
+    description: >
+      Phát hiện món ăn và phân tích dinh dưỡng (kcal, protein, carbs, fat) 
+      hoàn toàn bằng Gemini API.
+    consumes:
+      - multipart/form-data
+    parameters:
+      - name: Authorization
+        in: header
+        type: string
+        required: true
+      - name: image
+        in: formData
+        type: file
+        required: true
+    responses:
+      200:
+        description: Kết quả phân tích dinh dưỡng từ Gemini
+      400:
+        description: Thiếu ảnh
+      401:
+        description: Chưa đăng nhập
+      500:
+        description: Lỗi Gemini API hoặc server
+    """
+    return detect_food_gemini()

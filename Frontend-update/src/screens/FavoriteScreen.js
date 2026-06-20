@@ -75,20 +75,46 @@ export default function FavoriteScreen({ navigation }) {
         }
     };
 
-    const handleItemPress = (item) => {
+    const handleItemPress = async (item) => {
         if (item.source === 'spoonacular') {
-            // Navigate với format Spoonacular
-            navigation.navigate('RecipeDetailScreen', {
-                recipe: {
-                    id: item.spoonacular_id,
-                    title: item.title,
-                    image: getImageUri(item.image),
-                    calories: item.calories,
-                    nutrients: [],
-                    ingredients: [],
-                    instructions: [],
-                },
-            });
+            try {
+                const detailRes = await fetch(`${API_URL}/api/recipe/spoonacular/${item.spoonacular_id}/full-details`);
+                let instructions = [];
+                let ingredients = [];
+                let nutrients = [];
+                let detailCalories = null;
+                if (detailRes.ok) {
+                    const data = await detailRes.json();
+                    instructions = data.instructions || [];
+                    ingredients = data.ingredients || [];
+                    nutrients = data.nutrients || [];
+                    detailCalories = data.calories;
+                }
+                navigation.navigate('RecipeDetailScreen', {
+                    recipe: {
+                        id: item.spoonacular_id,
+                        title: item.title,
+                        image: getImageUri(item.image),
+                        calories: detailCalories || item.calories,
+                        nutrients,
+                        ingredients,
+                        instructions,
+                    },
+                });
+            } catch (err) {
+                // Thêm fallback navigate nếu fetch lỗi
+                navigation.navigate('RecipeDetailScreen', {
+                    recipe: {
+                        id: item.spoonacular_id,
+                        title: item.title,
+                        image: getImageUri(item.image),
+                        calories: item.calories,
+                        nutrients: [],
+                        ingredients: [],
+                        instructions: [],
+                    },
+                });
+            }
         } else {
             // Navigate với format nội bộ
             navigation.navigate('RecipeDetailScreen', {

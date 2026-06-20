@@ -41,6 +41,8 @@ export default function ScanScreen({ navigation }) {
     const [recommendations, setRecommendations] = useState([]);
     const [noMatch, setNoMatch] = useState(false);
     const [avatar, setAvatar] = useState(null);
+    const [geminiNutrition, setGeminiNutrition] = useState(null); // nutrition from gemini
+    const [addedToDiary, setAddedToDiary] = useState(false);
 
     const cameraRef = useRef(null);
 
@@ -85,6 +87,8 @@ export default function ScanScreen({ navigation }) {
         setDetectedLabel(null);
         setRecommendations([]);
         setNoMatch(false);
+        setGeminiNutrition(null);
+        setAddedToDiary(false);
     };
 
     // ─── Chụp ảnh từ live camera ─────────────────────────────────────────────
@@ -134,6 +138,8 @@ export default function ScanScreen({ navigation }) {
         setDetectedLabel(null);
         setRecommendations([]);
         setNoMatch(false);
+        setGeminiNutrition(null);
+        setAddedToDiary(false);
     };
 
     // ─── Xử lý ảnh ────────────────────────────────────────────────────────────
@@ -144,7 +150,9 @@ export default function ScanScreen({ navigation }) {
             if (scanMode === 'ingredient') {
                 await scanIngredient(asset);
             } else {
-                await scanFood(asset);
+                // Try Gemini first if it's "food" mode
+                console.log('--- Starting Gemini Scan ---');
+                await scanFoodGemini(asset);
             }
         } catch (err) {
             console.error('processImage error:', err);
@@ -193,9 +201,8 @@ export default function ScanScreen({ navigation }) {
 
         const detectData = await safeJson(detectRes);
         const detected = detectData?.detected_objects || [];
-
         if (!detected.length) { setNoMatch(true); return; }
-        setDetectedLabel(detected[0]);
+        setDetectedLabel(detected.join(', '));
 
         const recRes = await fetch(`${API_URL}/api/detect/recommend-recipes-spoonacular`, {
             method: 'POST',
@@ -261,8 +268,100 @@ export default function ScanScreen({ navigation }) {
         const recs = data?.recommendations || [];
 
         if (!detected.length) { setNoMatch(true); return; }
-        setDetectedLabel(detected[0]);
+        setDetectedLabel(detected.join(', '));
         recs.length ? setRecommendations(recs) : setNoMatch(true);
+    };
+
+    // ─── Scan Food with Gemini ───────────────────────────────────────
+    const scanFoodGemini = async (asset) => {
+        const token = await AsyncStorage.getItem('access_token');
+        if (!token) return;
+
+        const formData = new FormData();
+        formData.append('image', {
+            uri: asset.uri,
+            type: asset.mimeType || 'image/jpeg',
+            name: asset.fileName || 'photo.jpg',
+        });
+
+        console.log('Calling Gemini API:', `${API_URL}/api/detect/detect-food-gemini`);
+        const res = await fetch(`${API_URL}/api/detect/detect-food-gemini`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        const data = await safeJson(res);
+        console.log('Gemini scan result:', data);
+
+        if (res.ok && data?.success && data?.nutrition) {
+            setGeminiNutrition(data.nutrition);
+            setDetectedLabel(data.nutrition.name);
+            setRecommendations([]); // Gemini doesn't return recommendations yet
+        } else {
+            const errorMsg = data?.msg || data?.error || 'Gemini scan failed';
+            console.error('Gemini Error:', errorMsg);
+            Alert.alert('Gemini Scan Failed', errorMsg);
+            setNoMatch(true);
+        }
+    };
+
+    const getMealTypeByTime = () => {
+        const hour = new Date().getHours();
+        if (hour >= 0 && hour < 11) return 'Breakfast';
+        if (hour >= 11 && hour < 13) return 'Lunch';
+        if (hour >= 13 && hour < 18) return 'Snack';
+        return 'Dinner';
+    };
+
+    const handleAddToDiary = async () => {
+        if (!geminiNutrition || addedToDiary) return;
+
+        setIsLoading(true);
+        try {
+            const token = await AsyncStorage.getItem('access_token');
+            const formData = new FormData();
+
+            const currentMealType = getMealTypeByTime();
+
+            formData.append('meal_name', geminiNutrition.name);
+            formData.append('meal_type', currentMealType);
+            formData.append('calories', geminiNutrition.calories.toString());
+            formData.append('protein_g', geminiNutrition.protein.toString());
+            formData.append('carbs_g', geminiNutrition.carbs.toString());
+            formData.append('fat_g', geminiNutrition.fat.toString());
+
+            // Re-upload image
+            formData.append('image', {
+                uri: capturedImage.uri,
+                type: capturedImage.mimeType || 'image/jpeg',
+                name: capturedImage.fileName || 'photo.jpg',
+            });
+
+            const res = await fetch(`${API_URL}/api/diary/add`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            if (res.ok) {
+                setAddedToDiary(true);
+                Alert.alert('Success', 'Added to your diary!');
+            } else {
+                const err = await res.json();
+                Alert.alert('Error', err.error || 'Failed to add to diary');
+            }
+        } catch (err) {
+            console.error('Add to diary error:', err);
+            Alert.alert('Error', 'Failed to add to diary');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // ─── Navigate sang ScanResultRecipes ─────────────────────────────────────
@@ -373,9 +472,52 @@ export default function ScanScreen({ navigation }) {
                 )}
             </View>
 
-            {/* Tên nhận diện */}
-            {!isLoading && detectedLabel && (
-                <Text style={styles.detectedLabel}>{capitalize(detectedLabel)}</Text>
+            {/* Tên nhận diện (khi không có Gemini) */}
+            {!isLoading && detectedLabel && !geminiNutrition && (
+                <View style={styles.resultHeader}>
+                    <Text style={styles.detectedLabel}>{capitalize(detectedLabel)}</Text>
+                </View>
+            )}
+
+            {/* Gemini Nutrition Info */}
+            {!isLoading && geminiNutrition && (
+                <View style={styles.nutritionCard}>
+                    <View style={styles.cardHeader}>
+                        <Text style={styles.cardFoodName} numberOfLines={2}>
+                            {capitalize(detectedLabel || geminiNutrition.name)}
+                        </Text>
+                        <TouchableOpacity
+                            style={[styles.addDiaryBtn, addedToDiary && styles.addDiaryBtnSuccess]}
+                            onPress={handleAddToDiary}
+                            disabled={addedToDiary}
+                        >
+                            <Ionicons
+                                name={addedToDiary ? "checkmark-circle" : "add-circle-outline"}
+                                size={18}
+                                color={addedToDiary ? "#3F805A" : "#3F805A"}
+                            />
+                            <Text style={styles.addDiaryText}>{addedToDiary ? 'Added' : 'Add to diary'}</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <Text style={styles.kcalValue}>{geminiNutrition.calories} kcal</Text>
+                    <View style={styles.macroRow}>
+                        <View style={styles.macroCol}>
+                            <Text style={styles.macroLabel}>Protein</Text>
+                            <Text style={styles.macroValue}>{geminiNutrition.protein}g</Text>
+                        </View>
+                        <View style={styles.macroDivider} />
+                        <View style={styles.macroCol}>
+                            <Text style={styles.macroLabel}>Carbs</Text>
+                            <Text style={styles.macroValue}>{geminiNutrition.carbs}g</Text>
+                        </View>
+                        <View style={styles.macroDivider} />
+                        <View style={styles.macroCol}>
+                            <Text style={styles.macroLabel}>Fat</Text>
+                            <Text style={styles.macroValue}>{geminiNutrition.fat}g</Text>
+                        </View>
+                    </View>
+                </View>
             )}
 
             {/* Badge vàng */}
@@ -603,4 +745,88 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.5)',
     },
     shutterBtnDisabled: { width: 70, height: 70 },
+
+    // ── Gemini & Diary Result ──
+    resultHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        marginTop: 14,
+    },
+    addDiaryBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        backgroundColor: '#E8F5E9',
+    },
+    addDiaryBtnSuccess: {
+        backgroundColor: '#C8E6C9',
+    },
+    addDiaryText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#3F805A',
+    },
+    nutritionCard: {
+        backgroundColor: '#fff',
+        marginHorizontal: 20,
+        marginTop: 12,
+        borderRadius: 16,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 2,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+    },
+    cardFoodName: {
+        flex: 1,
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#111',
+        marginRight: 12,
+    },
+    kcalValue: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        color: '#3F805A',
+        marginBottom: 12,
+    },
+    macroRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderTopWidth: 1,
+        borderTopColor: '#F0F0F0',
+        paddingTop: 12,
+    },
+    macroCol: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    macroLabel: {
+        fontSize: 12,
+        color: '#888',
+        marginBottom: 4,
+    },
+    macroValue: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    macroDivider: {
+        width: 1,
+        height: 24,
+        backgroundColor: '#EEE',
+    },
 });

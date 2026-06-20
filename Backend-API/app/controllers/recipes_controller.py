@@ -4,6 +4,7 @@ import os
 import json
 import requests
 import logging
+import concurrent.futures
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from app.models.model import User, RecipeInfo, Rating, RecipeIngredients, RecipeNutrition, RecipesContribution, RecipesFavourite, RecipeSteps, RecipeVitamin, SearchHistory  
@@ -501,6 +502,66 @@ def search_spoonacular_by_keyword():
 
     # Tất cả key đều hết quota — trả về mảng rỗng thay vì lỗi 500
     return jsonify([]), 200
+
+def get_spoonacular_full_details(recipe_id):
+    """
+    Called from frontend when user clicks a Spoonacular recipe detail.
+    Fetches analyzedInstructions and ingredientWidget.json concurrently.
+    """
+    try:
+        from app.controllers.detect_controller import SPOONACULAR_API_KEY, limited_api_keys
+    except Exception as e:
+        logger_rc.error(f"Spoonacular config error: {e}")
+        return jsonify({"error": "Configuration error"}), 500
+
+    url_instructions = f"https://api.spoonacular.com/recipes/{recipe_id}/analyzedInstructions"
+    url_ingredients = f"https://api.spoonacular.com/recipes/{recipe_id}/ingredientWidget.json"
+    url_nutrition = f"https://api.spoonacular.com/recipes/{recipe_id}/nutritionWidget.json"
+
+    def fetch_url(url):
+        for api_key in SPOONACULAR_API_KEY:
+            if api_key in limited_api_keys:
+                continue
+            params = {'apiKey': api_key.strip()}
+            try:
+                resp = requests.get(url, params=params, timeout=10)
+                if resp.status_code == 200:
+                    return resp.json()
+                elif resp.status_code == 402:
+                    limited_api_keys.add(api_key)
+                    logger_rc.warning(f"Spoonacular key {api_key} reached limit.")
+                else:
+                    logger_rc.error(f"Spoonacular error {resp.status_code} on {url}: {resp.text[:200]}")
+            except requests.RequestException as e:
+                logger_rc.error(f"Request error with Spoonacular key {api_key} on {url}: {e}")
+        return None
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        future_inst = executor.submit(fetch_url, url_instructions)
+        future_ingr = executor.submit(fetch_url, url_ingredients)
+        future_nutr = executor.submit(fetch_url, url_nutrition)
+        
+        raw_instructions = future_inst.result()
+        ingredients = future_ingr.result()
+        nutrition = future_nutr.result()
+
+    parsed_instructions = []
+    if isinstance(raw_instructions, list):
+        for instruction_group in raw_instructions:
+            for step in instruction_group.get('steps', []):
+                parsed_instructions.append({
+                    'step_number': step.get('number'),
+                    'instruction': step.get('step')
+                })
+
+    return jsonify({
+        "recipe_id": recipe_id,
+        "instructions": parsed_instructions,
+        "ingredients": ingredients.get("ingredients", []) if isinstance(ingredients, dict) else [],
+        "nutrients": nutrition.get("nutrients", []) if isinstance(nutrition, dict) else [],
+        "calories": nutrition.get("calories", None) if isinstance(nutrition, dict) else None
+    }), 200
+
 
 
 def get_recipes_unapproved():

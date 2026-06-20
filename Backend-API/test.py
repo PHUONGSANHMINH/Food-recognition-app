@@ -30,22 +30,32 @@ logger = logging.getLogger(__name__)
 # Tải biến môi trường từ file .env
 load_dotenv()
 
-# Tải mô hình YOLOv8
+# Tải mô hình YOLOv8 — food scan
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MODEL_PATH = os.getenv('YOLOV8_MODEL_PATH', 'yolov8-model/model_121824.pt')
 FULL_MODEL_PATH = os.path.join(BASE_DIR, MODEL_PATH)
 print(FULL_MODEL_PATH)
 model = YOLO(FULL_MODEL_PATH)
+
+# Tải mô hình YOLOv8 — ingredient scan (best.pt được train riêng cho nguyên liệu)
+INGREDIENT_MODEL_PATH = os.getenv('YOLOV8_INGREDIENT_MODEL_PATH', 'yolov8-model/best.pt')
+FULL_INGREDIENT_MODEL_PATH = os.path.join(BASE_DIR, INGREDIENT_MODEL_PATH)
+print(f"Ingredient model: {FULL_INGREDIENT_MODEL_PATH}")
+try:
+    ingredient_model = YOLO(FULL_INGREDIENT_MODEL_PATH)
+    logger.info(f"Ingredient YOLOv8 loaded: {len(ingredient_model.names)} classes")
+except Exception as _e:
+    ingredient_model = model  # fallback về food model
+    logger.warning(f"Failed to load ingredient model, using food model as fallback: {_e}")
 # Cấu hình API của Spoonacular
 SPOONACULAR_API_KEY = os.getenv('SPOONACULAR_API_KEY', '').split(',')
 SPOONACULAR_SEARCH_URL = 'https://api.spoonacular.com/recipes/complexSearch'
-SPOONACULAR_FIND_BY_INGREDIENTS_URL = 'https://api.spoonacular.com/recipes/findByIngredients'
 SPOONACULAR_NUTRITION_URL = 'https://api.spoonacular.com/recipes/{id}/nutritionWidget.json'
 
 # Cấu hình Roboflow (Scan Food)
 ROBOFLOW_API_KEY            = os.getenv('ROBOFLOW_API_KEY', 'Wre9TGGWweRBqiO0MvIL')
 ROBOFLOW_MODEL_ID           = os.getenv('ROBOFLOW_FOOD_MODEL_ID', 'food-yklgo/3')
-ROBOFLOW_INGREDIENT_MODEL_ID= os.getenv('ROBOFLOW_INGREDIENT_MODEL_ID', 'ingredient-j9nuw/1')
+ROBOFLOW_INGREDIENT_MODEL_ID= os.getenv('ROBOFLOW_INGREDIENT_MODEL_ID', 'ingredients-mqhxf/1')
 ROBOFLOW_API_URL            = os.getenv('ROBOFLOW_API_URL', 'https://serverless.roboflow.com')
 roboflow_client = InferenceHTTPClient(
     api_url=ROBOFLOW_API_URL,
@@ -227,7 +237,7 @@ def recommend_recipes_by_labels(labels, threshold=0.3):  # threshold: ngưỡng 
     return recommendations
 
 def detect_objects():
-    """Phát hiện nguyên liệu qua Roboflow (thay thế YOLOv8 local)."""
+    """Phát hiện nguyên liệu qua YOLOv8 local (best.pt — ingredient model)."""
     if 'image' not in request.files:
         logger.warning('No image part in the request')
         return jsonify({'msg': 'No image part in the request'}), 400
@@ -256,47 +266,53 @@ def detect_objects():
         if file_size > 10 * 1024 * 1024:
             return jsonify({'msg': 'File is too large'}), 400
 
-        # ── Gọi Roboflow Ingredient Detection ────────────────────────────────
-        result = roboflow_client.infer(filepath, model_id=ROBOFLOW_INGREDIENT_MODEL_ID)
-        predictions = result.get('predictions', [])
-        logger.info(f"Roboflow raw: {[(p['class'], round(p.get('confidence',0),3)) for p in predictions]}")
+        # ── Gọi YOLOv8 Ingredient Model (best.pt) ────────────────────────────
+        yolo_results = ingredient_model.predict(
+            source=filepath,
+            conf=CONF_THRESHOLD,
+            verbose=False
+        )
 
-        # Lọc confidence threshold
-        filtered = [p for p in predictions if p.get('confidence', 0) >= CONF_THRESHOLD]
+        # Chuyển kết quả YOLO thành list predictions
+        raw_predictions = []
+        for r in yolo_results:
+            for box in r.boxes:
+                cls_id = int(box.cls[0])
+                conf   = float(box.conf[0])
+                label  = ingredient_model.names.get(cls_id, str(cls_id))
+                raw_predictions.append({'class': label, 'confidence': conf})
+
+        logger.info(f"YOLOv8 ingredient raw: {[(p['class'], round(p['confidence'],3)) for p in raw_predictions]}")
 
         # Normalize & deduplicate (ưu tiên confidence cao nhất)
         seen: dict = {}
-        for p in sorted(filtered, key=lambda x: x.get('confidence', 0), reverse=True):
+        for p in sorted(raw_predictions, key=lambda x: x['confidence'], reverse=True):
             norm = normalize_label(p['class'])
             if norm not in seen:
-                seen[norm] = p.get('confidence', 0)
+                seen[norm] = p['confidence']
 
         detected_labels    = list(seen.keys())
         detected_with_conf = [{'class': k, 'confidence': round(v, 4)} for k, v in seen.items()]
 
-        best_p = max(filtered, key=lambda x: x.get('confidence', 0)) if filtered else (
-                 max(predictions, key=lambda x: x.get('confidence', 0)) if predictions else None)
+        best_p = max(raw_predictions, key=lambda x: x['confidence']) if raw_predictions else None
 
         if not detected_labels:
-            low_hints = [
-                {'class': normalize_label(p['class']), 'confidence': round(p.get('confidence', 0), 4)}
-                for p in sorted(predictions, key=lambda x: x.get('confidence', 0), reverse=True)[:3]
-            ] if predictions else []
             log_scan_event(current_user_id, "Unknown", 0, filepath, 0)
             return jsonify({
                 'msg': 'No ingredients detected with sufficient confidence',
                 'conf_threshold': CONF_THRESHOLD,
-                'low_confidence_hints': low_hints,
+                'low_confidence_hints': [],
             }), 200
 
         best_label = best_p['class'] if best_p else 'Unknown'
-        best_conf  = best_p.get('confidence', 0) if best_p else 0
+        best_conf  = best_p['confidence'] if best_p else 0
         log_scan_event(current_user_id, best_label, best_conf, filepath, 1)
 
         return jsonify({
             'detected_objects':         detected_labels,
             'detected_with_confidence': detected_with_conf,
             'conf_threshold':           CONF_THRESHOLD,
+            'source':                   'yolov8_local',
         }), 200
 
     except Exception as e:
@@ -313,56 +329,52 @@ def recommend_recipes_spoonacular():
         if not detected_labels:
             return jsonify({'msg': 'No detected objects provided'}), 400
 
-        # Combine all ingredients into a comma-separated string for combined search
         ingredients = ','.join(detected_labels)
         params = {
-            'ingredients': ingredients,
+            'includeIngredients': ingredients,
             'number': 10,
             'ranking': 1,
-            'ignorePantry': True
+            'addRecipeInformation': True
         }
 
-        recommendations = []
         for api_key in SPOONACULAR_API_KEY:
             if api_key in limited_api_keys:
                 continue
             params['apiKey'] = api_key.strip()
-            logger.info(f"Searching for combined ingredients using Spoonacular API key: {api_key.strip()[:5]}...")
+            logger.info(f"Trying Spoonacular API key: {api_key.strip()[:5]}...")
 
             try:
-                response = requests.get(SPOONACULAR_FIND_BY_INGREDIENTS_URL, params=params)
+                response = requests.get(SPOONACULAR_SEARCH_URL, params=params)
                 logger.info(f"Spoonacular response status: {response.status_code}")
 
                 if response.status_code == 200:
                     data = response.json()
-                    # data is a list in findByIngredients
-                    recipes_list = data if isinstance(data, list) else []
-                    
-                    for recipe in recipes_list:
-                        recipe_id = recipe.get('id')
-                        if recipe_id:
-                            # Fetch additional details for each recipe
-                            recipe_info = get_recipe_info(recipe_id)
-                            instructions_result = get_recipe_instructions(recipe_id)
+                    recipes = data.get('results', [])
+                    logger.info(f"Found {len(recipes)} recipes")
 
-                            combined_info = {
-                                'id': recipe_id,
-                                'title': recipe.get('title'),
-                                'image': recipe.get('image'),
-                                'cookingMinutes': recipe_info.get('cookingMinutes', 0), # Added fallback
-                                'summary': recipe_info.get('summary', ''),
-                                'sourceUrl': recipe_info.get('sourceUrl', ''),
-                                'calories': recipe_info.get('calories'),
-                                'nutrients': recipe_info.get('nutrients'),
-                                'ingredients': recipe_info.get('ingredients'),
-                                'instructions': instructions_result.get('instructions', []),
-                                'usedIngredientCount': recipe.get('usedIngredientCount'),
-                                'missedIngredientCount': recipe.get('missedIngredientCount')
-                            }
-                            recommendations.append(combined_info)
-                    
-                    # Break API key loop if success
-                    break
+                    if not recipes:
+                        return jsonify({'msg': 'No recipes found for detected ingredients'}), 200
+
+                    recommendations = []
+                    for recipe in recipes:
+                        recipe_info = get_recipe_info(recipe.get('id'))
+                        instructions_result = get_recipe_instructions(recipe.get('id'))
+
+                        combined_info = {
+                            'id': recipe_info.get('id'),
+                            'title': recipe.get('title'),
+                            'image': recipe.get('image'),
+                            'cookingMinutes': recipe.get('cookingMinutes'),
+                            'summary': recipe.get('summary'),
+                            'sourceUrl': recipe.get('sourceUrl'),
+                            'calories': recipe_info.get('calories'),
+                            'nutrients': recipe_info.get('nutrients'),
+                            'ingredients': recipe_info.get('ingredients'),
+                            'instructions': instructions_result.get('instructions', []),
+                        }
+                        recommendations.append(combined_info)
+
+                    return jsonify({'recommendations': recommendations}), 200
 
                 elif response.status_code == 402:
                     limited_api_keys.add(api_key)
@@ -373,11 +385,7 @@ def recommend_recipes_spoonacular():
             except requests.RequestException as e:
                 logger.error(f"Request error with API key {api_key}: {str(e)}")
 
-        if not recommendations:
-            return jsonify({'msg': 'No recipes found for combined ingredients'}), 200
-
-        return jsonify({'recommendations': recommendations}), 200
-
+        return jsonify({'msg': 'All API keys have reached their limits or encountered an error'}), 500
     except Exception as e:
         logger.error(f"Unhandled error in recommend_recipes_spoonacular: {str(e)}")
         return jsonify({'msg': 'Internal server error', 'error': str(e)}), 500

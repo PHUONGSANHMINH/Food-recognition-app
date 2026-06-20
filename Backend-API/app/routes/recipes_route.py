@@ -26,6 +26,7 @@ from app.controllers.recipes_controller import (
     clear_search_history,
     search_spoonacular_by_keyword,
     get_recipe_stats,
+    get_spoonacular_full_details,
 )
 
 
@@ -180,6 +181,29 @@ def get_recipes_publish_view():
 })
 def search_spoonacular_view():
     return search_spoonacular_by_keyword()
+
+@recipe_bp.route('/spoonacular/<int:recipe_id>/full-details', methods=['GET'])
+@swag_from({
+    'tags': ['Recipes'],
+    'summary': 'Get Full Details from Spoonacular',
+    'description': 'Concurrently fetches analyzedInstructions and ingredientWidget.json from Spoonacular',
+    'parameters': [
+        {
+            'name': 'recipe_id',
+            'in': 'path',
+            'type': 'integer',
+            'required': True,
+            'description': 'Spoonacular Recipe ID to fetch details for'
+        }
+    ],
+    'responses': {
+        200: {
+            'description': 'Recipe instructions and ingredients fetched successfully'
+        }
+    }
+})
+def get_spoonacular_full_details_view(recipe_id):
+    return get_spoonacular_full_details(recipe_id)
 
 @recipe_bp.route('/get-recipes-unapproved', methods=['GET'])
 @swag_from({
