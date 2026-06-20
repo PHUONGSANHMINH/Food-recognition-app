@@ -1129,7 +1129,7 @@ def get_spoonacular_recommendations_v2():
                     
                     recommendations.append({
                         'source': 'spoonacular',
-                        'id_recipe': item.get('id'), # Thống nhất key id_recipe cho frontend
+                        'id': item.get('id'), # Changed from id_recipe to prevent 404 on local detail fetch
                         'name_recipe': item.get('title'),
                         'image': item.get('image'),
                         'calories': calories,

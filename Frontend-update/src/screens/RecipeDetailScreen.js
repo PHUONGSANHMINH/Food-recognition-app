@@ -33,30 +33,26 @@ export default function RecipeDetailScreen({ route, navigation }) {
     const [favModalMsg, setFavModalMsg] = useState('');
 
     // Nếu là recipe nội bộ (có id_recipe), fetch đầy đủ chi tiết
+    // Nếu là recipe Spoonacular mà chưa có instructions, cũng fetch detail
     useEffect(() => {
         const rid = initRecipe?.id_recipe;
-        if (!rid) return;  // Spoonacular recipe đã có đủ data
+        const sid = initRecipe?.id || initRecipe?.spoonacular_id;
 
-        const fetchDetail = async () => {
+        const fetchLocalDetail = async (id) => {
             try {
                 setLoading(true);
-                const res = await fetch(`${API_URL}/api/recipe/${rid}`);
+                const res = await fetch(`${API_URL}/api/recipe/${id}`);
                 if (!res.ok) return;
                 const data = await res.json();
-                // Chuẩn hóa structure để dùng chung với Spoonacular format
                 setRecipe({
                     ...data,
-                    // Cho RecipeDetailScreen đọc được
                     title: data.name_recipe,
                     image: toImageUri(data.image),
                     calories: data.nutrition?.calories ?? initRecipe?.calories,
-                    // ingredients đã là array [{name_ingredient, quantity, unit}]
-                    // steps → map sang {step_number, instruction}
                     instructions: (data.steps || []).map(s => ({
                         step_number: s.step_number,
                         instruction: s.content,
                     })),
-                    // nutrients → từ nutrition object → array giống Spoonacular
                     nutrients: data.nutrition ? [
                         { name: 'Protein', amount: data.nutrition.protein, unit: 'g' },
                         { name: 'Carbohydrates', amount: data.nutrition.carbohydrates, unit: 'g' },
@@ -66,14 +62,31 @@ export default function RecipeDetailScreen({ route, navigation }) {
                         { name: 'Sodium', amount: data.nutrition.sodium, unit: 'mg' },
                     ] : [],
                 });
-            } catch {
-                /* giữ nguyên initRecipe */
-            } finally {
-                setLoading(false);
-            }
+            } catch { /* ignore */ } finally { setLoading(false); }
         };
-        fetchDetail();
-    }, []);
+
+        const fetchSpoonacularDetail = async (id) => {
+            try {
+                setLoading(true);
+                const res = await fetch(`${API_URL}/api/recipe/spoonacular/${id}/full-details`);
+                if (!res.ok) return;
+                const data = await res.json();
+                setRecipe(prev => ({
+                    ...prev,
+                    instructions: data.instructions || [],
+                    ingredients: data.ingredients || [],
+                    nutrients: data.nutrients || [],
+                    calories: data.calories || prev?.calories
+                }));
+            } catch { /* ignore */ } finally { setLoading(false); }
+        };
+
+        if (rid) {
+            fetchLocalDetail(rid);
+        } else if (sid && (!initRecipe?.instructions || initRecipe.instructions.length === 0)) {
+            fetchSpoonacularDetail(sid);
+        }
+    }, [initRecipe]);
 
     if (!recipe) {
         return (

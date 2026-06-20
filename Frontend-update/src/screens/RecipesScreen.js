@@ -173,22 +173,80 @@ export default function RecipesScreen({ navigation }) {
     } catch { /* ignore */ }
   };
 
+  const [loadingDetailId, setLoadingDetailId] = useState(null);
+
+  const handleSpoonacularPress = useCallback(async (item) => {
+    setLoadingDetailId(item.id);
+    try {
+      const detailRes = await fetch(`${API_URL}/api/recipe/spoonacular/${item.id}/full-details`);
+
+      let instructions = [];
+      let ingredients = [];
+      let nutrients = [];
+      let detailCalories = null;
+      if (detailRes.ok) {
+        const data = await detailRes.json();
+        instructions = data.instructions || [];
+        ingredients = data.ingredients || [];
+        nutrients = data.nutrients || [];
+        detailCalories = data.calories;
+      }
+
+      navigation.navigate('RecipeDetailScreen', {
+        recipe: {
+          id: item.id,
+          title: item.name_recipe,
+          image: item.image,
+          calories: detailCalories || item.calories,
+          instructions,
+          nutrients,
+          ingredients,
+        },
+      });
+    } catch {
+      navigation.navigate('RecipeDetailScreen', {
+        recipe: {
+          id: item.id,
+          title: item.name_recipe,
+          image: item.image,
+          calories: item.calories,
+          instructions: [],
+          nutrients: [],
+          ingredients: [],
+        },
+      });
+    } finally {
+      setLoadingDetailId(null);
+    }
+  }, [navigation]);
+
   // Card món ăn — thiết kế theo ảnh
   const RecipeCard = ({ item }) => {
+    const isSpoonacular = item.source === 'spoonacular';
     const imageUri = getImageUri(item.image);
-    const isFav = favouriteIds.has(item.id_recipe);
+    const id = isSpoonacular ? item.id : item.id_recipe;
+    const isFav = favouriteIds.has(id);
+    const isLoadingThis = loadingDetailId === id;
+
     return (
       <TouchableOpacity
         style={styles.card}
         activeOpacity={0.88}
-        onPress={() => navigation.navigate('RecipeDetailScreen', {
-          recipe: {
-            id_recipe: item.id_recipe,
-            name_recipe: item.name_recipe,
-            image: item.image,
-            calories: item.calories,
+        disabled={isLoadingThis}
+        onPress={() => {
+          if (isSpoonacular) {
+            handleSpoonacularPress(item);
+          } else {
+            navigation.navigate('RecipeDetailScreen', {
+              recipe: {
+                id_recipe: item.id_recipe,
+                name_recipe: item.name_recipe,
+                image: item.image,
+                calories: item.calories,
+              }
+            });
           }
-        })}
+        }}
       >
         {/* Ảnh */}
         <View style={styles.cardImageWrap}>
@@ -199,6 +257,19 @@ export default function RecipesScreen({ navigation }) {
               <Ionicons name="restaurant-outline" size={36} color="#ccc" />
             </View>
           )}
+
+          {isLoadingThis && (
+            <View style={{
+              ...StyleSheet.absoluteFillObject,
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderRadius: 18
+            }}>
+              <ActivityIndicator size="small" color="#fff" />
+            </View>
+          )}
+
           {/* Heart icon — đỏ nếu đã yêu thích */}
           <TouchableOpacity
             style={[styles.heartOverlay, isFav && styles.heartOverlayFav]}

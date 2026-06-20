@@ -622,3 +622,5 @@
 2026-06-20 17:33:20,799 INFO: Searching for combined ingredients using Spoonacular API key: 08f25... [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:330]
 2026-06-20 17:33:22,273 INFO: Spoonacular response status: 200 [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:334]
 2026-06-20 17:45:31,591 INFO: Modern Gemini genai.Client initialized. [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:61]
+2026-06-20 17:45:40,582 INFO: Modern Gemini genai.Client initialized. [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:61]
+2026-06-20 17:51:57,792 INFO: Modern Gemini genai.Client initialized. [in D:\Education\Food-recognition-app\Backend-API\app\controllers\detect_controller.py:61]
